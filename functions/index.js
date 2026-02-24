@@ -93,10 +93,12 @@ const appendToSheet = async (spreadsheetId, sheetName, rowData) => {
 
 /**
  * Új, szekvenciális regisztrációs szám generálása (pl. "25/0001").
+ * @param {boolean} isTest Jelzi, ha teszt regisztrációs számról van szó.
  * @return {Promise<string|null>} Az új regisztrációs szám vagy null hiba esetén.
  */
-const generateRegistrationNumber = async () => {
-    const counterRef = db.doc('counters/registrations');
+const generateRegistrationNumber = async (isTest = false) => {
+    const counterDocName = isTest ? 'registrations_test' : 'registrations';
+    const counterRef = db.doc(`counters/${counterDocName}`);
     try {
         const newCount = await db.runTransaction(async (transaction) => {
             const counterDoc = await transaction.get(counterRef);
@@ -107,7 +109,8 @@ const generateRegistrationNumber = async () => {
         });
         const year = new Date().getFullYear().toString().slice(-2);
         const paddedCount = newCount.toString().padStart(4, '0');
-        const registrationNumber = `${year}/${paddedCount}`;
+        const prefix = isTest ? 'TEST-' : ''; // Teszt előtag
+        const registrationNumber = `${prefix}${year}/${paddedCount}`;
         logger.info(`Generated new registration number: ${registrationNumber}`);
         return registrationNumber;
     } catch (error) {
@@ -269,7 +272,7 @@ const logToFarSheet = async (studentData) => {
  * @param {object} studentData A címzett adatai.
  * @param {object} template Az e-mail sablon.
  */
-const sendEmail = async (studentData, template) => {
+const sendEmail = async (studentData, template, isTest = false) => {
     if (!studentData.email) {
         logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
         return;
@@ -278,12 +281,15 @@ const sendEmail = async (studentData, template) => {
         logger.error("Email template is invalid.", {studentId: studentData.id});
         return;
     }
+
+    const subjectPrefix = isTest ? '[TESZT] ' : '';
+
     const mailPayload = {
         to: studentData.email,
         // MÓDOSÍTÁS: A feladó nevének és címének explicit megadása az egységességért
         from: '"Mosolyzóna, a Kreszprofesszor autósiskolája" <iroda@mosolyzona.hu>',
         message: {
-            subject: template.subject,
+            subject: `${subjectPrefix}${template.subject}`,
             html: template.html,
         },
     };
@@ -292,7 +298,7 @@ const sendEmail = async (studentData, template) => {
     }
     try {
         await db.collection("mail").add(mailPayload);
-        logger.info(`Email queued for sending to ${studentData.email}`, {cc: mailPayload.cc || 'none'});
+        logger.info(`Email queued for sending to ${studentData.email}`, {cc: mailPayload.cc || 'none', isTest});
     } catch (error) {
         logger.error(`Failed to queue email for ${studentData.email}`, {error: error.message});
     }
@@ -378,6 +384,17 @@ const runDailyChecks = async () => {
 exports.submitRegistration = onCall({ region: "europe-west1" }, async (request) => {
     const formData = request.data;
 
+    // ÚJ: Teszt mód detektálása a kérésből
+    // A frontendnek küldenie kell egy 'isTest' flaget a form adatok mellett vagy azokban
+    // Jelenleg feltételezzük, hogy a formData-ban van, vagy egyszerűen a mentés helye dönti el.
+    // Mivel a kérés a frontendről jön, a legegyszerűbb, ha a frontend az 'registrations' vagy 'registrations_test' helyett
+    // csak az adatokat küldi, és mi itt döntjük el, hova megy.
+    // DE: A 'submitRegistration' jelenleg nem kap paramétert a gyűjteményről.
+    // A legelegánsabb, ha a request data tartalmaz egy '_isTest' mezőt.
+
+    const isTest = formData._isTest === true;
+    delete formData._isTest; // Nem mentjük el az adatbázisba
+
     // BIZTONSÁGI JAVÍTÁS: A bejövő adatok szanitizálása
     const sanitizedData = {};
     for (const key in formData) {
@@ -404,9 +421,11 @@ exports.submitRegistration = onCall({ region: "europe-west1" }, async (request) 
     delete newRegistrationData.guardian_email_confirm;
     delete newRegistrationData.copyNameToBirth;
 
+    const collectionName = isTest ? "registrations_test" : "registrations";
+
     try {
-        const docRef = await db.collection("registrations").add(newRegistrationData);
-        logger.info(`New registration successfully submitted via function for ${sanitizedData.email}`, {docId: docRef.id});
+        const docRef = await db.collection(collectionName).add(newRegistrationData);
+        logger.info(`New registration successfully submitted via function for ${sanitizedData.email} to ${collectionName}`, {docId: docRef.id});
         return { success: true, message: "Sikeres regisztráció!" };
     } catch (error) {
         logger.error("Error submitting registration via function:", error);
@@ -422,7 +441,9 @@ exports.adminAddStudent = onCall({ region: "europe-west1" }, async (request) => 
     }
 
     const formData = request.data;
-    
+    const isTest = formData._isTest === true;
+    delete formData._isTest;
+
     const newRegistrationData = {
         ...formData,
         createdAt: Timestamp.now(),
@@ -433,9 +454,11 @@ exports.adminAddStudent = onCall({ region: "europe-west1" }, async (request) => 
     // Felesleges mezők eltávolítása a végleges dokumentumból
     delete newRegistrationData.copyNameToBirth;
 
+    const collectionName = isTest ? "registrations_test" : "registrations";
+
     try {
-        const docRef = await db.collection("registrations").add(newRegistrationData);
-        logger.info(`Admin (${userEmail}) successfully added a new student: ${formatFullName(formData.current_prefix, formData.current_firstName, formData.current_lastName, formData.current_secondName)}`, {docId: docRef.id});
+        const docRef = await db.collection(collectionName).add(newRegistrationData);
+        logger.info(`Admin (${userEmail}) successfully added a new student to ${collectionName}: ${formatFullName(formData.current_prefix, formData.current_firstName, formData.current_lastName, formData.current_secondName)}`, {docId: docRef.id});
         return { success: true, docId: docRef.id };
     } catch (error) {
         logger.error(`Error adding student by admin ${userEmail}:`, error);
@@ -505,7 +528,7 @@ exports.onRegistrationCreated = onDocumentCreated(
         const studentData = event.data.data();
         const studentRef = event.data.ref;
 
-        const registrationNumber = await generateRegistrationNumber();
+        const registrationNumber = await generateRegistrationNumber(false);
         if (registrationNumber) {
             await studentRef.update({ registrationNumber: registrationNumber });
         }
@@ -523,6 +546,35 @@ exports.onRegistrationCreated = onDocumentCreated(
         }
         
         logger.info(`Registration created for ${studentRef.id}. Sheet writing will be handled by onUpdated trigger.`);
+    }
+);
+
+// ÚJ: Dokumentum létrehozásakor lefutó trigger a TESZT adatbázishoz
+exports.onRegistrationTestCreated = onDocumentCreated(
+    {
+        document: "registrations_test/{registrationId}",
+        // Nem kell secret, mert nem írunk táblázatba
+    },
+    async (event) => {
+        const studentData = event.data.data();
+        const studentRef = event.data.ref;
+
+        const registrationNumber = await generateRegistrationNumber(true); // true = teszt
+        if (registrationNumber) {
+            await studentRef.update({ registrationNumber: registrationNumber });
+        }
+
+        if (studentData.registeredBy === 'form' || studentData.sendInitialEmail === true) {
+            const emailData = { ...studentData, registrationNumber };
+            // isTest = true paraméter átadása a sendEmail-nek
+            await sendEmail(emailData, templates.registrationConfirmation(emailData), true);
+        }
+
+        if (studentData.sendInitialEmail !== undefined) {
+            await studentRef.update({sendInitialEmail: FieldValue.delete()});
+        }
+
+        logger.info(`TEST Registration created for ${studentRef.id}. NO Sheet writing.`);
     }
 );
 
@@ -586,3 +638,35 @@ exports.onRegistrationUpdated = onDocumentUpdated(
     }
 );
 
+// ÚJ: Dokumentum frissítésekor lefutó trigger a TESZT adatbázishoz
+exports.onRegistrationTestUpdated = onDocumentUpdated(
+    {
+        document: "registrations_test/{registrationId}",
+        // Nincs secret, mert nem írunk táblázatba
+    },
+    async (event) => {
+        const before = event.data.before.data();
+        const after = event.data.after.data();
+
+        // E-mailek küldése TESZT módban (de táblázat írás nélkül)
+
+        if (!before.status_enrolled && after.status_enrolled) {
+            await sendEmail(after, templates.enrolledConfirmation(after), true);
+            // NEM hívjuk meg a logEnrollmentToSheet-et
+        }
+
+        if (!before.courseCompletedAt && after.courseCompletedAt) {
+            if (after.hasMedicalCertificate) {
+                await sendEmail(after, templates.courseCompletedReadyToSign(after), true);
+            } else {
+                await sendEmail(after, templates.courseCompletedMedicalNeeded(after), true);
+            }
+        }
+
+        if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
+            await sendEmail(after, templates.medicalCertificateReceived(after), true);
+        }
+
+        logger.info(`TEST Registration updated for ${after.registrationNumber}. Email sent if applicable, NO Sheet update.`);
+    }
+);

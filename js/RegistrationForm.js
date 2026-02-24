@@ -51,7 +51,7 @@
  * MÓDOSÍTÁS 48: A "Közterület jellege" mezők kiegészítve az `autocapitalize="none"` attribútummal.
  */
 import { html, LoadingOverlay, InfoModal } from './UI.js';
-import { functions, httpsCallable } from './firebase.js';
+import { functions, httpsCallable, isTestMode } from './firebase.js'; // ÚJ: isTestMode importálása
 import DateInput from './components/DateInput.js';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal.js';
 import TrainingInfoModal from './components/TrainingInfoModal.js';
@@ -544,8 +544,15 @@ const RegistrationForm = () => {
 
         setIsSubmitting(true);
         try {
+            // ÚJ: isTestMode() ellenőrzése és _isTest flag beállítása
+            const payload = { ...formData };
+            if (isTestMode()) {
+                payload._isTest = true;
+                console.log("Submitting in TEST MODE");
+            }
+
             const submitRegistration = httpsCallable(functions, 'submitRegistration');
-            await submitRegistration(formData);
+            await submitRegistration(payload);
             setIsSubmittedSuccessfully(true);
 
         } catch (error) {
@@ -1021,4 +1028,3 @@ const RegistrationForm = () => {
 };
 
 export default RegistrationForm;
-

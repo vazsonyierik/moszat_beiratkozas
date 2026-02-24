@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Segédfüggvény annak ellenőrzésére, hogy a felhasználó hitelesített admin-e.
+    function isAdmin() {
+      return request.auth != null && exists(/databases/$(database)/documents/admins/$(request.auth.token.email));
+    }
+
+    // Szabályok az ÉLES tanulói regisztrációkhoz
+    match /registrations/{registrationId} {
+      // VÉGLEGES MÓDOSÍTÁS: A létrehozást (create) mostantól csak a backend (Cloud Functions) végezheti.
+      // A publikus írás véglegesen letiltva.
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // Szabályok a TESZT tanulói regisztrációkhoz (új)
+    match /registrations_test/{registrationId} {
+      // Hasonlóan az éleshez, de itt is csak backend írhat, admin olvashat/módosíthat
+      allow create: if false;
+      allow read, update, delete: if isAdmin();
+    }
+
+    // BIZTONSÁGOS SZABÁLYOK AZ ADMINISZTRÁTOROKHOZ
+    match /admins/{adminEmail} {
+      // Az admin dokumentumok lekérdezése (get) mostantól csak bejelentkezett adminoknak engedélyezett,
+      // megelőzve az e-mail címek kitalálását.
+      allow get: if isAdmin();
+      // Csak a már bejelentkezett adminok listázhatják az ÖSSZES admint, vagy írhatnak a gyűjteménybe.
+      allow list, write: if isAdmin();
+    }
+
+    // Szabályok a Trigger Email kiterjesztés levelezési sorához
+    match /mail/{mailId} {
+      // E-mailt csak authentikált folyamat (pl. Cloud Function) hozhat létre.
+      allow create: if request.auth != null;
+      allow read, update, delete: if false;
+    }
+
+    // Szabályok az automatizálási naplókhoz
+    match /automation_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Csak a backend írhat
+    }
+
+    // Szabályok az admin műveleti naplókhoz
+    match /admin_logs/{logId} {
+      allow read, create: if isAdmin(); // Az adminok létrehozhatnak és olvashatnak naplókat
+      allow update, delete: if false; // A naplók nem módosíthatók
+    }
+
+    // Szabályok az automatizálási beállításokhoz
+    match /settings/automation {
+        allow read, write: if isAdmin();
+    }
+
+    // Szabályok a számlálókhoz (pl. sorszám generálás)
+    match /counters/{counterId} {
+        allow read, write: if false; // Csak a backend férhet hozzá
+    }
+  }
+}

@@ -47,7 +47,7 @@ const Section = React.memo(({ title, children }) => html`
 `);
 
 
-const AdminAddStudentModal = ({ onClose, adminUser }) => {
+const AdminAddStudentModal = ({ onClose, adminUser, isTestView }) => { // ÚJ: isTestView prop hozzáadása
     const initialFormData = {
         current_prefix: '', current_lastName: '', current_firstName: '', current_secondName: '',
         birth_prefix: '', birth_lastName: '', birth_firstName: '', birth_secondName: '',
@@ -110,10 +110,18 @@ const AdminAddStudentModal = ({ onClose, adminUser }) => {
         try {
             // JAVÍTÁS: A biztonságos Cloud Function hívása
             const adminAddStudent = httpsCallable(functions, 'adminAddStudent');
+
+            // ÚJ: Az _isTest flag átadása a payloadban, ha az admin teszt nézetben van
+            const payload = { ...formData };
+            if (isTestView) {
+                payload._isTest = true;
+            }
+
             // Az űrlap adatai (beleértve a sendInitialEmail állapotát is) átadódnak
-            await adminAddStudent(formData);
+            await adminAddStudent(payload);
             
-            showToast('Tanuló sikeresen rögzítve!', 'success');
+            const modeText = isTestView ? ' (TESZT)' : '';
+            showToast(`Tanuló sikeresen rögzítve${modeText}!`, 'success');
             onClose();
         } catch (error) {
             console.error("Hiba a tanuló mentésekor: ", error);
@@ -126,9 +134,12 @@ const AdminAddStudentModal = ({ onClose, adminUser }) => {
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick=${onClose}>
             <div className="bg-stone-50 rounded-xl shadow-2xl w-full max-w-6xl transform transition-all" onClick=${e => e.stopPropagation()}>
-                <header className="p-6 border-b bg-white rounded-t-xl flex justify-between items-center">
+                <header className=${`p-6 border-b rounded-t-xl flex justify-between items-center ${isTestView ? 'bg-red-50' : 'bg-white'}`}>
                     <div>
-                        <h3 className="text-2xl font-bold text-gray-800">Új tanuló manuális rögzítése</h3>
+                        <h3 className="text-2xl font-bold text-gray-800">
+                            Új tanuló manuális rögzítése
+                            ${isTestView && html`<span className="text-red-600 ml-2">(TESZT MÓD)</span>`}
+                        </h3>
                         <p className="text-gray-500">Töltsd ki a tanuló adatait.</p>
                     </div>
                     <button onClick=${onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100"><${XIcon} size=${24} /></button>
@@ -266,4 +277,3 @@ const AdminAddStudentModal = ({ onClose, adminUser }) => {
 };
 
 export default AdminAddStudentModal;
-
