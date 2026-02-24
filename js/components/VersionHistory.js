@@ -152,6 +152,50 @@ const VersionHistory = ({ onClose, adminUser }) => {
         });
     };
 
+    const handleSeedData = async () => {
+        showConfirmation({
+            message: "Szeretnéd automatikusan betölteni az eddigi fejlesztéseket (Tesztkörnyezet, UI változások)?",
+            onConfirm: async () => {
+                setIsLoading(true);
+                try {
+                    const batch = [
+                        {
+                            versionNumber: "v1.0.0",
+                            title: "Kezdeti Rendszerállapot",
+                            description: "Az eredeti, éles rendszer működése.",
+                            createdBy: "system",
+                            createdAt: serverTimestamp()
+                        },
+                        {
+                            versionNumber: "v1.1.0",
+                            title: "Tesztkörnyezet és UI Fejlesztések",
+                            description: "• Létrehoztuk a 'Shadow' tesztkörnyezetet (külön adatbázis: registrations_test).\n• Az Admin felületen elkülönített Teszt nézet (piros háttérrel).\n• A teszt regisztrációk NEM kerülnek be a Google Sheet-be.\n• Új beállítások menü (fogaskerék ikon).",
+                            createdBy: adminUser.email,
+                            createdAt: serverTimestamp()
+                        },
+                        {
+                            versionNumber: "v1.1.1",
+                            title: "Verziókövetés Funkció",
+                            description: "• Új Verziókövetés (Changelog) modul hozzáadása az admin felülethez.\n• Fejlesztési előzmények rögzítése és visszakövethetősége.",
+                            createdBy: adminUser.email,
+                            createdAt: serverTimestamp()
+                        }
+                    ];
+
+                    for (const item of batch) {
+                        await addDoc(collection(db, "versions"), item);
+                    }
+                    showToast("Kezdeti verziók sikeresen betöltve!", "success");
+                } catch (error) {
+                    console.error("Error seeding data:", error);
+                    showToast("Hiba az adatok betöltésekor: " + error.message, "error");
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        });
+    };
+
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick=${onClose}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
@@ -184,7 +228,17 @@ const VersionHistory = ({ onClose, adminUser }) => {
 
                         <div className="relative">
                             ${versions.length === 0
-                                ? html`<div className="text-center py-12 text-slate-400">Még nincsenek rögzített verziók.</div>`
+                                ? html`
+                                    <div className="text-center py-12">
+                                        <p className="text-slate-400 mb-4">Még nincsenek rögzített verziók.</p>
+                                        <button
+                                            onClick=${handleSeedData}
+                                            className="px-4 py-2 bg-indigo-100 text-indigo-700 font-medium rounded-lg hover:bg-indigo-200 transition-colors"
+                                        >
+                                            Kezdeti fejlesztések betöltése (v1.1.0)
+                                        </button>
+                                    </div>
+                                `
                                 : versions.map(version => html`<${VersionItem} key=${version.id} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} />`)
                             }
                         </div>
