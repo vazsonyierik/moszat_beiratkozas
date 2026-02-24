@@ -7,7 +7,7 @@
  * JAVÍTÁS 2: A JSX kommentek eltávolítva az 'htm' template literálból, hogy megszűnjenek a DOM nesting hibák.
  */
 
-import { html, LoadingOverlay } from './UI.js';
+import { html, LoadingOverlay, ConfirmationModal } from './UI.js'; // Import ConfirmationModal
 import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
 import { useToast, useConfirmation } from './context/AppContext.js';
 import * as utils from './utils.js';
@@ -22,7 +22,7 @@ import AdminLog from './components/AdminLog.js';
 import StudentIdInput from './components/StudentIdInput.js';
 
 const React = window.React;
-const { useState, useEffect, useMemo, useCallback, Fragment } = React;
+const { useState, useEffect, useMemo, useCallback, Fragment, useRef } = React;
 
 // --- Child Components ---
 const StatusIcon = ({ Icon, color, title }) => html`
@@ -467,36 +467,40 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
-    // ÚJ: Állapot a teszt mód kapcsolójához az admin panelen
-    const [viewTestDataType, setViewTestDataType] = useState(false); // false = Éles, true = Teszt
+    const [viewTestDataType, setViewTestDataType] = useState(false);
+    const [isModeMenuOpen, setIsModeMenuOpen] = useState(false); // ÚJ: Dropdown állapot
+    const modeMenuRef = useRef(null);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
-    // JAVÍTÁS: Globális 'copy' eseményfigyelő a vágólapra másolt szöveg "megtisztításához".
-    // Ez megoldja a Word-be illesztéskor jelentkező "extra sor" problémát.
     useEffect(() => {
         const handleCopy = (event) => {
-            // Csak akkor avatkozunk be, ha a másolás az admin panelen belül történik
-            // (az .admin-view-wrapper osztály az App.js-ben van definiálva)
             if (event.target.closest('.admin-view-wrapper')) {
                 const selectedText = window.getSelection().toString();
-                // A .trim() eltávolítja a felesleges szóközöket és az extra újsor karaktert
                 const cleanText = selectedText.trim(); 
-                
-                // Csak a tiszta szöveget helyezzük a vágólapra
                 event.clipboardData.setData('text/plain', cleanText);
-                event.preventDefault(); // Megakadályozzuk az alapértelmezett másolási eseményt
+                event.preventDefault();
             }
         };
-
         document.addEventListener('copy', handleCopy);
-
-        // A "cleanup" függvény eltávolítja az eseményfigyelőt, amikor a komponens megszűnik
         return () => {
             document.removeEventListener('copy', handleCopy);
         };
-    }, []); // Az üres tömb biztosítja, hogy ez csak egyszer fusson le (mount-kor)
+    }, []);
+
+    // ÚJ: Dropdown bezárása kattintáskor
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
+                setIsModeMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         if (!user) {
@@ -504,7 +508,6 @@ const AdminPanel = ({ user, handleLogout }) => {
             return;
         }
 
-        // ÚJ: A gyűjtemény neve függ a kapcsoló állásától
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
 
         const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
@@ -519,10 +522,9 @@ const AdminPanel = ({ user, handleLogout }) => {
             setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [user, viewTestDataType]); // ÚJ: Függőség hozzáadása
+    }, [user, viewTestDataType]);
 
     const handleUpdateStudent = useCallback(async (id, data, studentName) => {
-        // ÚJ: Megfelelő kollekció használata
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
         const regRef = doc(db, collectionName, id);
         await updateDoc(regRef, data);
@@ -683,6 +685,26 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
+    // ÚJ: Váltás kezelése megerősítéssel
+    const handleModeSwitch = () => {
+        const targetMode = !viewTestDataType;
+        const modeName = targetMode ? 'TESZT' : 'ÉLES';
+        const message = targetMode
+            ? 'Biztosan át akarsz váltani a TESZT felületre? Itt teszt adatokat kezelhetsz, amelyek nem kerülnek be az éles rendszerbe.'
+            : 'Biztosan vissza akarsz térni az ÉLES felületre? Mostantól valódi adatokat kezelsz!';
+
+        // Először bezárjuk a menüt
+        setIsModeMenuOpen(false);
+
+        showConfirmation({
+            message: message,
+            onConfirm: () => {
+                setViewTestDataType(targetMode);
+                showToast(`Sikeresen átváltottál ${modeName} üzemmódba.`, 'info');
+            }
+        });
+    };
+
     const filteredRegistrations = useMemo(() => {
         const iconChecks = iconFilterOptions.filter(opt => selectedIconFilters.includes(opt.key));
         return registrations.filter(reg => {
@@ -758,11 +780,17 @@ const AdminPanel = ({ user, handleLogout }) => {
         `;
     };
 
+    // ÚJ: Háttérszín dinamikus beállítása
+    const containerBgClass = viewTestDataType ? 'bg-red-50' : 'bg-gray-50';
+
     return html`
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-gray-50 p-4 sm:p-6 lg:p-8 rounded-xl">
+        <div className=${`container mx-auto px-4 sm:px-6 lg:px-8 py-8 ${containerBgClass}`}>
+            <div className=${`p-4 sm:p-6 lg:p-8 rounded-xl ${viewTestDataType ? 'bg-red-100/50' : 'bg-gray-50'}`}>
                 <header className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Admin Felület</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                        Admin Felület
+                        ${viewTestDataType && html`<span className="text-red-600 ml-3 text-2xl">(TESZT MÓD)</span>`}
+                    </h1>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600">Bejelentkezve: <strong className="font-medium">${user.email}</strong></span>
                         <button onClick=${handleLogout} className="bg-red-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-600 flex items-center gap-2">
@@ -772,31 +800,40 @@ const AdminPanel = ({ user, handleLogout }) => {
                         <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
                             ${isRunningChecks ? 'Futtatás...' : 'Ellenőrzés'}
                         </button>
-                        <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
+
+                        <div className="flex items-center gap-2">
+                            <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
+
+                            <div className="relative" ref=${modeMenuRef}>
+                                <button
+                                    onClick=${() => setIsModeMenuOpen(!isModeMenuOpen)}
+                                    className="p-2 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
+                                    title="Beállítások"
+                                >
+                                    <${Icons.SettingsIcon} size=${24} />
+                                </button>
+
+                                ${isModeMenuOpen && html`
+                                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                                        <div className="py-1">
+                                            <button
+                                                onClick=${handleModeSwitch}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                            >
+                                                ${viewTestDataType
+                                                    ? html`<span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra`
+                                                    : html`<span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra`
+                                                }
+                                            </button>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
                     </div>
                 </header>
 
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
-                     <div className="p-4 bg-gray-100 border-b flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                             <span className="font-bold text-gray-700">Adatok forrása:</span>
-                             <div className="flex bg-white rounded-lg border overflow-hidden">
-                                <button
-                                    onClick=${() => setViewTestDataType(false)}
-                                    className=${`px-4 py-2 text-sm font-medium transition-colors ${!viewTestDataType ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                                >
-                                    ÉLES ADATOK
-                                </button>
-                                <button
-                                    onClick=${() => setViewTestDataType(true)}
-                                    className=${`px-4 py-2 text-sm font-medium transition-colors ${viewTestDataType ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
-                                >
-                                    TESZT ADATOK
-                                </button>
-                             </div>
-                        </div>
-                     </div>
-
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
                         <${Icons.ChevronDownIcon} className=${`w-5 h-5 transform transition-transform ${isFilterVisible ? 'rotate-180' : ''}`} />
