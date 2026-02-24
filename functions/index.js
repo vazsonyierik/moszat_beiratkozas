@@ -573,7 +573,7 @@ exports.onRegistrationTestCreated = onDocumentCreated(
     {
         document: "registrations_test/{registrationId}",
         // Nem kell secret, mert nem írunk táblázatba
-        secrets: ["TEST_SHEET_ID"], // Opcionálisan beolvassuk a teszt sheet ID-t
+        // secrets: ["TEST_SHEET_ID"], // KIKAPCSOLVA a secret hiánya miatti hiba elkerülésére (fallback ID-t használunk)
     },
     async (event) => {
         const studentData = event.data.data();
@@ -664,7 +664,7 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
     {
         document: "registrations_test/{registrationId}",
         // Secret-ek a teszt táblázatokhoz. Ha nincsenek beállítva, a fallback hardcoded ID-t használjuk.
-        secrets: ["TEST_SHEET_ID"],
+        // secrets: ["TEST_SHEET_ID"], // KIKAPCSOLVA a secret hiánya miatti hiba elkerülésére (fallback ID-t használunk)
     },
     async (event) => {
         const before = event.data.before.data();
