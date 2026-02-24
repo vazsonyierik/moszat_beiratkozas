@@ -20,11 +20,43 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         }
     };
 
-    const normalizeDate = (dateStr) => {
-        // Input: "2007.09.05." or "2007-09-05" or "2007. 09. 05."
-        // Output: "2007.09.05."
-        if (!dateStr) return null;
-        return dateStr.trim().replace(/-/g, '.').replace(/ /g, '').replace(/\.$/, '') + '.';
+    const normalizeDate = (input) => {
+        // Handle JS Date object
+        if (input instanceof Date && !isNaN(input)) {
+            const y = input.getFullYear();
+            const m = String(input.getMonth() + 1).padStart(2, '0');
+            const d = String(input.getDate()).padStart(2, '0');
+            return `${y}.${m}.${d}.`;
+        }
+
+        if (typeof input !== 'string') return null;
+
+        const trimmed = input.trim().replace(/\.$/, ''); // Remove trailing dot if exists
+
+        // 1. Try YYYY.MM.DD or YYYY-MM-DD
+        const isoMatch = trimmed.match(/^(\d{4})[.-](\d{1,2})[.-](\d{1,2})$/);
+        if (isoMatch) {
+            const y = isoMatch[1];
+            const m = isoMatch[2].padStart(2, '0');
+            const d = isoMatch[3].padStart(2, '0');
+            return `${y}.${m}.${d}.`;
+        }
+
+        // 2. Try US format M/D/YY or M/D/YYYY (e.g. 5/1/91)
+        const usMatch = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+        if (usMatch) {
+            let y = parseInt(usMatch[3], 10);
+            const m = usMatch[1].padStart(2, '0');
+            const d = usMatch[2].padStart(2, '0');
+
+            // Handle 2-digit year (cutoff 30 -> 2030, else 19xx)
+            if (y < 100) {
+                y = y < 30 ? 2000 + y : 1900 + y;
+            }
+            return `${y}.${m}.${d}.`;
+        }
+
+        return null;
     };
 
     const processExcel = async () => {
@@ -41,7 +73,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         reader.onload = async (e) => {
             try {
                 const data = new Uint8Array(e.target.result);
-                const workbook = XLSX.read(data, { type: 'array' });
+                // Use cellDates: true to parse dates as JS Date objects where possible
+                const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
                 // Find the sheet with exam results
                 const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('vizsgaeredmény') || name.toLowerCase().includes('rögzítve'));
@@ -50,8 +83,9 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                 }
 
                 const worksheet = workbook.Sheets[sheetName];
-                // Use raw: false to get formatted strings (dates as strings)
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "", raw: false });
+                // Use raw: false for display strings, but cellDates handles dates correctly
+                // However, if we use cellDates: true, the raw value in json will be a Date object.
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
                 // Find header row
                 let headerRowIndex = -1;
@@ -67,7 +101,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     throw new Error("Nem található a fejléc sor (Tanuló azonosító oszlop).");
                 }
 
-                const headers = jsonData[headerRowIndex].map(h => h.toString().trim());
+                const headers = jsonData[headerRowIndex].map(h => h ? h.toString().trim() : "");
                 const studentIdIdx = headers.indexOf('Tanuló azonosító');
                 const birthDateIdx = headers.findIndex(h => h.includes('Szül.'));
                 const subjectIdx = headers.indexOf('Vizsgatárgy');
@@ -89,12 +123,14 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                 const collectionName = isTestView ? 'registrations_test' : 'registrations';
 
                 for (const row of rows) {
-                    const studentId = row[studentIdIdx]?.toString().trim();
+                    const studentIdRaw = row[studentIdIdx];
+                    const studentId = studentIdRaw ? studentIdRaw.toString().trim() : "";
+
                     if (!studentId) continue; // Skip empty rows
 
-                    const birthDateRaw = row[birthDateIdx]?.toString().trim();
+                    const birthDateRaw = row[birthDateIdx];
                     const subject = row[subjectIdx]?.toString().trim();
-                    const examDateRaw = row[examDateIdx]?.toString().trim();
+                    const examDateRaw = row[examDateIdx];
                     const result = row[resultIdx]?.toString().trim();
                     const location = locationIdx !== -1 ? row[locationIdx]?.toString().trim() : '';
 
@@ -102,6 +138,24 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         results.errors.push({ id: studentId, msg: "Hiányzó vizsgaadatok (tárgy, dátum vagy eredmény)." });
                         continue;
                     }
+
+                    // Normalize dates
+                    const excelBirthDate = normalizeDate(birthDateRaw);
+                    // For exam date, we want display format YYYY.MM.DD HH:MM if possible, but let's stick to normalized date for now or raw string if contains time
+                    // The screenshot shows "2026.02.06 8:40" in the cell.
+                    // If cellDates is true, this will be a Date object.
+                    let formattedExamDate = "";
+                    if (examDateRaw instanceof Date) {
+                        const y = examDateRaw.getFullYear();
+                        const m = String(examDateRaw.getMonth() + 1).padStart(2, '0');
+                        const d = String(examDateRaw.getDate()).padStart(2, '0');
+                        const hours = String(examDateRaw.getHours()).padStart(2, '0');
+                        const mins = String(examDateRaw.getMinutes()).padStart(2, '0');
+                        formattedExamDate = `${y}.${m}.${d}. ${hours}:${mins}`;
+                    } else {
+                        formattedExamDate = examDateRaw.toString();
+                    }
+
 
                     // Query Firestore for student
                     const q = query(collection(db, collectionName), where("studentId", "==", studentId));
@@ -117,9 +171,18 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
                     // Verify Birth Date
                     const dbBirthDate = normalizeDate(studentData.birthDate);
-                    const excelBirthDate = normalizeDate(birthDateRaw);
+
+                    if (!excelBirthDate) {
+                         results.errors.push({
+                            id: studentId,
+                            msg: `Érvénytelen születési dátum formátum az Excelben: ${birthDateRaw}`
+                        });
+                        continue;
+                    }
 
                     if (dbBirthDate !== excelBirthDate) {
+                        // Attempt fallback comparison (maybe day/month swap?)
+                        // But strictly speaking they should match.
                         results.errors.push({
                             id: studentId,
                             msg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate}).`
@@ -130,7 +193,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     // Prepare exam result object
                     const examResult = {
                         subject: subject,
-                        date: examDateRaw,
+                        date: formattedExamDate,
                         result: result,
                         location: location,
                         importedAt: new Date().toISOString()
@@ -140,7 +203,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     const existingResults = studentData.examResults || [];
                     const isDuplicate = existingResults.some(ex =>
                         ex.subject === examResult.subject &&
-                        ex.date === examResult.date &&
+                        ex.date === examResult.date && // Exact string match on date/time
                         ex.result === examResult.result
                     );
 
@@ -153,9 +216,6 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     await updateDoc(docRef, {
                         examResults: [...existingResults, examResult]
                     });
-
-                    // If result is 'Megfelelt' and subject is 'Forgalmi vezetés', mark course completed automatically?
-                    // (User didn't ask for this, but it's good practice. I'll stick to just importing for now as requested).
 
                     results.success++;
                 }
@@ -221,7 +281,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
                             ${error && html`
                                 <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-start gap-3">
-                                    <${Icons.AlertIcon} size=${20} className="flex-shrink-0 mt-0.5" />
+                                    <${Icons.AlertTriangleIcon} size=${20} className="flex-shrink-0 mt-0.5" />
                                     <span>${error}</span>
                                 </div>
                             `}
