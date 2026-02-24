@@ -5,6 +5,7 @@
  * which was removed during the form redesign refactor in App.js.
  * JAVÍTÁS: A táblázatban lévő `<div>` elemek `<span>`-re cserélve, hogy a dupla kattintásos kijelölés és másolás helyesen működjön.
  * JAVÍTÁS 2: A JSX kommentek eltávolítva az 'htm' template literálból, hogy megszűnjenek a DOM nesting hibák.
+ * MÓDOSÍTÁS 3: KAV Import funkció hozzáadva a fejléchez.
  */
 
 import { html, LoadingOverlay } from './UI.js'; // Import ConfirmationModal
