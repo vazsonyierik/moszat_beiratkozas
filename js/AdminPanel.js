@@ -468,6 +468,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [expiredFilter, setExpiredFilter] = useState('all');
+    const [examResultFilter, setExamResultFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
     const [viewTestDataType, setViewTestDataType] = useState(false);
@@ -720,9 +721,24 @@ const AdminPanel = ({ user, handleLogout }) => {
             if ((startDate && (!regDate || regDate < new Date(startDate)))) return false;
             if ((endDate && (!regDate || regDate > new Date(endDate)))) return false;
 
-            return iconChecks.every(check => check.check(reg));
+            const matchesExamFilter = (() => {
+                if (examResultFilter === 'all') return true;
+                const results = reg.examResults || [];
+                if (examResultFilter === 'successful') {
+                    return results.some(r => r.result.toLowerCase() === 'megfelelt' || r.result.toLowerCase() === 'sikeres');
+                }
+                if (examResultFilter === 'failed') {
+                    return results.some(r => r.result.toLowerCase() === 'nem felelt meg' || r.result.toLowerCase().includes('sikertelen'));
+                }
+                if (examResultFilter === 'missed') {
+                    return results.some(r => r.result.toLowerCase() === 'nem jelent meg');
+                }
+                return true;
+            })();
+
+            return matchesExamFilter && iconChecks.every(check => check.check(reg));
         });
-    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters]);
+    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter]);
 
     const { 
         enrolledRegistrations, 
@@ -858,6 +874,27 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Jelentkezés -tól</label><input type="date" id="startDate" value=${startDate} onChange=${e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" /></div>
                                 <div><label htmlFor="endDate" className="block text-sm font-medium text-gray-700">Jelentkezés -ig</label><input type="date" id="endDate" value=${endDate} onChange=${e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" /></div>
+                            </div>
+                            <div className="md:col-span-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Vizsgaeredmény szűrés (Van legalább egy ilyen eredménye)</label>
+                                <div className="flex flex-wrap gap-4">
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-indigo-600" name="examFilter" value="all" checked=${examResultFilter === 'all'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Összes</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-green-600" name="examFilter" value="successful" checked=${examResultFilter === 'successful'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Sikeres (M)</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-red-600" name="examFilter" value="failed" checked=${examResultFilter === 'failed'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Sikertelen (1)</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-yellow-600" name="examFilter" value="missed" checked=${examResultFilter === 'missed'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Nem jelent meg (3)</span>
+                                    </label>
+                                </div>
                             </div>
                             <div>
                                 <div className="flex items-center justify-between">

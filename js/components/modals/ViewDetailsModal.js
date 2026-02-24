@@ -66,11 +66,15 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         let badgeClass = 'bg-gray-100 text-gray-800';
                         let displayResult = res.result;
 
-                        if (resultLower === 'megfelelt') {
+                        if (resultLower === 'megfelelt' || resultLower === 'sikeres') {
                             badgeClass = 'bg-green-100 text-green-800';
+                            displayResult = 'M';
                         } else if (resultLower === 'nem felelt meg' || resultLower.includes('sikertelen')) {
                             badgeClass = 'bg-red-100 text-red-800';
-                            displayResult = 'Nem megfelelt: 1-';
+                            displayResult = '1';
+                        } else if (resultLower === 'nem jelent meg') {
+                            badgeClass = 'bg-yellow-100 text-yellow-800';
+                            displayResult = '3';
                         }
 
                         if (isEditing) {
