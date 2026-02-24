@@ -957,7 +957,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                 </${React.Fragment}>
                 
-                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} />`}
+                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}
