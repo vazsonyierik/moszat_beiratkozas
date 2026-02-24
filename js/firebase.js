@@ -45,6 +45,20 @@ const db = getFirestore(app);
 // JAVÍTÁS: A Cloud Functions régiójának megadása
 const functions = getFunctions(app, 'europe-west1');
 
+// ÚJ: Segédfüggvény a teszt mód detektálására
+const isTestMode = () => {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('test') === 'true';
+};
+
+// ÚJ: Segédfüggvény a megfelelő gyűjtemény nevének lekérésére
+const getCollectionName = (baseName) => {
+    if (isTestMode() && baseName === 'registrations') {
+        return 'registrations_test';
+    }
+    return baseName;
+};
+
 export { 
     app, 
     auth, 
@@ -69,5 +83,7 @@ export {
     isSignInWithEmailLink,
     signInWithEmailLink,
     signOut,
-    Timestamp
+    Timestamp,
+    isTestMode, // Exportáljuk, hogy más komponensek is használhassák
+    getCollectionName // Exportáljuk a dinamikus kollekció választáshoz
 };

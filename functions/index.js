@@ -93,10 +93,12 @@ const appendToSheet = async (spreadsheetId, sheetName, rowData) => {
 
 /**
  * Új, szekvenciális regisztrációs szám generálása (pl. "25/0001").
+ * @param {boolean} isTest Jelzi, ha teszt regisztrációs számról van szó.
  * @return {Promise<string|null>} Az új regisztrációs szám vagy null hiba esetén.
  */
-const generateRegistrationNumber = async () => {
-    const counterRef = db.doc('counters/registrations');
+const generateRegistrationNumber = async (isTest = false) => {
+    const counterDocName = isTest ? 'registrations_test' : 'registrations';
+    const counterRef = db.doc(`counters/${counterDocName}`);
     try {
         const newCount = await db.runTransaction(async (transaction) => {
             const counterDoc = await transaction.get(counterRef);
@@ -107,7 +109,8 @@ const generateRegistrationNumber = async () => {
         });
         const year = new Date().getFullYear().toString().slice(-2);
         const paddedCount = newCount.toString().padStart(4, '0');
-        const registrationNumber = `${year}/${paddedCount}`;
+        const prefix = isTest ? 'TEST-' : ''; // Teszt előtag
+        const registrationNumber = `${prefix}${year}/${paddedCount}`;
         logger.info(`Generated new registration number: ${registrationNumber}`);
         return registrationNumber;
     } catch (error) {
@@ -119,11 +122,14 @@ const generateRegistrationNumber = async () => {
 /**
  * Új regisztráció adatainak naplózása a fő regisztrációs táblázatba.
  * @param {object} studentData Az új tanuló adatai.
+ * @param {boolean} isTest Teszt mód.
  */
-const logNewRegistrationToSheet = async (studentData) => {
-    const SPREADSHEET_ID = process.env.REGISTRATION_SHEET_ID;
+const logNewRegistrationToSheet = async (studentData, isTest = false) => {
+    // Ha teszt, akkor a TEST_SHEET_ID-t használjuk
+    const SPREADSHEET_ID = isTest ? (process.env.TEST_SHEET_ID || '1lRDjcMFYXBmivYSdDMkclWYtR-D0QuGJ7P5or1Wqw-I') : process.env.REGISTRATION_SHEET_ID;
+    
     if (!SPREADSHEET_ID) {
-        logger.error("REGISTRATION_SHEET_ID environment variable not set. Skipping sheet log for new registration.");
+        logger.error("SHEET ID environment variable not set. Skipping sheet log for new registration.", { isTest });
         return;
     }
     const headers = [
@@ -153,12 +159,14 @@ const logNewRegistrationToSheet = async (studentData) => {
 /**
  * Tanuló sorának frissítése a fő regisztrációs táblázatban.
  * @param {object} studentData A tanuló frissített adatai.
+ * @param {boolean} isTest Teszt mód.
  */
-const updateRegistrationSheet = async (studentData) => {
-    const SPREADSHEET_ID = process.env.REGISTRATION_SHEET_ID;
+const updateRegistrationSheet = async (studentData, isTest = false) => {
+    // Ha teszt, akkor a TEST_SHEET_ID-t használjuk
+    const SPREADSHEET_ID = isTest ? (process.env.TEST_SHEET_ID || '1lRDjcMFYXBmivYSdDMkclWYtR-D0QuGJ7P5or1Wqw-I') : process.env.REGISTRATION_SHEET_ID;
     const SHEET_NAME = 'Jelentkezések';
     if (!SPREADSHEET_ID) {
-        logger.error("REGISTRATION_SHEET_ID env var not set. Cannot update sheet.");
+        logger.error("SHEET ID env var not set. Cannot update sheet.", { isTest });
         return;
     }
     if (!studentData.registrationNumber) {
@@ -183,7 +191,7 @@ const updateRegistrationSheet = async (studentData) => {
         }
         if (rowNumber === -1) {
             logger.warn(`Could not find row for registration number ${studentData.registrationNumber}. Appending as new row instead.`);
-            await logNewRegistrationToSheet(studentData);
+            await logNewRegistrationToSheet(studentData, isTest);
             return;
         }
         logger.info(`Found student at row ${rowNumber}. Preparing to update.`);
@@ -226,11 +234,14 @@ const updateRegistrationSheet = async (studentData) => {
 /**
  * Beiratkozott tanuló adatainak naplózása a beiratkozási táblázatba.
  * @param {object} studentData A beiratkozott tanuló adatai.
+ * @param {boolean} isTest Teszt mód.
  */
-const logEnrollmentToSheet = async (studentData) => {
-    const SPREADSHEET_ID = process.env.ENROLLMENT_SHEET_ID;
+const logEnrollmentToSheet = async (studentData, isTest = false) => {
+    // Ha teszt, akkor a TEST_SHEET_ID-t használjuk
+    const SPREADSHEET_ID = isTest ? (process.env.TEST_SHEET_ID || '1lRDjcMFYXBmivYSdDMkclWYtR-D0QuGJ7P5or1Wqw-I') : process.env.ENROLLMENT_SHEET_ID;
+    
     if (!SPREADSHEET_ID) {
-        logger.error("ENROLLMENT_SHEET_ID environment variable not set. Skipping sheet log for enrollment.");
+        logger.error("SHEET ID environment variable not set. Skipping sheet log for enrollment.", { isTest });
         return;
     }
     const enrolledAt = studentData.enrolledAt ? formatSingleTimestamp(studentData.enrolledAt) : new Date().toLocaleString('hu-HU');
@@ -243,19 +254,30 @@ const logEnrollmentToSheet = async (studentData) => {
 /**
  * Adatok exportálása a FAR táblázatba.
  * @param {object} studentData A tanuló adatai.
+ * @param {boolean} isTest Teszt mód.
  */
-const logToFarSheet = async (studentData) => {
-    // A FAR_SHEET_ID-t mostantól környezeti változóból olvassuk be.
-    const SPREADSHEET_ID = process.env.FAR_SHEET_ID;
+const logToFarSheet = async (studentData, isTest = false) => {
+    // Ha teszt, akkor a TEST_SHEET_ID-t használjuk
+    const SPREADSHEET_ID = isTest ? (process.env.TEST_SHEET_ID || '1lRDjcMFYXBmivYSdDMkclWYtR-D0QuGJ7P5or1Wqw-I') : process.env.FAR_SHEET_ID;
     const SHEET_NAME = 'Résztvevők';
+    
     if (!SPREADSHEET_ID) {
-        logger.error("FAR_SHEET_ID environment variable not set. Skipping FAR sheet log.");
+        logger.error("SHEET ID environment variable not set. Skipping FAR sheet log.", { isTest });
         return;
     }
     const viseltNev = formatFullName(studentData.current_prefix, studentData.current_firstName, studentData.current_lastName, studentData.current_secondName);
     const szuletesiNev = formatFullName(studentData.birth_prefix, studentData.birth_firstName, studentData.birth_lastName, studentData.birth_secondName);
     const anyjaNeve = formatFullName(studentData.mother_prefix, studentData.mother_firstName, studentData.mother_lastName, studentData.mother_secondName);
+    
+    // MÓDOSÍTÁS: Az első oszlopba a tanfolyam kezdés (beiratkozás) dátuma kerül (formázva: YYYY. MM. DD.)
+    let courseStartDate = '';
+    if (studentData.enrolledAt) {
+        const fullTimestamp = formatSingleTimestamp(studentData.enrolledAt); // pl. 2024. 03. 14. 14:30
+        courseStartDate = fullTimestamp.split(' ')[0] + ' ' + fullTimestamp.split(' ')[1] + ' ' + fullTimestamp.split(' ')[2]; // pl. 2024. 03. 14.
+    }
+
     const rowData = [
+        courseStartDate, // Új oszlop: Tanfolyam kezdete
         studentData.education || '', viseltNev, szuletesiNev, anyjaNeve,
         studentData.birth_country || '', studentData.birth_city || '', studentData.birthDate || '',
         studentData.email || '', '', '', '', '', '', '',
@@ -269,7 +291,7 @@ const logToFarSheet = async (studentData) => {
  * @param {object} studentData A címzett adatai.
  * @param {object} template Az e-mail sablon.
  */
-const sendEmail = async (studentData, template) => {
+const sendEmail = async (studentData, template, isTest = false) => {
     if (!studentData.email) {
         logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
         return;
@@ -278,12 +300,15 @@ const sendEmail = async (studentData, template) => {
         logger.error("Email template is invalid.", {studentId: studentData.id});
         return;
     }
+
+    const subjectPrefix = isTest ? '[TESZT] ' : '';
+
     const mailPayload = {
         to: studentData.email,
         // MÓDOSÍTÁS: A feladó nevének és címének explicit megadása az egységességért
         from: '"Mosolyzóna, a Kreszprofesszor autósiskolája" <iroda@mosolyzona.hu>',
         message: {
-            subject: template.subject,
+            subject: `${subjectPrefix}${template.subject}`,
             html: template.html,
         },
     };
@@ -292,7 +317,7 @@ const sendEmail = async (studentData, template) => {
     }
     try {
         await db.collection("mail").add(mailPayload);
-        logger.info(`Email queued for sending to ${studentData.email}`, {cc: mailPayload.cc || 'none'});
+        logger.info(`Email queued for sending to ${studentData.email}`, {cc: mailPayload.cc || 'none', isTest});
     } catch (error) {
         logger.error(`Failed to queue email for ${studentData.email}`, {error: error.message});
     }
@@ -377,6 +402,17 @@ const runDailyChecks = async () => {
 // ÚJ FUNKCIÓ: Biztonságos regisztrációkezelés
 exports.submitRegistration = onCall({ region: "europe-west1" }, async (request) => {
     const formData = request.data;
+    
+    // ÚJ: Teszt mód detektálása a kérésből
+    // A frontendnek küldenie kell egy 'isTest' flaget a form adatok mellett vagy azokban
+    // Jelenleg feltételezzük, hogy a formData-ban van, vagy egyszerűen a mentés helye dönti el.
+    // Mivel a kérés a frontendről jön, a legegyszerűbb, ha a frontend az 'registrations' vagy 'registrations_test' helyett
+    // csak az adatokat küldi, és mi itt döntjük el, hova megy.
+    // DE: A 'submitRegistration' jelenleg nem kap paramétert a gyűjteményről.
+    // A legelegánsabb, ha a request data tartalmaz egy '_isTest' mezőt.
+    
+    const isTest = formData._isTest === true;
+    delete formData._isTest; // Nem mentjük el az adatbázisba
 
     // BIZTONSÁGI JAVÍTÁS: A bejövő adatok szanitizálása
     const sanitizedData = {};
@@ -404,9 +440,11 @@ exports.submitRegistration = onCall({ region: "europe-west1" }, async (request) 
     delete newRegistrationData.guardian_email_confirm;
     delete newRegistrationData.copyNameToBirth;
 
+    const collectionName = isTest ? "registrations_test" : "registrations";
+
     try {
-        const docRef = await db.collection("registrations").add(newRegistrationData);
-        logger.info(`New registration successfully submitted via function for ${sanitizedData.email}`, {docId: docRef.id});
+        const docRef = await db.collection(collectionName).add(newRegistrationData);
+        logger.info(`New registration successfully submitted via function for ${sanitizedData.email} to ${collectionName}`, {docId: docRef.id});
         return { success: true, message: "Sikeres regisztráció!" };
     } catch (error) {
         logger.error("Error submitting registration via function:", error);
@@ -422,7 +460,9 @@ exports.adminAddStudent = onCall({ region: "europe-west1" }, async (request) => 
     }
 
     const formData = request.data;
-    
+    const isTest = formData._isTest === true;
+    delete formData._isTest;
+
     const newRegistrationData = {
         ...formData,
         createdAt: Timestamp.now(),
@@ -433,9 +473,11 @@ exports.adminAddStudent = onCall({ region: "europe-west1" }, async (request) => 
     // Felesleges mezők eltávolítása a végleges dokumentumból
     delete newRegistrationData.copyNameToBirth;
 
+    const collectionName = isTest ? "registrations_test" : "registrations";
+
     try {
-        const docRef = await db.collection("registrations").add(newRegistrationData);
-        logger.info(`Admin (${userEmail}) successfully added a new student: ${formatFullName(formData.current_prefix, formData.current_firstName, formData.current_lastName, formData.current_secondName)}`, {docId: docRef.id});
+        const docRef = await db.collection(collectionName).add(newRegistrationData);
+        logger.info(`Admin (${userEmail}) successfully added a new student to ${collectionName}: ${formatFullName(formData.current_prefix, formData.current_firstName, formData.current_lastName, formData.current_secondName)}`, {docId: docRef.id});
         return { success: true, docId: docRef.id };
     } catch (error) {
         logger.error(`Error adding student by admin ${userEmail}:`, error);
@@ -505,7 +547,7 @@ exports.onRegistrationCreated = onDocumentCreated(
         const studentData = event.data.data();
         const studentRef = event.data.ref;
 
-        const registrationNumber = await generateRegistrationNumber();
+        const registrationNumber = await generateRegistrationNumber(false);
         if (registrationNumber) {
             await studentRef.update({ registrationNumber: registrationNumber });
         }
@@ -523,6 +565,37 @@ exports.onRegistrationCreated = onDocumentCreated(
         }
         
         logger.info(`Registration created for ${studentRef.id}. Sheet writing will be handled by onUpdated trigger.`);
+    }
+);
+
+// ÚJ: Dokumentum létrehozásakor lefutó trigger a TESZT adatbázishoz
+exports.onRegistrationTestCreated = onDocumentCreated(
+    {
+        document: "registrations_test/{registrationId}",
+        // Nem kell secret, mert nem írunk táblázatba
+        secrets: ["TEST_SHEET_ID"], // Opcionálisan beolvassuk a teszt sheet ID-t
+    },
+    async (event) => {
+        const studentData = event.data.data();
+        const studentRef = event.data.ref;
+
+        const registrationNumber = await generateRegistrationNumber(true); // true = teszt
+        if (registrationNumber) {
+            await studentRef.update({ registrationNumber: registrationNumber });
+        }
+
+        if (studentData.registeredBy === 'form' || studentData.sendInitialEmail === true) {
+            const emailData = { ...studentData, registrationNumber };
+            // isTest = true paraméter átadása a sendEmail-nek
+            await sendEmail(emailData, templates.registrationConfirmation(emailData), true);
+        }
+        
+        if (studentData.sendInitialEmail !== undefined) {
+            await studentRef.update({sendInitialEmail: FieldValue.delete()});
+        }
+        
+        // MÓDOSÍTÁS: A teszt adatbázis is elkezdi hívni a sheet logolást, de csak ha van teszt táblázat
+        logger.info(`TEST Registration created for ${studentRef.id}. Sheet writing will be handled by onUpdated trigger IF test sheet is configured.`);
     }
 );
 
@@ -545,7 +618,7 @@ exports.onRegistrationUpdated = onDocumentUpdated(
 
         if (!before.registrationNumber && after.registrationNumber) {
             logger.info(`New registration number detected for ${after.registrationNumber}. Creating initial sheet row.`);
-            await logNewRegistrationToSheet(after);
+            await logNewRegistrationToSheet(after, false);
             sheetNeedsUpdate = false;
         } else {
             const beforeComparable = {...before};
@@ -559,17 +632,17 @@ exports.onRegistrationUpdated = onDocumentUpdated(
         
         if (sheetNeedsUpdate) {
             logger.info(`Change detected for ${after.registrationNumber}. Updating sheet row.`);
-            await updateRegistrationSheet(after);
+            await updateRegistrationSheet(after, false);
         }
 
         if (!before.studentId && after.studentId) {
             logger.info(`Student ID assigned for ${after.registrationNumber}. Logging to FAR sheet.`);
-            await logToFarSheet(after);
+            await logToFarSheet(after, false);
         }
 
         if (!before.status_enrolled && after.status_enrolled) {
             await sendEmail(after, templates.enrolledConfirmation(after));
-            await logEnrollmentToSheet(after);
+            await logEnrollmentToSheet(after, false);
         }
 
         if (!before.courseCompletedAt && after.courseCompletedAt) {
@@ -586,3 +659,65 @@ exports.onRegistrationUpdated = onDocumentUpdated(
     }
 );
 
+// ÚJ: Dokumentum frissítésekor lefutó trigger a TESZT adatbázishoz
+exports.onRegistrationTestUpdated = onDocumentUpdated(
+    {
+        document: "registrations_test/{registrationId}",
+        // Secret-ek a teszt táblázatokhoz. Ha nincsenek beállítva, a fallback hardcoded ID-t használjuk.
+        secrets: ["TEST_SHEET_ID"], 
+    },
+    async (event) => {
+        const before = event.data.before.data();
+        const after = event.data.after.data();
+        
+        // Teszt mód (isTest = true) átadása a függvényeknek
+
+        let sheetNeedsUpdate = false;
+        
+        // Sheet frissítések (TESZT TÁBLÁZATBA)
+        if (!before.registrationNumber && after.registrationNumber) {
+            logger.info(`(TEST) New registration number detected for ${after.registrationNumber}. Creating initial sheet row.`);
+            await logNewRegistrationToSheet(after, true); // isTest = true
+            sheetNeedsUpdate = false;
+        } else {
+            const beforeComparable = {...before};
+            delete beforeComparable.createdAt;
+            const afterComparable = {...after};
+            delete afterComparable.createdAt;
+            if (JSON.stringify(beforeComparable) !== JSON.stringify(afterComparable)) {
+                sheetNeedsUpdate = true;
+            }
+        }
+        
+        if (sheetNeedsUpdate) {
+            logger.info(`(TEST) Change detected for ${after.registrationNumber}. Updating sheet row.`);
+            await updateRegistrationSheet(after, true); // isTest = true
+        }
+
+        if (!before.studentId && after.studentId) {
+            logger.info(`(TEST) Student ID assigned for ${after.registrationNumber}. Logging to FAR sheet.`);
+            await logToFarSheet(after, true); // isTest = true
+        }
+
+        // E-mailek küldése és Beiratkozás logolása TESZT módban
+
+        if (!before.status_enrolled && after.status_enrolled) {
+            await sendEmail(after, templates.enrolledConfirmation(after), true);
+            await logEnrollmentToSheet(after, true); // isTest = true (Most már logolunk!)
+        }
+
+        if (!before.courseCompletedAt && after.courseCompletedAt) {
+            if (after.hasMedicalCertificate) {
+                await sendEmail(after, templates.courseCompletedReadyToSign(after), true);
+            } else {
+                await sendEmail(after, templates.courseCompletedMedicalNeeded(after), true);
+            }
+        }
+
+        if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
+            await sendEmail(after, templates.medicalCertificateReceived(after), true);
+        }
+        
+        logger.info(`TEST Registration updated for ${after.registrationNumber}. Actions executed with isTest=true.`);
+    }
+);

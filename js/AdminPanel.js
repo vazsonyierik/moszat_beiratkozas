@@ -7,7 +7,7 @@
  * JAVÍTÁS 2: A JSX kommentek eltávolítva az 'htm' template literálból, hogy megszűnjenek a DOM nesting hibák.
  */
 
-import { html, LoadingOverlay } from './UI.js';
+import { html, LoadingOverlay } from './UI.js'; // Import ConfirmationModal
 import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
 import { useToast, useConfirmation } from './context/AppContext.js';
 import * as utils from './utils.js';
@@ -20,9 +20,10 @@ import AdminAddStudentModal from './components/modals/AdminAddStudentModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import StudentIdInput from './components/StudentIdInput.js';
+import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 
 const React = window.React;
-const { useState, useEffect, useMemo, useCallback, Fragment } = React;
+const { useState, useEffect, useMemo, useCallback, Fragment, useRef } = React;
 
 // --- Child Components ---
 const StatusIcon = ({ Icon, color, title }) => html`
@@ -467,41 +468,50 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
+    const [viewTestDataType, setViewTestDataType] = useState(false); 
+    const [isModeMenuOpen, setIsModeMenuOpen] = useState(false); 
+    const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
+    const modeMenuRef = useRef(null);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
-    // JAVÍTÁS: Globális 'copy' eseményfigyelő a vágólapra másolt szöveg "megtisztításához".
-    // Ez megoldja a Word-be illesztéskor jelentkező "extra sor" problémát.
     useEffect(() => {
         const handleCopy = (event) => {
-            // Csak akkor avatkozunk be, ha a másolás az admin panelen belül történik
-            // (az .admin-view-wrapper osztály az App.js-ben van definiálva)
             if (event.target.closest('.admin-view-wrapper')) {
                 const selectedText = window.getSelection().toString();
-                // A .trim() eltávolítja a felesleges szóközöket és az extra újsor karaktert
                 const cleanText = selectedText.trim(); 
-                
-                // Csak a tiszta szöveget helyezzük a vágólapra
                 event.clipboardData.setData('text/plain', cleanText);
-                event.preventDefault(); // Megakadályozzuk az alapértelmezett másolási eseményt
+                event.preventDefault();
             }
         };
-
         document.addEventListener('copy', handleCopy);
-
-        // A "cleanup" függvény eltávolítja az eseményfigyelőt, amikor a komponens megszűnik
         return () => {
             document.removeEventListener('copy', handleCopy);
         };
-    }, []); // Az üres tömb biztosítja, hogy ez csak egyszer fusson le (mount-kor)
+    }, []);
+
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
+                setIsModeMenuOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, []);
 
     useEffect(() => {
         if (!user) {
             setIsLoading(false);
             return;
         }
-        const q = query(collection(db, "registrations"), orderBy("createdAt", "desc"));
+        
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+
+        const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const regsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setRegistrations(regsData);
@@ -513,16 +523,18 @@ const AdminPanel = ({ user, handleLogout }) => {
             setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [user]);
+    }, [user, viewTestDataType]);
 
     const handleUpdateStudent = useCallback(async (id, data, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         await updateDoc(regRef, data);
-        await logAdminAction(user.email, 'Tanulói adatlap szerkesztése', studentName, id);
-    }, [user]);
+        await logAdminAction(user.email, `Tanulói adatlap szerkesztése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
+    }, [user, viewTestDataType]);
     
     const handleStatusUpdate = useCallback(async (id, field, value, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         const updateData = { [field]: value };
         if (field === 'status_enrolled' && value === true) {
             updateData.enrolledAt = serverTimestamp();
@@ -534,17 +546,18 @@ const AdminPanel = ({ user, handleLogout }) => {
                 status_enrolled: 'Beiratkozva',
                 hasMedicalCertificate: 'Orvosi leadva'
             }[field];
-            const actionText = `${statusText} státusz ${value ? 'bekapcsolása' : 'kikapcsolása'}`;
+            const actionText = `${statusText} státusz ${value ? 'bekapcsolása' : 'kikapcsolása'} (${viewTestDataType ? 'TESZT' : 'ÉLES'})`;
             await logAdminAction(user.email, actionText, studentName, id);
             showToast('Státusz frissítve!', 'success');
         } catch (err) { 
             console.error("Hiba a státusz frissítésekor: ", err);
             showToast('Hiba a státusz frissítésekor!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
     
     const handleIdSave = useCallback(async (id, studentId, studentName, customDateStr) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             const updatePayload = { studentId: studentId };
             if (studentId && studentId.trim() !== "") {
@@ -552,38 +565,40 @@ const AdminPanel = ({ user, handleLogout }) => {
                 updatePayload.studentIdAssignedAt = timestamp;
             }
             await updateDoc(regRef, updatePayload);
-            await logAdminAction(user.email, `Tanulói azonosító mentése: ${studentId}`, studentName, id);
+            await logAdminAction(user.email, `Tanulói azonosító mentése (${viewTestDataType ? 'TESZT' : 'ÉLES'}): ${studentId}`, studentName, id);
             showToast('Tanulói azonosító mentve!', 'success');
         } catch (err) { 
             console.error("Hiba a Tanuló azonosító mentésekor:", err);
             showToast('Hiba az azonosító mentésekor!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
 
     const handleCommentSave = useCallback(async (id, adminComment, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             await updateDoc(regRef, { adminComment });
-            await logAdminAction(user.email, `Admin megjegyzés mentése/módosítása`, studentName, id);
+            await logAdminAction(user.email, `Admin megjegyzés mentése/módosítása (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Admin megjegyzés mentve!', 'success');
         } catch (err) {
             console.error("Hiba az admin megjegyzés mentésekor:", err);
             showToast('Hiba a megjegyzés mentésekor!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
 
     const handleMarkAsCompleted = useCallback(async (id, studentName, customDateStr) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             const timestamp = utils.dateStringToTimestamp(customDateStr) || serverTimestamp();
             await updateDoc(regRef, { courseCompletedAt: timestamp });
-            await logAdminAction(user.email, 'Tanfolyam befejezettnek jelölése', studentName, id);
+            await logAdminAction(user.email, `Tanfolyam befejezettnek jelölése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Tanuló befejezte a tanfolyamot!', 'success');
         } catch (err) {
             console.error("Hiba a 'befejezte' státusz frissítésekor: ", err);
             showToast("Hiba a 'befejezte' státusz frissítésekor!", 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
 
     const handleMarkAsCompletedWithConfirmation = useCallback((reg, customDate, onComplete) => {
         const studentName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName);
@@ -615,16 +630,17 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [handleStatusUpdate, showConfirmation]);
 
     const handleDelete = useCallback(async (id, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try { 
             await deleteDoc(regRef); 
-            await logAdminAction(user.email, 'Jelentkezés törlése', studentName, id);
+            await logAdminAction(user.email, `Jelentkezés törlése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Jelentkezés törölve!', 'success');
         } catch (err) { 
             console.error("Hiba a törlés során: ", err);
             showToast('Hiba a törlés során!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
     
     const handleDeleteRequest = useCallback((id, name) => {
         showConfirmation({
@@ -634,16 +650,17 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [handleDelete, showConfirmation]);
 
     const handleRestoreStudent = useCallback(async (id, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             await updateDoc(regRef, { status: 'active' });
-            await logAdminAction(user.email, 'Tanuló státuszának visszaállítása (lejárt -> aktív)', studentName, id);
+            await logAdminAction(user.email, `Tanuló státuszának visszaállítása (lejárt -> aktív) [${viewTestDataType ? 'TESZT' : 'ÉLES'}]`, studentName, id);
             showToast('Tanuló sikeresen visszaállítva!', 'success');
         } catch (err) {
             console.error("Hiba a visszaállítás során: ", err);
             showToast('Hiba a visszaállítás során!', 'error');
         }
-    }, [user, showToast]);
+    }, [user, showToast, viewTestDataType]);
 
     const handleRestoreRequest = useCallback((reg) => {
         const studentName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName);
@@ -668,6 +685,24 @@ const AdminPanel = ({ user, handleLogout }) => {
             setIsRunningChecks(false);
         }
     }, [showToast]);
+
+    const handleModeSwitch = () => {
+        const targetMode = !viewTestDataType;
+        const modeName = targetMode ? 'TESZT' : 'ÉLES';
+        const message = targetMode 
+            ? 'Biztosan át akarsz váltani a TESZT felületre? Itt teszt adatokat kezelhetsz, amelyek nem kerülnek be az éles rendszerbe.'
+            : 'Biztosan vissza akarsz térni az ÉLES felületre? Mostantól valódi adatokat kezelsz!';
+        
+        setIsModeMenuOpen(false);
+
+        showConfirmation({
+            message: message,
+            onConfirm: () => {
+                setViewTestDataType(targetMode);
+                showToast(`Sikeresen átváltottál ${modeName} üzemmódba.`, 'info');
+            }
+        });
+    };
 
     const filteredRegistrations = useMemo(() => {
         const iconChecks = iconFilterOptions.filter(opt => selectedIconFilters.includes(opt.key));
@@ -744,11 +779,16 @@ const AdminPanel = ({ user, handleLogout }) => {
         `;
     };
 
+    const containerBgClass = viewTestDataType ? 'bg-red-50' : 'bg-gray-50';
+
     return html`
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="bg-gray-50 p-4 sm:p-6 lg:p-8 rounded-xl">
+        <div className=${`container mx-auto px-4 sm:px-6 lg:px-8 py-8 ${containerBgClass}`}>
+            <div className=${`p-4 sm:p-6 lg:p-8 rounded-xl ${viewTestDataType ? 'bg-red-100/50' : 'bg-gray-50'}`}>
                 <header className="flex justify-between items-center mb-4 flex-wrap gap-4">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">Admin Felület</h1>
+                    <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
+                        Admin Felület
+                        ${viewTestDataType && html`<span className="text-red-600 ml-3 text-2xl">(TESZT MÓD)</span>`}
+                    </h1>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600">Bejelentkezve: <strong className="font-medium">${user.email}</strong></span>
                         <button onClick=${handleLogout} className="bg-red-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-600 flex items-center gap-2">
@@ -758,9 +798,46 @@ const AdminPanel = ({ user, handleLogout }) => {
                         <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
                             ${isRunningChecks ? 'Futtatás...' : 'Ellenőrzés'}
                         </button>
-                        <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
+                        
+                        <div className="flex items-center gap-2">
+                            <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
+                            
+                            <div className="relative" ref=${modeMenuRef}>
+                                <button 
+                                    onClick=${() => setIsModeMenuOpen(!isModeMenuOpen)} 
+                                    className="p-2 rounded-md bg-gray-200 hover:bg-gray-300 text-gray-700 transition-colors"
+                                    title="Beállítások"
+                                >
+                                    <${Icons.SettingsIcon} size=${24} />
+                                </button>
+                                
+                                ${isModeMenuOpen && html`
+                                    <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                                        <div className="py-1">
+                                            <button 
+                                                onClick=${handleModeSwitch}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                                            >
+                                                ${viewTestDataType 
+                                                    ? html`<span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra` 
+                                                    : html`<span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra`
+                                                }
+                                            </button>
+                                            <button 
+                                                onClick=${() => { setShowVersionHistory(true); setIsModeMenuOpen(false); }}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                                Verziókövetés
+                                            </button>
+                                        </div>
+                                    </div>
+                                `}
+                            </div>
+                        </div>
                     </div>
                 </header>
+                
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
@@ -876,8 +953,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
-                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} />`}
+                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
+                ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
             </div>
         </div>
     `;
