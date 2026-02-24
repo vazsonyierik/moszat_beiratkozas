@@ -12,7 +12,8 @@ import {
     signInWithEmailLink, 
     signOut,
     functions,
-    httpsCallable
+    httpsCallable,
+    isTestMode // ÚJ import
 } from './firebase.js';
 import { html, LoadingOverlay } from './UI.js';
 import RegistrationForm from './RegistrationForm.js';
@@ -110,14 +111,27 @@ const AdminLogin = () => {
     `;
 };
 
+// ÚJ: TestModeIndicator komponens
+const TestModeIndicator = () => html`
+    <div className="fixed top-0 left-0 w-full bg-red-600 text-white text-center py-2 font-bold z-50 shadow-lg">
+        ⚠ TESZT ÜZEMMÓD ⚠ - Az adatok nem lesznek élesítve!
+    </div>
+`;
 
 function App() {
     const [user, setUser] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
     const [view, setView] = useState('form');
+    const [isTest, setIsTest] = useState(false); // ÚJ állapot
     const showToast = useToast();
 
     useEffect(() => {
+        // ÚJ: Teszt mód ellenőrzése
+        if (isTestMode()) {
+            setIsTest(true);
+            console.warn("ALKALMAZÁS TESZT ÜZEMMÓDBAN!");
+        }
+
         const params = new URLSearchParams(window.location.search);
         if (params.get('admin') === 'true') {
             setView('admin');
@@ -172,7 +186,8 @@ function App() {
     const wrapperClass = view === 'form' ? 'form-view-wrapper' : 'admin-view-wrapper';
 
     return html`
-        <div className=${wrapperClass}>
+        ${isTest && html`<${TestModeIndicator} />`}
+        <div className=${wrapperClass} style=${isTest ? { marginTop: '40px' } : {}}>
             ${renderContent()}
         </div>
     `;

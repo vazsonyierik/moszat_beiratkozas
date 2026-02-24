@@ -467,6 +467,8 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
+    // ÚJ: Állapot a teszt mód kapcsolójához az admin panelen
+    const [viewTestDataType, setViewTestDataType] = useState(false); // false = Éles, true = Teszt
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -501,7 +503,11 @@ const AdminPanel = ({ user, handleLogout }) => {
             setIsLoading(false);
             return;
         }
-        const q = query(collection(db, "registrations"), orderBy("createdAt", "desc"));
+
+        // ÚJ: A gyűjtemény neve függ a kapcsoló állásától
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+
+        const q = query(collection(db, collectionName), orderBy("createdAt", "desc"));
         const unsubscribe = onSnapshot(q, (querySnapshot) => {
             const regsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setRegistrations(regsData);
@@ -513,16 +519,19 @@ const AdminPanel = ({ user, handleLogout }) => {
             setIsLoading(false);
         });
         return () => unsubscribe();
-    }, [user]);
+    }, [user, viewTestDataType]); // ÚJ: Függőség hozzáadása
 
     const handleUpdateStudent = useCallback(async (id, data, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        // ÚJ: Megfelelő kollekció használata
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         await updateDoc(regRef, data);
-        await logAdminAction(user.email, 'Tanulói adatlap szerkesztése', studentName, id);
-    }, [user]);
+        await logAdminAction(user.email, `Tanulói adatlap szerkesztése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
+    }, [user, viewTestDataType]);
     
     const handleStatusUpdate = useCallback(async (id, field, value, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         const updateData = { [field]: value };
         if (field === 'status_enrolled' && value === true) {
             updateData.enrolledAt = serverTimestamp();
@@ -534,17 +543,18 @@ const AdminPanel = ({ user, handleLogout }) => {
                 status_enrolled: 'Beiratkozva',
                 hasMedicalCertificate: 'Orvosi leadva'
             }[field];
-            const actionText = `${statusText} státusz ${value ? 'bekapcsolása' : 'kikapcsolása'}`;
+            const actionText = `${statusText} státusz ${value ? 'bekapcsolása' : 'kikapcsolása'} (${viewTestDataType ? 'TESZT' : 'ÉLES'})`;
             await logAdminAction(user.email, actionText, studentName, id);
             showToast('Státusz frissítve!', 'success');
         } catch (err) { 
             console.error("Hiba a státusz frissítésekor: ", err);
             showToast('Hiba a státusz frissítésekor!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
     
     const handleIdSave = useCallback(async (id, studentId, studentName, customDateStr) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             const updatePayload = { studentId: studentId };
             if (studentId && studentId.trim() !== "") {
@@ -552,38 +562,40 @@ const AdminPanel = ({ user, handleLogout }) => {
                 updatePayload.studentIdAssignedAt = timestamp;
             }
             await updateDoc(regRef, updatePayload);
-            await logAdminAction(user.email, `Tanulói azonosító mentése: ${studentId}`, studentName, id);
+            await logAdminAction(user.email, `Tanulói azonosító mentése (${viewTestDataType ? 'TESZT' : 'ÉLES'}): ${studentId}`, studentName, id);
             showToast('Tanulói azonosító mentve!', 'success');
         } catch (err) { 
             console.error("Hiba a Tanuló azonosító mentésekor:", err);
             showToast('Hiba az azonosító mentésekor!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
 
     const handleCommentSave = useCallback(async (id, adminComment, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             await updateDoc(regRef, { adminComment });
-            await logAdminAction(user.email, `Admin megjegyzés mentése/módosítása`, studentName, id);
+            await logAdminAction(user.email, `Admin megjegyzés mentése/módosítása (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Admin megjegyzés mentve!', 'success');
         } catch (err) {
             console.error("Hiba az admin megjegyzés mentésekor:", err);
             showToast('Hiba a megjegyzés mentésekor!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
 
     const handleMarkAsCompleted = useCallback(async (id, studentName, customDateStr) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             const timestamp = utils.dateStringToTimestamp(customDateStr) || serverTimestamp();
             await updateDoc(regRef, { courseCompletedAt: timestamp });
-            await logAdminAction(user.email, 'Tanfolyam befejezettnek jelölése', studentName, id);
+            await logAdminAction(user.email, `Tanfolyam befejezettnek jelölése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Tanuló befejezte a tanfolyamot!', 'success');
         } catch (err) {
             console.error("Hiba a 'befejezte' státusz frissítésekor: ", err);
             showToast("Hiba a 'befejezte' státusz frissítésekor!", 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
 
     const handleMarkAsCompletedWithConfirmation = useCallback((reg, customDate, onComplete) => {
         const studentName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName);
@@ -615,16 +627,17 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [handleStatusUpdate, showConfirmation]);
 
     const handleDelete = useCallback(async (id, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try { 
             await deleteDoc(regRef); 
-            await logAdminAction(user.email, 'Jelentkezés törlése', studentName, id);
+            await logAdminAction(user.email, `Jelentkezés törlése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Jelentkezés törölve!', 'success');
         } catch (err) { 
             console.error("Hiba a törlés során: ", err);
             showToast('Hiba a törlés során!', 'error');
         }
-    }, [showToast, user]);
+    }, [showToast, user, viewTestDataType]);
     
     const handleDeleteRequest = useCallback((id, name) => {
         showConfirmation({
@@ -634,16 +647,17 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [handleDelete, showConfirmation]);
 
     const handleRestoreStudent = useCallback(async (id, studentName) => {
-        const regRef = doc(db, "registrations", id);
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
         try {
             await updateDoc(regRef, { status: 'active' });
-            await logAdminAction(user.email, 'Tanuló státuszának visszaállítása (lejárt -> aktív)', studentName, id);
+            await logAdminAction(user.email, `Tanuló státuszának visszaállítása (lejárt -> aktív) [${viewTestDataType ? 'TESZT' : 'ÉLES'}]`, studentName, id);
             showToast('Tanuló sikeresen visszaállítva!', 'success');
         } catch (err) {
             console.error("Hiba a visszaállítás során: ", err);
             showToast('Hiba a visszaállítás során!', 'error');
         }
-    }, [user, showToast]);
+    }, [user, showToast, viewTestDataType]);
 
     const handleRestoreRequest = useCallback((reg) => {
         const studentName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName);
@@ -761,7 +775,28 @@ const AdminPanel = ({ user, handleLogout }) => {
                         <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
                     </div>
                 </header>
+
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
+                     <div className="p-4 bg-gray-100 border-b flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                             <span className="font-bold text-gray-700">Adatok forrása:</span>
+                             <div className="flex bg-white rounded-lg border overflow-hidden">
+                                <button
+                                    onClick=${() => setViewTestDataType(false)}
+                                    className=${`px-4 py-2 text-sm font-medium transition-colors ${!viewTestDataType ? 'bg-indigo-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    ÉLES ADATOK
+                                </button>
+                                <button
+                                    onClick=${() => setViewTestDataType(true)}
+                                    className=${`px-4 py-2 text-sm font-medium transition-colors ${viewTestDataType ? 'bg-red-600 text-white' : 'text-gray-600 hover:bg-gray-50'}`}
+                                >
+                                    TESZT ADATOK
+                                </button>
+                             </div>
+                        </div>
+                     </div>
+
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
                         <${Icons.ChevronDownIcon} className=${`w-5 h-5 transform transition-transform ${isFilterVisible ? 'rotate-180' : ''}`} />
@@ -876,7 +911,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
-                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} />`}
+                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
             </div>
         </div>
