@@ -1,0 +1,1050 @@
+/* --- Alapbeállítások és Változók --- */
+:root {
+    --primary-color: #2dd4bf; /* Élénk türkiz - gombokhoz, aktív elemekhez */
+    --primary-color-hover: #4fd1c5; /* A türkiz világosabb árnyalata hover állapothoz */
+    --secondary-color: #f5f5f4; /* Nagyon világos, meleg tónusú "kő" szín */
+    --secondary-color-darker: #e7e5e4; /* A háttér sötétebb árnyalata */
+    --text-color: #334155; /* Sötét pala szürke a jobb olvashatóságért */
+    --heading-color: #083344; /* Mély, sötét cián - főcímekhez */
+    --white: #ffffff;
+    --light-gray: #e2e8f0; /* slate-200 */
+    --shadow: 0 8px 25px rgba(8, 51, 68, 0.1); /* Árnyék a téma színével */
+    --border-radius: 16px;
+    --focus-ring-color: #38bdf8; /* Élénk kék a fókusz jelöléséhez */
+}
+
+/* --- Böngésző Kompatibilitás Javítás --- */
+html {
+    -webkit-text-size-adjust: 100%; /* Megakadályozza a szöveg automatikus átméretezését régebbi iOS eszközökön */
+    text-size-adjust: 100%; /* Szabványos tulajdonság a szöveg automatikus átméretezésének megakadályozására */
+}
+
+/* --- Globális Stílusok (Csak az űrlapra) --- */
+.form-view-wrapper {
+    font-family: 'Poppins', sans-serif;
+    background-color: var(--white);
+    color: var(--text-color);
+    line-height: 1.7;
+    padding: 2rem 1rem;
+    min-height: 100vh;
+}
+
+/* --- Fő Űrlap Konténer (A központi fehér kára) --- */
+.registration-card {
+    background-color: var(--secondary-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    max-width: 1100px;
+    margin: 0 auto;
+    overflow: hidden;
+}
+
+/* --- Logó Fejléc --- */
+.registration-logo-header {
+    background-image: linear-gradient(to right, var(--heading-color), #0e7490);
+    padding: 1rem 2.5rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.registration-logo-header img {
+    height: 45px;
+    width: auto;
+}
+
+
+.registration-card-header {
+    text-align: center;
+    padding: 2rem 1.5rem;
+}
+
+.registration-card-header h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    color: var(--heading-color);
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.registration-card-header p {
+    color: var(--text-color);
+    font-size: 1.1em;
+}
+
+/* --- Lépésjelző (Stepper) --- */
+.stepper {
+    display: flex;
+    justify-content: space-around;
+    padding: 1.5rem 1rem;
+    border-top: 1px solid var(--light-gray);
+    border-bottom: 1px solid var(--light-gray);
+    background-color: #fafaf9;
+}
+
+.step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: #a8a29e;
+    font-weight: 500;
+    position: relative;
+    flex: 1;
+    transition: color 0.4s ease;
+}
+
+.step-icon-wrapper {
+    position: relative;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 2.5rem;
+}
+
+
+.step:not(:last-child) .step-icon-wrapper::after {
+    content: '';
+    position: absolute;
+    left: calc(50% + 1.75rem);
+    top: 50%;
+    transform: translateY(-50%);
+    height: 3px;
+    width: calc(100% - 3.5rem);
+    background-color: var(--light-gray);
+    transition: background-image 0.5s ease, background-color 0.5s ease;
+    z-index: 0;
+    pointer-events: none; /* A vonal ne legyen kattintható */
+}
+
+.step.completed:not(:last-child) .step-icon-wrapper::after {
+    background-image: linear-gradient(to right, var(--light-gray), var(--primary-color));
+}
+
+.step-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--white);
+    border: 2px solid var(--light-gray);
+    transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    z-index: 1;
+    font-weight: 600;
+    position: relative;
+    flex-shrink: 0;
+}
+
+/* JAVÍTÁS: A kattinthatóságot jelző kurzor és a hover effekt hozzáadása */
+.step.clickable {
+    cursor: pointer;
+}
+
+@media (hover: hover) {
+    .step.clickable:hover .step-icon {
+        transform: scale(1.15);
+        box-shadow: 0 4px 12px rgba(8, 51, 68, 0.25);
+    }
+}
+
+
+.step-text {
+    font-size: 0.85rem;
+    text-align: center;
+}
+
+.step.active .step-icon {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    transform: scale(1.1);
+}
+
+.step.active {
+    color: var(--heading-color);
+    font-weight: 600;
+}
+
+.step.completed .step-icon {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--white);
+    transform: scale(1.05);
+}
+
+.step-icon span {
+    transition: opacity 0.2s ease;
+}
+
+.step.completed .step-icon span {
+    opacity: 0;
+}
+
+.step-icon svg {
+    position: absolute;
+    width: 1.25rem;
+    height: 1.25rem;
+    stroke-width: 3;
+    transform: scale(0);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    stroke: var(--white);
+}
+
+.step.completed .step-icon svg {
+    transform: scale(1);
+}
+
+
+/* --- Tartalmi Szekciók --- */
+.form-content {
+    padding: 2rem 2.5rem;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+    background-color: var(--white);
+    border: 1px solid var(--light-gray);
+    box-shadow: 0 4px 15px rgba(8, 51, 68, 0.05);
+    border-radius: 12px;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.form-section-header {
+    background-image: linear-gradient(to right, var(--heading-color), #0e7490);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: 1.1em;
+    margin-bottom: 0;
+    border-radius: 11px 11px 0 0;
+}
+
+.form-section > div {
+    padding: 1.5rem;
+    border: none;
+    border-top: none;
+    border-radius: 0;
+}
+
+.guardian-section-required {
+    background-color: var(--primary-color) !important;
+    background-image: none !important;
+}
+
+.form-subsection-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: transparent;
+    border: none;
+    border-bottom: 2px solid var(--primary-color);
+    padding: 0 0 0.5rem 0;
+    border-radius: 0;
+    margin-bottom: 1.5rem;
+}
+
+.form-subsection-header h3 {
+    color: var(--heading-color);
+}
+
+/* --- Függőleges elválasztó --- */
+.grid-with-separator {
+    position: relative;
+}
+@media (min-width: 1024px) {
+    .grid-with-separator::after {
+        content: '';
+        position: absolute;
+        top: 1rem;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 1px;
+        background-color: var(--light-gray);
+    }
+}
+
+
+/* --- Beviteli Mezők és Címkék --- */
+.input-group {
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+label {
+    color: var(--text-color);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.25rem;
+    font-size: 0.875rem;
+}
+
+.required-star {
+    color: #ef4444;
+}
+
+.input {
+    border-radius: 8px !important;
+    border: 1px solid #d6d3d1;
+    transition: all 0.2s ease-in-out;
+    width: 100%;
+    padding: 0.4rem 0.8rem;
+    font-size: 0.875rem;
+    background-color: #fafaf9;
+}
+
+.input:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.3) !important;
+    outline: none !important;
+    background-color: var(--white);
+}
+
+.input:disabled {
+    background-color: var(--secondary-color-darker);
+    cursor: not-allowed;
+}
+
+.input.has-error {
+    border-color: #ef4444 !important;
+    background-color: #fee2e2;
+    padding-right: 2.5rem;
+}
+
+.input.has-error:focus {
+    border-color: #ef4444 !important;
+    box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.3) !important;
+}
+
+.input-wrapper .error-icon {
+    display: block;
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #ef4444;
+    pointer-events: none;
+}
+
+.input.has-warning {
+    border-color: var(--primary-color) !important;
+    background-color: #f0fdfa;
+    padding-right: 2.5rem;
+}
+
+.input.has-warning:focus {
+    border-color: var(--primary-color) !important;
+    box-shadow: 0 0 0 3px rgba(45, 212, 191, 0.3) !important;
+}
+
+.warning-icon-wrapper {
+    display: block;
+    position: absolute;
+    right: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--primary-color);
+    cursor: pointer;
+}
+
+.error-message {
+    color: #ef4444;
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 0.25rem;
+    animation: fadeIn-performant 0.35s ease-out forwards;
+}
+
+.warning-message-text, .info-tooltip-text {
+    display: none; /* Alapból rejtett asztalon */
+}
+
+.warning-message-mobile {
+    display: none; /* Alapból rejtett */
+    color: var(--primary-color);
+    font-size: 0.8rem;
+    margin-top: 0.25rem;
+}
+
+.declaration-error-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #fef2f2;
+    border: 1px solid #fca5a5;
+    color: #991b1b;
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-top: 0.5rem;
+}
+
+.info-box {
+    background-color: var(--secondary-color-darker);
+    color: var(--text-color);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    border-left: 4px solid var(--primary-color);
+}
+
+/* --- Egyedi jelölőnégyzetek és rádiógombok --- */
+input[type="checkbox"],
+input[type="radio"] {
+  -webkit-appearance: none;
+  appearance: none;
+  background-color: var(--white);
+  margin: 0;
+  font: inherit;
+  color: currentColor;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #d6d3d1;
+  display: inline-block;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+input[type="checkbox"] {
+  border-radius: 4px;
+}
+
+input[type="radio"] {
+  border-radius: 50%;
+}
+
+input[type="checkbox"]:checked {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='white'%3e%3cpath fill-rule='evenodd' d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z' clip-rule='evenodd' /%3e%3c/svg%3e");
+  background-size: 100% 100%;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+input[type="radio"]:checked {
+  border-color: var(--primary-color);
+  background-color: var(--primary-color);
+}
+
+input[type="radio"]:checked::after {
+  content: '';
+  display: block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--white);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+input[type="checkbox"]:focus-visible,
+input[type="radio"]:focus-visible {
+  outline: 2px solid var(--focus-ring-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 2px var(--white);
+}
+
+/* --- Stílus a rádiógomb/checkbox csoportoknak --- */
+.form-choice-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-choice-group .question-text {
+    color: var(--text-color);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 0.75rem;
+    font-size: 0.875rem;
+}
+
+.form-choice-group .options-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.form-choice-group .option-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.form-choice-group .option-label span {
+    margin-left: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.collapsible-inner-box {
+    background-color: var(--secondary-color);
+    border: 1px solid var(--light-gray);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-top: 1rem;
+}
+
+/* --- Egyedi link stílus a nyilatkozatokhoz --- */
+.form-link {
+    color: var(--primary-color);
+    font-weight: 600;
+    text-decoration: none;
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    margin: -2px -4px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease-in-out;
+}
+
+@media (hover: hover) {
+    .form-link:hover {
+        background-color: rgba(45, 212, 191, 0.15);
+    }
+}
+
+
+/* --- Gombok --- */
+.form-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2.5rem;
+    background-image: linear-gradient(to right, var(--heading-color), #0e7490);
+    border-top: 4px solid var(--primary-color);
+}
+
+.form-button {
+    padding: 0.75rem 2rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1em;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+    -webkit-tap-highlight-color: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.form-button.primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+    box-shadow: none;
+}
+
+.form-button.secondary {
+    background-color: var(--secondary-color-darker);
+    color: var(--text-color);
+}
+
+@media (hover: hover) {
+    .form-button.primary:hover {
+        background-color: var(--primary-color-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(8, 51, 68, 0.4);
+    }
+    .form-button.secondary:hover {
+        background-color: #d6d3d1;
+        transform: translateY(-2px);
+    }
+}
+
+
+.form-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* --- Modális Ablak Stílusok (MÓDOSÍTVA VILÁGOSRA) --- */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(8, 51, 68, 0.6);
+    -webkit-backdrop-filter: blur(4px);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    z-index: 50;
+}
+
+.modal-container {
+    background-color: var(--secondary-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    width: 100%;
+    max-width: 56rem;
+    display: flex;
+    flex-direction: column;
+    max-height: 90vh;
+    transform: scale(0.95);
+    opacity: 0;
+    animation: modal-appear 0.3s cubic-bezier(0.165, 0.84, 0.44, 1) forwards;
+}
+
+@keyframes modal-appear {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.modal-header {
+    padding: 0.75rem 1.5rem;
+    border-bottom: 1px solid var(--light-gray);
+    background-color: var(--white);
+    background-image: none;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.modal-header h3 {
+    font-size: 1.25em;
+    font-weight: 700;
+    color: var(--heading-color);
+}
+
+.modal-header p {
+    font-size: 0.8em;
+    color: var(--text-color);
+}
+
+.modal-close-button {
+    color: var(--text-color);
+    padding: 0.5rem;
+    border-radius: 9999px;
+    transition: background-color 0.2s, color 0.2s;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+}
+
+.modal-close-button:hover {
+    background-color: var(--secondary-color-darker);
+    color: var(--heading-color);
+}
+
+.modal-main {
+    padding: 1.5rem 2rem;
+    overflow-y: auto;
+    background-color: var(--white);
+    color: var(--text-color);
+    font-size: 0.9rem;
+}
+
+.modal-main h3, .modal-main h4, .modal-main h5 {
+    color: var(--heading-color);
+    font-weight: 600;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.modal-main p, .modal-main ul {
+    margin-bottom: 1rem;
+    line-height: 1.8;
+}
+
+.modal-main strong {
+    color: var(--heading-color);
+    font-weight: 600;
+}
+
+.modal-main ul {
+    list-style-position: inside;
+    padding-left: 0.5rem;
+}
+
+.modal-main table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1.25rem;
+    font-size: 0.875rem;
+}
+
+.modal-main table th, .modal-main table td {
+    border: 1px solid var(--light-gray);
+    padding: 0.75rem;
+    text-align: left;
+}
+
+.modal-main table th {
+    background-color: var(--secondary-color);
+    font-weight: 500;
+}
+
+.modal-main a {
+    color: var(--primary-color);
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+.modal-footer {
+    padding: 0.75rem 1.5rem;
+    border-top: 1px solid var(--light-gray);
+    background-color: var(--white);
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+    display: flex;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+.modal-button-primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    border-radius: 50px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease-out;
+}
+
+@media (hover: hover) {
+    .modal-button-primary:hover {
+        background-color: var(--primary-color-hover);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(8, 51, 68, 0.2);
+    }
+}
+
+
+/* --- Animációk --- */
+.form-step {
+    animation: fadeIn 0.6s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* JAVÍTÁS: Teljesítménybarát animáció a hibaüzenetekhez */
+@keyframes fadeIn-performant {
+    from {
+        opacity: 0;
+        transform: translateY(-5px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.collapsible-section {
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: grid-template-rows 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.collapsible-section.is-open {
+    grid-template-rows: 1fr;
+}
+
+.collapsible-content {
+    overflow: hidden;
+    min-height: 0;
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+    will-change: transform;
+    backface-visibility: hidden;
+    transform: translateZ(0);
+    padding: 4px;
+    margin: -4px;
+}
+
+.collapsible-section.is-open .collapsible-content {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: 0.1s;
+}
+
+/* --- Reszponzív Beállítások --- */
+@media (min-width: 769px) {
+    .input.no-spinners::-webkit-outer-spin-button,
+    .input.no-spinners::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .input.no-spinners {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+
+    .warning-message-text, .info-tooltip-text {
+        display: block;
+        position: absolute;
+        bottom: 125%;
+        right: 0;
+        background-color: var(--heading-color);
+        color: var(--white);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+        box-shadow: var(--shadow);
+        width: max-content;
+        max-width: 250px;
+        text-align: center;
+        font-weight: 500;
+        font-size: 0.8rem;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 0.2s, visibility 0.2s;
+        z-index: 20;
+    }
+
+    .info-tooltip-text {
+        right: auto; /* Visszaállítjuk az alapértelmezett igazítást */
+    }
+
+    .warning-icon-wrapper:hover .warning-message-text,
+    .group:hover .info-tooltip-text {
+        opacity: 1;
+        visibility: visible;
+    }
+}
+
+
+@media (max-width: 768px) {
+    .form-view-wrapper {
+        padding: 0;
+    }
+    .registration-card {
+        margin: 0;
+        border-radius: 0;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    .form-content {
+        flex-grow: 1;
+    }
+    .form-content, .registration-card-header, .stepper, .form-navigation, .registration-logo-header {
+        padding-left: 1.5rem;
+        padding-right: 1.5rem;
+    }
+    .stepper {
+        padding-top: 1.5rem;
+        padding-bottom: 1.5rem;
+        gap: 0.5rem;
+    }
+    .step-text {
+        font-size: 0.7rem;
+    }
+    .step:not(:last-child) .step-icon-wrapper::after {
+        left: calc(50% + 1.5rem);
+        width: calc(100% - 3rem);
+    }
+    .warning-icon-wrapper {
+        display: none; /* Mobilon elrejtjük a tooltipes ikont */
+    }
+    .warning-message-mobile {
+        display: block; /* Mobilon láthatóvá tesszük a mező alatti üzenetet */
+    }
+
+    /* JAVÍTÁS: Cím megnövelése, hogy a jelölőnégyzetet a jobb szélre tolja */
+    .form-subsection-header h3 {
+        flex-grow: 1;
+    }
+
+    /* JAVÍTÁS: Jelölőnégyzet méretezése mobilnézetben */
+    .form-subsection-header .flex.items-center input[type="checkbox"] {
+        width: 18px;
+        height: 18px;
+    }
+    .form-subsection-header .flex.items-center label {
+        font-size: 0.8rem;
+    }
+
+    /* JAVÍTÁS: Automatikus zoom letiltása mobil eszközökön a beviteli mezőknél */
+    /* A böngészők (főleg az iOS Safari) automatikusan nagyítanak, ha a betűméret 16px-nél kisebb. */
+    .form-content input[type="text"],
+    .form-content input[type="email"],
+    .form-content input[type="tel"],
+    .form-content input[type="number"],
+    .form-content select,
+    .form-content textarea {
+        font-size: 16px;
+    }
+
+    /* JAVÍTÁS: Térköz hozzáadása a "Tanultál-e..." szekció fölé mobilnézetben */
+    .pt-6.mt-6.border-t > .grid > div:nth-child(2) {
+        margin-top: 2rem;
+    }
+
+    .modal-main {
+        padding: 1.5rem 1rem;
+        font-size: 0.85rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.25em;
+    }
+
+    /* --- MOBILBARÁT TÁBLÁZATOK (ESZTÉTIKAI JAVÍTÁS) --- */
+    /* Kártya nézet (kulcs-érték pároknak) */
+    .modal-main .responsive-table-card {
+        border: none;
+    }
+    .modal-main .responsive-table-card tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .modal-main .responsive-table-card tr,
+    .modal-main .responsive-table-card th,
+    .modal-main .responsive-table-card td {
+        display: block;
+        width: 100%;
+        text-align: left !important;
+        border: none;
+        padding: 0;
+    }
+    .modal-main .responsive-table-card tr {
+        background-color: var(--secondary-color);
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+    }
+    .modal-main .responsive-table-card th {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-color);
+        background-color: transparent;
+        margin-bottom: 0.125rem;
+    }
+    .modal-main .responsive-table-card td {
+        font-weight: 600;
+        color: var(--heading-color);
+    }
+
+    /* Grid nézet (fejléces táblázatokhoz) */
+    .modal-main .responsive-table-grid {
+        border: none;
+    }
+    .modal-main .responsive-table-grid thead {
+        display: none;
+    }
+    .modal-main .responsive-table-grid tbody {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+    .modal-main .responsive-table-grid tr {
+        display: block;
+        border: 1px solid var(--light-gray);
+        border-radius: 8px;
+        padding: 0;
+        margin-bottom: 0;
+        background-color: var(--white);
+        box-shadow: 0 2px 4px rgba(8, 51, 68, 0.05);
+        overflow: hidden;
+    }
+     .modal-main .responsive-table-grid td {
+        display: block;
+        text-align: left;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid var(--light-gray);
+    }
+     .modal-main .responsive-table-grid tr td:last-child {
+        border-bottom: none;
+     }
+    .modal-main .responsive-table-grid td::before {
+        content: attr(data-label);
+        display: block;
+        font-weight: 500;
+        font-size: 0.8rem;
+        color: var(--text-color);
+        margin-bottom: 0.25rem;
+    }
+    
+    /* MÓDOSÍTÁS: Modális ablak fejléc/lábléc méretének csökkentése mobilon */
+    .modal-header {
+        padding: 0.6rem 1rem;
+    }
+
+    .modal-header h3 {
+        font-size: 1.1em; /* Kisebb cím */
+    }
+    
+    .modal-header p {
+        font-size: 0.75em;
+    }
+
+    .modal-footer {
+        padding: 0.6rem 1rem;
+    }
+
+    .modal-button-primary {
+        padding: 0.5rem 1.25rem;
+        font-size: 0.9em; /* Kisebb gomb */
+    }
+}
+
+@media (max-width: 480px) {
+    .registration-card-header h1 {
+        font-size: 1.8em;
+    }
+    .registration-card-header p {
+        font-size: 1em;
+    }
+    .form-content {
+        padding: 1.5rem 1rem;
+    }
+     .form-button {
+        padding: 0.6rem 1.5rem;
+        font-size: 0.9em;
+    }
+    .step-text {
+        display: none;
+    }
+    .step:not(:last-child) .step-icon-wrapper::after {
+        left: calc(50% + 1.25rem);
+        width: calc(100% - 2.5rem);
+    }
+    .error-message, .warning-message-mobile {
+        font-size: 0.75rem; /* Kicsit kisebb betűméret, hogy elférjen */
+        line-height: 1.3; /* A sormagasság beállítása a tördeléshez */
+    }
+
+    /* MÓDOSÍTÁS: Modális ablak további kicsinyítése a legkisebb képernyőkön */
+    .modal-header {
+        padding: 0.5rem 0.75rem;
+    }
+    .modal-header h3 {
+        font-size: 1em;
+    }
+    .modal-footer {
+        padding: 0.5rem 0.75rem;
+    }
+    .modal-button-primary {
+        padding: 0.4rem 1rem;
+        font-size: 0.85em;
+    }
+}
+

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kreszprofesszor és Mosolyzóna Autósiskola beiratkozási adatlap</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React és ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Egyedi stílusok -->
+    <link rel="stylesheet" href="./jelentkezes.css">
+
+    <!-- MÓDOSÍTÁS: Betöltésjelző stílusai -->
+    <style>
+        #loader {
+            position: fixed;
+            inset: 0;
+            background-color: rgb(241 245 249); /* bg-slate-100 */
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.3s ease-in-out;
+        }
+        .loader-content {
+            text-align: center;
+            font-family: 'Poppins', sans-serif;
+        }
+        .loader-icon {
+            margin: 0 auto;
+            width: 96px;
+            height: auto;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+            50% {
+                opacity: 0.8;
+                transform: scale(0.95);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <!-- MÓDOSÍTÁS: Betöltésjelző HTML -->
+    <div id="loader">
+        <div class="loader-content">
+            <img src="https://moszat.hu/moszat_teszt/images/MK_128px.png" alt="Betöltés..." class="loader-icon" />
+            <p class="mt-4 text-lg font-semibold text-gray-700">Oldal betöltése...</p>
+        </div>
+    </div>
+
+    <!-- A React alkalmazás ide töltődik be -->
+    <div id="root"></div>
+
+    <!-- Fő alkalmazás szkript (ES Modulként) -->
+    <script type="module" src="./js/main.js?v=202508051530"></script>
+</body>
+</html>
+
