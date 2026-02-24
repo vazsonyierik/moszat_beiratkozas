@@ -76,148 +76,179 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                 // Use cellDates: true to parse dates as JS Date objects where possible
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-                // Find the sheet with exam results
-                const sheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('vizsgaeredmény') || name.toLowerCase().includes('rögzítve'));
-                if (!sheetName) {
-                    throw new Error("Nem található 'Vizsgaeredmény rögzítve' munkalap a fájlban.");
+                // Find potential sheets: "Vizsgaeredmény rögzítve" OR "Vizsgaidőpont foglalva"
+                const targetSheets = workbook.SheetNames.filter(name => {
+                    const lowerName = name.toLowerCase();
+                    return lowerName.includes('vizsgaeredmény') ||
+                           lowerName.includes('rögzítve') ||
+                           lowerName.includes('vizsgaidőpont') ||
+                           lowerName.includes('foglalva');
+                });
+
+                if (targetSheets.length === 0) {
+                    throw new Error("Nem található 'Vizsgaeredmény rögzítve' vagy 'Vizsgaidőpont foglalva' munkalap a fájlban.");
                 }
 
-                const worksheet = workbook.Sheets[sheetName];
-                // Use raw: false for display strings, but cellDates handles dates correctly
-                // However, if we use cellDates: true, the raw value in json will be a Date object.
-                const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
-                // Find header row
-                let headerRowIndex = -1;
-                for (let i = 0; i < jsonData.length; i++) {
-                    const row = jsonData[i];
-                    if (row.some(cell => typeof cell === 'string' && cell.includes('Tanuló azonosító'))) {
-                        headerRowIndex = i;
-                        break;
-                    }
-                }
-
-                if (headerRowIndex === -1) {
-                    throw new Error("Nem található a fejléc sor (Tanuló azonosító oszlop).");
-                }
-
-                const headers = jsonData[headerRowIndex].map(h => h ? h.toString().trim() : "");
-                const studentIdIdx = headers.indexOf('Tanuló azonosító');
-                const birthDateIdx = headers.findIndex(h => h.includes('Szül.'));
-                const subjectIdx = headers.indexOf('Vizsgatárgy');
-                const examDateIdx = headers.indexOf('Vizsga'); // "Vizsga" oszlop a dátum
-                const resultIdx = headers.indexOf('Eredmény');
-                const locationIdx = headers.indexOf('Vizsgahely');
-
-                if (studentIdIdx === -1 || birthDateIdx === -1 || subjectIdx === -1 || examDateIdx === -1 || resultIdx === -1) {
-                    throw new Error("Hiányzó oszlopok: Tanuló azonosító, Szül. ideje, Vizsgatárgy, Vizsga (dátum), Eredmény.");
-                }
-
-                const rows = jsonData.slice(headerRowIndex + 1);
                 const results = {
                     success: 0,
+                    updated: 0, // Track updates separately from creates
                     errors: [],
                     skipped: 0
                 };
 
                 const collectionName = isTestView ? 'registrations_test' : 'registrations';
 
-                for (const row of rows) {
-                    const studentIdRaw = row[studentIdIdx];
-                    const studentId = studentIdRaw ? studentIdRaw.toString().trim() : "";
+                // Iterate through all matching sheets
+                for (const sheetName of targetSheets) {
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
-                    if (!studentId) continue; // Skip empty rows
+                    // Find header row
+                    let headerRowIndex = -1;
+                    for (let i = 0; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (row.some(cell => typeof cell === 'string' && cell.includes('Tanuló azonosító'))) {
+                            headerRowIndex = i;
+                            break;
+                        }
+                    }
 
-                    const birthDateRaw = row[birthDateIdx];
-                    const subject = row[subjectIdx]?.toString().trim();
-                    const examDateRaw = row[examDateIdx];
-                    const result = row[resultIdx]?.toString().trim();
-                    const location = locationIdx !== -1 ? row[locationIdx]?.toString().trim() : '';
-
-                    if (!subject || !examDateRaw || !result) {
-                        results.errors.push({ id: studentId, msg: "Hiányzó vizsgaadatok (tárgy, dátum vagy eredmény)." });
+                    if (headerRowIndex === -1) {
+                        // Skip sheet if no valid header found, but log warning if it was a target sheet?
+                        // For now, continue to next sheet.
                         continue;
                     }
 
-                    // Normalize dates
-                    const excelBirthDate = normalizeDate(birthDateRaw);
-                    // For exam date, we want display format YYYY.MM.DD HH:MM if possible, but let's stick to normalized date for now or raw string if contains time
-                    // The screenshot shows "2026.02.06 8:40" in the cell.
-                    // If cellDates is true, this will be a Date object.
-                    let formattedExamDate = "";
-                    if (examDateRaw instanceof Date) {
-                        const y = examDateRaw.getFullYear();
-                        const m = String(examDateRaw.getMonth() + 1).padStart(2, '0');
-                        const d = String(examDateRaw.getDate()).padStart(2, '0');
-                        const hours = String(examDateRaw.getHours()).padStart(2, '0');
-                        const mins = String(examDateRaw.getMinutes()).padStart(2, '0');
-                        formattedExamDate = `${y}.${m}.${d}. ${hours}:${mins}`;
-                    } else {
-                        formattedExamDate = examDateRaw.toString();
+                    const headers = jsonData[headerRowIndex].map(h => h ? h.toString().trim() : "");
+                    const studentIdIdx = headers.indexOf('Tanuló azonosító');
+                    const birthDateIdx = headers.findIndex(h => h.includes('Szül.'));
+                    const subjectIdx = headers.indexOf('Vizsgatárgy');
+                    const examDateIdx = headers.indexOf('Vizsga'); // "Vizsga" oszlop a dátum
+                    const resultIdx = headers.indexOf('Eredmény'); // Optional for "Foglalva"
+                    const locationIdx = headers.indexOf('Vizsgahely');
+
+                    if (studentIdIdx === -1 || birthDateIdx === -1 || subjectIdx === -1 || examDateIdx === -1) {
+                         // Critical columns missing for this sheet
+                         continue;
                     }
 
+                    const rows = jsonData.slice(headerRowIndex + 1);
 
-                    // Query Firestore for student
-                    const q = query(collection(db, collectionName), where("studentId", "==", studentId));
-                    const querySnapshot = await getDocs(q);
+                    for (const row of rows) {
+                        const studentIdRaw = row[studentIdIdx];
+                        const studentId = studentIdRaw ? studentIdRaw.toString().trim() : "";
 
-                    if (querySnapshot.empty) {
-                        results.errors.push({ id: studentId, msg: "Tanuló nem található a rendszerben (azonosító alapján)." });
-                        continue;
+                        if (!studentId) continue; // Skip empty rows
+
+                        const birthDateRaw = row[birthDateIdx];
+                        const subject = row[subjectIdx]?.toString().trim();
+                        const examDateRaw = row[examDateIdx];
+                        let result = resultIdx !== -1 ? row[resultIdx]?.toString().trim() : "";
+                        const location = locationIdx !== -1 ? row[locationIdx]?.toString().trim() : '';
+
+                        // Default result if missing (for reservation sheets)
+                        if (!result) result = "Kiírva";
+
+                        if (!subject || !examDateRaw) {
+                            results.errors.push({ id: studentId, msg: "Hiányzó vizsgaadatok (tárgy vagy dátum)." });
+                            continue;
+                        }
+
+                        // Normalize dates
+                        const excelBirthDate = normalizeDate(birthDateRaw);
+
+                        // FIX: Round time to nearest minute to handle floating point errors
+                        let formattedExamDate = "";
+                        if (examDateRaw instanceof Date) {
+                            // Round to nearest minute: add 30 seconds, then floor to minute
+                            const roundedTime = new Date(Math.round(examDateRaw.getTime() / 60000) * 60000);
+
+                            const y = roundedTime.getFullYear();
+                            const m = String(roundedTime.getMonth() + 1).padStart(2, '0');
+                            const d = String(roundedTime.getDate()).padStart(2, '0');
+                            const hours = String(roundedTime.getHours()).padStart(2, '0');
+                            const mins = String(roundedTime.getMinutes()).padStart(2, '0');
+                            formattedExamDate = `${y}.${m}.${d}. ${hours}:${mins}`;
+                        } else {
+                            formattedExamDate = examDateRaw.toString();
+                        }
+
+                        // Query Firestore for student
+                        const q = query(collection(db, collectionName), where("studentId", "==", studentId));
+                        const querySnapshot = await getDocs(q);
+
+                        if (querySnapshot.empty) {
+                            results.errors.push({ id: studentId, msg: "Tanuló nem található a rendszerben (azonosító alapján)." });
+                            continue;
+                        }
+
+                        const docRef = querySnapshot.docs[0].ref;
+                        const studentData = querySnapshot.docs[0].data();
+
+                        // Verify Birth Date
+                        const dbBirthDate = normalizeDate(studentData.birthDate);
+
+                        if (!excelBirthDate) {
+                             results.errors.push({
+                                id: studentId,
+                                msg: `Érvénytelen születési dátum formátum az Excelben: ${birthDateRaw}`
+                            });
+                            continue;
+                        }
+
+                        if (dbBirthDate !== excelBirthDate) {
+                            results.errors.push({
+                                id: studentId,
+                                msg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate}).`
+                            });
+                            continue;
+                        }
+
+                        const existingResults = studentData.examResults || [];
+
+                        // Logic: Find existing exam by Subject + Date
+                        const existingIndex = existingResults.findIndex(ex =>
+                            ex.subject === subject && ex.date === formattedExamDate
+                        );
+
+                        if (existingIndex !== -1) {
+                            // Found match. Check if we should update.
+                            const existingExam = existingResults[existingIndex];
+
+                            // If existing result is 'Kiírva' (or empty) AND we have a concrete result (anything other than 'Kiírva' or empty), UPDATE.
+                            // OR if we are just re-importing the same 'Kiírva' reservation, we might skip.
+
+                            const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
+                            const isNewConcrete = result && result !== "Kiírva";
+
+                            if (isExistingPlaceholder && isNewConcrete) {
+                                // Update logic
+                                const updatedExam = { ...existingExam, result: result, importedAt: new Date().toISOString() };
+                                const newResults = [...existingResults];
+                                newResults[existingIndex] = updatedExam;
+
+                                await updateDoc(docRef, { examResults: newResults });
+                                results.updated++;
+                            } else {
+                                // Duplicate or no update needed
+                                results.skipped++;
+                            }
+                        } else {
+                            // New exam entry
+                            const examResult = {
+                                subject: subject,
+                                date: formattedExamDate,
+                                result: result,
+                                location: location,
+                                importedAt: new Date().toISOString()
+                            };
+
+                            await updateDoc(docRef, {
+                                examResults: [...existingResults, examResult]
+                            });
+                            results.success++;
+                        }
                     }
-
-                    const docRef = querySnapshot.docs[0].ref;
-                    const studentData = querySnapshot.docs[0].data();
-
-                    // Verify Birth Date
-                    const dbBirthDate = normalizeDate(studentData.birthDate);
-
-                    if (!excelBirthDate) {
-                         results.errors.push({
-                            id: studentId,
-                            msg: `Érvénytelen születési dátum formátum az Excelben: ${birthDateRaw}`
-                        });
-                        continue;
-                    }
-
-                    if (dbBirthDate !== excelBirthDate) {
-                        // Attempt fallback comparison (maybe day/month swap?)
-                        // But strictly speaking they should match.
-                        results.errors.push({
-                            id: studentId,
-                            msg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate}).`
-                        });
-                        continue;
-                    }
-
-                    // Prepare exam result object
-                    const examResult = {
-                        subject: subject,
-                        date: formattedExamDate,
-                        result: result,
-                        location: location,
-                        importedAt: new Date().toISOString()
-                    };
-
-                    // Check for duplicates
-                    const existingResults = studentData.examResults || [];
-                    const isDuplicate = existingResults.some(ex =>
-                        ex.subject === examResult.subject &&
-                        ex.date === examResult.date && // Exact string match on date/time
-                        ex.result === examResult.result
-                    );
-
-                    if (isDuplicate) {
-                        results.skipped++;
-                        continue;
-                    }
-
-                    // Update document
-                    await updateDoc(docRef, {
-                        examResults: [...existingResults, examResult]
-                    });
-
-                    results.success++;
                 }
 
                 setImportResults(results);
@@ -254,9 +285,9 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                 <p className="font-semibold mb-2">Importálási tudnivalók:</p>
                                 <ul className="list-disc list-inside space-y-1">
                                     <li>A fájl formátuma <strong>.xlsx</strong> legyen.</li>
+                                    <li>Támogatott munkalapok: <strong>"Vizsgaeredmény rögzítve"</strong>, <strong>"Vizsgaidőpont foglalva"</strong>.</li>
                                     <li>A rendszer a <strong>Tanuló azonosító</strong> és <strong>Születési dátum</strong> alapján azonosít.</li>
-                                    <li>A <strong>"Vizsgaeredmény rögzítve"</strong> munkalapot dolgozzuk fel.</li>
-                                    <li>Már meglévő eredményeket (azonos tárgy és dátum) a rendszer nem duplikál.</li>
+                                    <li>A meglévő "Kiírva" státuszú vizsgákat az eredmény importáláskor frissíti.</li>
                                 </ul>
                             </div>
 
@@ -288,14 +319,18 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         </div>
                     ` : html`
                         <div className="space-y-6">
-                            <div className="grid grid-cols-3 gap-4 text-center">
+                            <div className="grid grid-cols-4 gap-4 text-center">
                                 <div className="bg-green-100 p-4 rounded-lg border border-green-200">
                                     <div className="text-2xl font-bold text-green-700">${importResults.success}</div>
-                                    <div className="text-xs text-green-800 uppercase font-semibold tracking-wide">Sikeres</div>
+                                    <div className="text-xs text-green-800 uppercase font-semibold tracking-wide">Új</div>
+                                </div>
+                                <div className="bg-blue-100 p-4 rounded-lg border border-blue-200">
+                                    <div className="text-2xl font-bold text-blue-700">${importResults.updated}</div>
+                                    <div className="text-xs text-blue-800 uppercase font-semibold tracking-wide">Frissítve</div>
                                 </div>
                                 <div className="bg-yellow-100 p-4 rounded-lg border border-yellow-200">
                                     <div className="text-2xl font-bold text-yellow-700">${importResults.skipped}</div>
-                                    <div className="text-xs text-yellow-800 uppercase font-semibold tracking-wide">Kihagyva (Duplikált)</div>
+                                    <div className="text-xs text-yellow-800 uppercase font-semibold tracking-wide">Kihagyva</div>
                                 </div>
                                 <div className="bg-red-100 p-4 rounded-lg border border-red-200">
                                     <div className="text-2xl font-bold text-red-700">${importResults.errors.length}</div>
