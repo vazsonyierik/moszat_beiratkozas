@@ -118,6 +118,53 @@ const ViewDetailsModal = ({ student, onClose }) => {
         </div>
     `;
 
+    const renderExamResults = () => {
+        if (!student.examResults || student.examResults.length === 0) return null;
+
+        // Dátum szerinti rendezés csökkenő sorrendben (legfrissebb elől)
+        const sortedResults = [...student.examResults].sort((a, b) => {
+            const dateA = a.date || '';
+            const dateB = b.date || '';
+            return dateB.localeCompare(dateA);
+        });
+
+        return html`
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border col-span-1 lg:col-span-2">
+                <h4 className="text-lg font-semibold text-indigo-700 border-b pb-3 mb-4">Vizsgaeredmények (KAV)</h4>
+                <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 border rounded-md">
+                        <thead className="bg-gray-50">
+                            <tr>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Vizsgatárgy</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dátum</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Helyszín</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Eredmény</th>
+                            </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                            ${sortedResults.map((exam, idx) => {
+                                const isSuccess = exam.result && (exam.result.toLowerCase() === 'megfelelt' || exam.result.toLowerCase() === 'sikeres');
+                                const badgeClass = isSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
+                                return html`
+                                    <tr key=${idx}>
+                                        <td className="px-6 py-4 whitespace-normal text-sm font-medium text-gray-900">${exam.subject}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${exam.date}</td>
+                                        <td className="px-6 py-4 whitespace-normal text-sm text-gray-500">${exam.location}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeClass}`}>
+                                                ${exam.result}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `;
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    };
+
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-gray-50 rounded-xl shadow-2xl w-full max-w-5xl transform transition-all" onClick=${e => e.stopPropagation()}>
@@ -174,6 +221,7 @@ const ViewDetailsModal = ({ student, onClose }) => {
                         <${DisplayField} label="Azonosító megadása" value=${formatSingleTimestamp(student.studentIdAssignedAt)} />
                         <${DisplayField} label="Tanfolyam befejezve" value=${formatSingleTimestamp(student.courseCompletedAt)} />
                     <//>
+                    ${renderExamResults()}
                 </main>
                 <footer className="p-4 bg-white rounded-b-xl border-t flex justify-end">
                     <button onClick=${onClose} className="bg-gray-200 text-gray-800 font-semibold py-2 px-6 rounded-md hover:bg-gray-300">Bezárás</button>
