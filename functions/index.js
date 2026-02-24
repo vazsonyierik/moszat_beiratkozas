@@ -694,8 +694,8 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
             await updateRegistrationSheet(after, true); // isTest = true
         }
 
-        if (!before.studentId && after.studentId) {
-            logger.info(`(TEST) Student ID assigned for ${after.registrationNumber}. Logging to FAR sheet.`);
+        if ((!before.studentId && after.studentId) || (before.studentId && after.studentId && before.studentId !== after.studentId)) {
+            logger.info(`(TEST) Student ID assigned or changed for ${after.registrationNumber}. Logging to FAR sheet.`);
             await logToFarSheet(after, true); // isTest = true
         }
 
