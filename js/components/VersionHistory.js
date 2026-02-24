@@ -105,6 +105,7 @@ const VersionHistory = ({ onClose, adminUser }) => {
     const [versions, setVersions] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [showAddForm, setShowAddForm] = useState(false);
+    const [permissionError, setPermissionError] = useState(false);
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
@@ -114,9 +115,14 @@ const VersionHistory = ({ onClose, adminUser }) => {
             const versionsData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
             setVersions(versionsData);
             setIsLoading(false);
+            setPermissionError(false);
         }, (error) => {
             console.error("Error fetching versions:", error);
-            showToast("Hiba a verziók betöltésekor", "error");
+            if (error.code === 'permission-denied') {
+                setPermissionError(true);
+            } else {
+                showToast("Hiba a verziók betöltésekor", "error");
+            }
             setIsLoading(false);
         });
         return () => unsubscribe();
@@ -133,7 +139,11 @@ const VersionHistory = ({ onClose, adminUser }) => {
             setShowAddForm(false);
         } catch (error) {
             console.error("Error adding version:", error);
-            showToast("Hiba a mentés során: " + error.message, "error");
+            if (error.code === 'permission-denied') {
+                showToast("Hiba: Jogosultsági probléma (lásd a figyelmeztetést)", "error");
+            } else {
+                showToast("Hiba a mentés során: " + error.message, "error");
+            }
         }
     };
 
@@ -213,10 +223,29 @@ const VersionHistory = ({ onClose, adminUser }) => {
                 </header>
 
                 <div className="flex-1 overflow-y-auto p-6 bg-white">
+                    ${permissionError && html`
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
+                            <div className="flex">
+                                <div className="flex-shrink-0">
+                                    <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div className="ml-3">
+                                    <p className="text-sm text-red-700">
+                                        <strong className="font-bold">Figyelem: Adatbázis jogosultsági hiba!</strong><br />
+                                        A verziókövetés funkció használatához frissíteni kell az adatbázis szabályokat.<br />
+                                        Kérlek futtasd a parancssorban: <code className="bg-red-100 px-1 py-0.5 rounded text-red-800">firebase deploy --only firestore:rules</code>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    `}
+
                     ${isLoading ? html`<div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div></div>` : html`
                         <div className="flex justify-between items-center mb-6">
                             <h4 className="text-lg font-semibold text-slate-700">Előzmények</h4>
-                            ${!showAddForm && html`
+                            ${!showAddForm && !permissionError && html`
                                 <button onClick=${() => setShowAddForm(true)} className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                     Új verzió hozzáadása
