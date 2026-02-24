@@ -60,5 +60,11 @@ service cloud.firestore {
     match /counters/{counterId} {
         allow read, write: if false; // Csak a backend férhet hozzá
     }
+
+    // ÚJ: Szabályok a verziókövetéshez
+    match /versions/{versionId} {
+        // Csak adminok olvashatják és írhatják (verziók létrehozása)
+        allow read, write: if isAdmin();
+    }
   }
 }

@@ -7,7 +7,7 @@
  * JAVÍTÁS 2: A JSX kommentek eltávolítva az 'htm' template literálból, hogy megszűnjenek a DOM nesting hibák.
  */
 
-import { html, LoadingOverlay, ConfirmationModal } from './UI.js'; // Import ConfirmationModal
+import { html, LoadingOverlay } from './UI.js'; // Import ConfirmationModal
 import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
 import { useToast, useConfirmation } from './context/AppContext.js';
 import * as utils from './utils.js';
@@ -20,6 +20,7 @@ import AdminAddStudentModal from './components/modals/AdminAddStudentModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import StudentIdInput from './components/StudentIdInput.js';
+import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 
 const React = window.React;
 const { useState, useEffect, useMemo, useCallback, Fragment, useRef } = React;
@@ -468,7 +469,8 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
     const [viewTestDataType, setViewTestDataType] = useState(false);
-    const [isModeMenuOpen, setIsModeMenuOpen] = useState(false); // ÚJ: Dropdown állapot
+    const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
+    const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -489,7 +491,6 @@ const AdminPanel = ({ user, handleLogout }) => {
         };
     }, []);
 
-    // ÚJ: Dropdown bezárása kattintáskor
     useEffect(() => {
         const handleClickOutside = (event) => {
             if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
@@ -685,7 +686,6 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
-    // ÚJ: Váltás kezelése megerősítéssel
     const handleModeSwitch = () => {
         const targetMode = !viewTestDataType;
         const modeName = targetMode ? 'TESZT' : 'ÉLES';
@@ -693,7 +693,6 @@ const AdminPanel = ({ user, handleLogout }) => {
             ? 'Biztosan át akarsz váltani a TESZT felületre? Itt teszt adatokat kezelhetsz, amelyek nem kerülnek be az éles rendszerbe.'
             : 'Biztosan vissza akarsz térni az ÉLES felületre? Mostantól valódi adatokat kezelsz!';
 
-        // Először bezárjuk a menüt
         setIsModeMenuOpen(false);
 
         showConfirmation({
@@ -780,7 +779,6 @@ const AdminPanel = ({ user, handleLogout }) => {
         `;
     };
 
-    // ÚJ: Háttérszín dinamikus beállítása
     const containerBgClass = viewTestDataType ? 'bg-red-50' : 'bg-gray-50';
 
     return html`
@@ -824,6 +822,13 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                     ? html`<span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra`
                                                     : html`<span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra`
                                                 }
+                                            </button>
+                                            <button
+                                                onClick=${() => { setShowVersionHistory(true); setIsModeMenuOpen(false); }}
+                                                className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                                Verziókövetés
                                             </button>
                                         </div>
                                     </div>
@@ -950,6 +955,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
+                ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
             </div>
         </div>
     `;
