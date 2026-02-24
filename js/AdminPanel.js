@@ -17,6 +17,7 @@ import { logAdminAction } from './actions.js';
 import ViewDetailsModal from './components/modals/ViewDetailsModal.js';
 import EditDetailsModal from './components/modals/EditDetailsModal.js';
 import AdminAddStudentModal from './components/modals/AdminAddStudentModal.js';
+import ExamImportModal from './components/modals/ExamImportModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import StudentIdInput from './components/StudentIdInput.js';
@@ -465,6 +466,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     const [selectedIconFilters, setSelectedIconFilters] = useState([]);
     const [isAddingStudent, setIsAddingStudent] = useState(false);
+    const [isImporting, setIsImporting] = useState(false);
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
@@ -800,6 +802,10 @@ const AdminPanel = ({ user, handleLogout }) => {
                         </button>
 
                         <div className="flex items-center gap-2">
+                            <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
+                                <${Icons.UploadCloudIcon} size=${20} />
+                                Importálás (KAV)
+                            </button>
                             <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
 
                             <div className="relative" ref=${modeMenuRef}>
@@ -954,6 +960,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
+                ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
                 ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
             </div>
