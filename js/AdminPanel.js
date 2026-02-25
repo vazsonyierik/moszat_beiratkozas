@@ -22,6 +22,7 @@ import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
+import { generateTestStudents } from './utils/testDataGenerator.js';
 
 const React = window.React;
 const { useState, useEffect, useMemo, useCallback, Fragment, useRef } = React;
@@ -474,6 +475,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [viewTestDataType, setViewTestDataType] = useState(false);
     const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
+    const [isGenerating, setIsGenerating] = useState(false);
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -689,6 +691,21 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
+    const handleGenerateTestData = async () => {
+        if (!viewTestDataType) return;
+
+        setIsGenerating(true);
+        try {
+            const count = await generateTestStudents(20);
+            showToast(`${count} teszt tanuló sikeresen generálva!`, 'success');
+        } catch (error) {
+            console.error("Hiba a generálás során:", error);
+            showToast("Hiba történt a generálás során.", "error");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const handleModeSwitch = () => {
         const targetMode = !viewTestDataType;
         const modeName = targetMode ? 'TESZT' : 'ÉLES';
@@ -816,6 +833,18 @@ const AdminPanel = ({ user, handleLogout }) => {
                         <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
                             ${isRunningChecks ? 'Futtatás...' : 'Ellenőrzés'}
                         </button>
+
+                        ${viewTestDataType && html`
+                            <button
+                                onClick=${handleGenerateTestData}
+                                disabled=${isGenerating}
+                                className="bg-purple-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
+                                title="20 db teszt tanuló generálása"
+                            >
+                                ${isGenerating ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.FilePlusIcon} size=${20} />`}
+                                Generálás
+                            </button>
+                        `}
 
                         <div className="flex items-center gap-2">
                             <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
