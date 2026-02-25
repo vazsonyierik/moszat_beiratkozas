@@ -934,14 +934,15 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                        <button 
-                                            key=${key} 
-                                            onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
-                                            title=${title}
-                                            className=${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color} border-transparent` : 'border-gray-300 bg-white'}`}
-                                        >
-                                            <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
-                                        </button>
+                                        <div key=${key}>
+                                            <button
+                                                onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
+                                                title=${title}
+                                                className=${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color} border-transparent` : 'border-gray-300 bg-white'}`}
+                                            >
+                                                <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
+                                            </button>
+                                        </div>
                                     `})}
                                  </div>
                             </div>

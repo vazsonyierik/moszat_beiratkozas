@@ -1,4 +1,4 @@
-import { db, collection, addDoc, serverTimestamp } from '../firebase.js';
+import { functions, httpsCallable } from '../firebase.js';
 
 const lastNames = ['Kovács', 'Nagy', 'Szabó', 'Tóth', 'Varga', 'Kiss', 'Molnár', 'Németh', 'Farkas', 'Balogh'];
 const firstNamesMale = ['Bence', 'Máté', 'Levente', 'Dávid', 'Balázs', 'Ádám', 'Tamás', 'Péter', 'Zoltán', 'Gábor'];
@@ -150,8 +150,14 @@ export const generateTestStudents = async (count = 20) => {
         students.push(student);
     }
 
-    // Save to Firestore
-    const promises = students.map(student => addDoc(collection(db, 'registrations_test'), student));
+    // Save to Firestore via Cloud Function (to bypass security rules)
+    const submitRegistration = httpsCallable(functions, 'submitRegistration');
+    const promises = students.map(student => {
+        // Add flag to indicate test mode to the backend
+        const payload = { ...student, _isTest: true };
+        return submitRegistration(payload);
+    });
+
     await Promise.all(promises);
 
     return students.length;
