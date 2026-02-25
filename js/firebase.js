@@ -23,7 +23,8 @@ import {
     getDocs,
     where,
     deleteField,
-    Timestamp
+    Timestamp,
+    limit // ÚJ
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { 
     getFunctions, 
@@ -81,6 +82,7 @@ export {
     getDocs,
     where,
     deleteField,
+    limit, // ÚJ
     sendSignInLinkToEmail,
     isSignInWithEmailLink,
     signInWithEmailLink,
