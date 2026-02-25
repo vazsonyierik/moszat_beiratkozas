@@ -11,6 +11,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
     const [importResults, setImportResults] = useState(null);
     const [error, setError] = useState(null);
     const [pendingOverrides, setPendingOverrides] = useState([]);
+    const [activeTab, setActiveTab] = useState('errors');
     const fileInputRef = useRef(null);
 
     const handleFileChange = (e) => {
@@ -100,10 +101,22 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                 newResults[existingIndex] = updatedExam;
 
                 await updateDoc(docRef, { examResults: newResults });
-                if (results) results.updated++;
+                if (results) results.updated.push({
+                    studentId: studentData.studentId,
+                    subject: row.subject,
+                    date: formattedExamDate,
+                    result: row.result,
+                    prevResult: existingExam.result
+                });
             } else {
                 // Duplicate or no update needed
-                if (results) results.skipped++;
+                if (results) results.skipped.push({
+                    studentId: studentData.studentId,
+                    subject: row.subject,
+                    date: formattedExamDate,
+                    reason: "Már létező eredmény",
+                    existingResult: existingExam.result
+                });
             }
         } else {
             // New exam entry
@@ -118,7 +131,13 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
             await updateDoc(docRef, {
                 examResults: [...existingResults, examResult]
             });
-            if (results) results.success++;
+            if (results) results.success.push({
+                studentId: studentData.studentId,
+                subject: row.subject,
+                date: formattedExamDate,
+                result: row.result,
+                location: row.location
+            });
         }
     };
 
@@ -154,10 +173,11 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                 }
 
                 const results = {
-                    success: 0,
-                    updated: 0,
+                    success: [],
+                    updated: [],
                     errors: [],
-                    skipped: 0
+                        skipped: [],
+                        debugInfo: null
                 };
 
                 const overrides = [];
@@ -194,6 +214,18 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     if (studentIdIdx === -1 || birthDateIdx === -1 || subjectIdx === -1 || examDateIdx === -1) {
                          continue;
                     }
+
+                    // Debug info capturing
+                    results.debugInfo = {
+                        sheetName: sheetName,
+                        headers: headers,
+                        indices: {
+                            subject: subjectIdx,
+                            location: locationIdx,
+                            date: examDateIdx,
+                            result: resultIdx
+                        }
+                    };
 
                     const rows = jsonData.slice(headerRowIndex + 1);
 
@@ -284,7 +316,14 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
             // Update success count visually
             setImportResults(prev => ({
                 ...prev,
-                success: prev.success + 1
+                success: [...prev.success, {
+                    studentId: overrideItem.row.studentId,
+                    subject: overrideItem.row.subject,
+                    date: overrideItem.row.examDateRaw instanceof Date ? overrideItem.row.examDateRaw.toLocaleDateString() : overrideItem.row.examDateRaw,
+                    result: overrideItem.row.result,
+                    location: overrideItem.row.location,
+                    note: "Kényszerített import"
+                }]
             }));
 
         } catch (err) {
@@ -348,85 +387,131 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     ` : html`
                         <div className="space-y-6">
                             <div className="grid grid-cols-4 gap-4 text-center">
-                                <div className="bg-green-100 p-4 rounded-lg border border-green-200">
-                                    <div className="text-2xl font-bold text-green-700">${importResults.success}</div>
+                                <div className="bg-green-100 p-4 rounded-lg border border-green-200 cursor-pointer hover:bg-green-200 transition-colors" onClick=${() => setActiveTab('success')}>
+                                    <div className="text-2xl font-bold text-green-700">${importResults.success.length}</div>
                                     <div className="text-xs text-green-800 uppercase font-semibold tracking-wide">Új</div>
                                 </div>
-                                <div className="bg-blue-100 p-4 rounded-lg border border-blue-200">
-                                    <div className="text-2xl font-bold text-blue-700">${importResults.updated}</div>
+                                <div className="bg-blue-100 p-4 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors" onClick=${() => setActiveTab('updated')}>
+                                    <div className="text-2xl font-bold text-blue-700">${importResults.updated.length}</div>
                                     <div className="text-xs text-blue-800 uppercase font-semibold tracking-wide">Frissítve</div>
                                 </div>
-                                <div className="bg-yellow-100 p-4 rounded-lg border border-yellow-200">
-                                    <div className="text-2xl font-bold text-yellow-700">${importResults.skipped}</div>
+                                <div className="bg-yellow-100 p-4 rounded-lg border border-yellow-200 cursor-pointer hover:bg-yellow-200 transition-colors" onClick=${() => setActiveTab('skipped')}>
+                                    <div className="text-2xl font-bold text-yellow-700">${importResults.skipped.length}</div>
                                     <div className="text-xs text-yellow-800 uppercase font-semibold tracking-wide">Kihagyva</div>
                                 </div>
-                                <div className="bg-red-100 p-4 rounded-lg border border-red-200">
+                                <div className="bg-red-100 p-4 rounded-lg border border-red-200 cursor-pointer hover:bg-red-200 transition-colors" onClick=${() => setActiveTab('errors')}>
                                     <div className="text-2xl font-bold text-red-700">${importResults.errors.length + pendingOverrides.length}</div>
                                     <div className="text-xs text-red-800 uppercase font-semibold tracking-wide">Hiba/Eltérés</div>
                                 </div>
                             </div>
 
-                            ${pendingOverrides.length > 0 && html`
-                                <div>
-                                    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                        <${Icons.AlertTriangleIcon} size=${18} className="text-orange-500"/>
-                                        Eltérések (Kényszeríthető)
-                                    </h4>
-                                    <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-                                        <table className="min-w-full divide-y divide-orange-200 text-sm">
-                                            <thead className="bg-orange-100">
-                                                <tr>
-                                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Azonosító</th>
-                                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Probléma</th>
-                                                    <th className="px-4 py-2 text-right font-medium text-gray-600">Művelet</th>
+                            <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
+                                <div className="p-3 bg-gray-50 border-b font-semibold text-gray-700 flex justify-between items-center">
+                                    <span>
+                                        ${activeTab === 'success' && 'Újonnan hozzáadott vizsgák'}
+                                        ${activeTab === 'updated' && 'Frissített vizsgaeredmények'}
+                                        ${activeTab === 'skipped' && 'Kihagyott tételek'}
+                                        ${activeTab === 'errors' && 'Hibák és Eltérések'}
+                                    </span>
+                                </div>
+                                <div className="overflow-x-auto max-h-80">
+                                    <table className="min-w-full divide-y divide-gray-200 text-sm">
+                                        <thead className="bg-gray-100">
+                                            <tr>
+                                                <th className="px-4 py-2 text-left font-medium text-gray-500">Azonosító</th>
+                                                ${activeTab !== 'errors' && html`
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-500">Tárgy</th>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-500">Dátum</th>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-500">Helyszín</th>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-500">Eredmény</th>
+                                                `}
+                                                ${activeTab === 'errors' && html`<th className="px-4 py-2 text-left font-medium text-gray-500">Hiba üzenet / Ok</th>`}
+                                                ${activeTab === 'skipped' && html`<th className="px-4 py-2 text-left font-medium text-gray-500">Ok</th>`}
+                                                ${activeTab === 'errors' && html`<th className="px-4 py-2 text-right font-medium text-gray-500">Művelet</th>`}
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-gray-200 bg-white">
+                                            ${activeTab === 'success' && importResults.success.map((item, idx) => html`
+                                                <tr key=${idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2 font-mono text-xs">${item.studentId}</td>
+                                                    <td className="px-4 py-2">${item.subject}</td>
+                                                    <td className="px-4 py-2">${item.date}</td>
+                                                    <td className="px-4 py-2 text-xs text-gray-500">${item.location}</td>
+                                                    <td className="px-4 py-2 font-medium">${item.result}</td>
                                                 </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-orange-200 bg-white">
+                                            `)}
+
+                                            ${activeTab === 'updated' && importResults.updated.map((item, idx) => html`
+                                                <tr key=${idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2 font-mono text-xs">${item.studentId}</td>
+                                                    <td className="px-4 py-2">${item.subject}</td>
+                                                    <td className="px-4 py-2">${item.date}</td>
+                                                    <td className="px-4 py-2 text-xs text-gray-500">-</td>
+                                                    <td className="px-4 py-2">
+                                                        <span className="text-gray-400 line-through mr-2 text-xs">${item.prevResult}</span>
+                                                        <span className="font-medium text-blue-600">${item.result}</span>
+                                                    </td>
+                                                </tr>
+                                            `)}
+
+                                            ${activeTab === 'skipped' && importResults.skipped.map((item, idx) => html`
+                                                <tr key=${idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2 font-mono text-xs">${item.studentId}</td>
+                                                    <td className="px-4 py-2">${item.subject}</td>
+                                                    <td className="px-4 py-2">${item.date}</td>
+                                                    <td className="px-4 py-2 text-xs text-gray-500">-</td>
+                                                    <td className="px-4 py-2 text-gray-500">${item.existingResult}</td>
+                                                    <td className="px-4 py-2 text-orange-600 text-xs">${item.reason}</td>
+                                                </tr>
+                                            `)}
+
+                                            ${activeTab === 'errors' && html`
                                                 ${pendingOverrides.map((item, idx) => html`
-                                                    <tr key=${idx}>
+                                                    <tr key=${'override-' + idx} className="bg-orange-50 hover:bg-orange-100">
                                                         <td className="px-4 py-3 font-mono text-xs text-gray-700 align-top">${item.row.studentId}</td>
-                                                        <td className="px-4 py-3 text-orange-800 align-top">${item.errorMsg}</td>
+                                                        <td className="px-4 py-3 text-orange-800 align-top" colSpan="4">
+                                                            <div className="flex flex-col gap-1">
+                                                                <span className="font-semibold">Eltérés:</span>
+                                                                <span>${item.errorMsg}</span>
+                                                                <span className="text-xs text-gray-500 mt-1">Adatok: ${item.row.subject} (${item.row.result}) - ${item.row.location}</span>
+                                                            </div>
+                                                        </td>
                                                         <td className="px-4 py-3 text-right align-top">
                                                             <button
                                                                 onClick=${() => handleForceImport(item, idx)}
                                                                 className="bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded hover:bg-orange-700 transition-colors shadow-sm"
                                                             >
-                                                                Importálás
+                                                                Kényszerítés
                                                             </button>
                                                         </td>
                                                     </tr>
                                                 `)}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            `}
-
-                            ${importResults.errors.length > 0 && html`
-                                <div>
-                                    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                        <${Icons.XCircleIcon} size=${18} className="text-red-500"/>
-                                        Kritikus Hibák
-                                    </h4>
-                                    <div className="bg-gray-50 border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
-                                        <table className="min-w-full divide-y divide-gray-200 text-sm">
-                                            <thead className="bg-gray-100">
-                                                <tr>
-                                                    <th className="px-4 py-2 text-left font-medium text-gray-500">Azonosító</th>
-                                                    <th className="px-4 py-2 text-left font-medium text-gray-500">Hiba oka</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="divide-y divide-gray-200 bg-white">
                                                 ${importResults.errors.map((err, idx) => html`
-                                                    <tr key=${idx}>
+                                                    <tr key=${'error-' + idx} className="bg-red-50 hover:bg-red-100">
                                                         <td className="px-4 py-2 font-mono text-xs text-gray-700">${err.id}</td>
-                                                        <td className="px-4 py-2 text-red-600">${err.msg}</td>
+                                                        <td className="px-4 py-2 text-red-600" colSpan="4">${err.msg}</td>
+                                                        <td></td>
                                                     </tr>
                                                 `)}
-                                            </tbody>
-                                        </table>
-                                    </div>
+                                            `}
+                                        </tbody>
+                                    </table>
+                                    ${activeTab === 'success' && importResults.success.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
+                                    ${activeTab === 'updated' && importResults.updated.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
+                                    ${activeTab === 'skipped' && importResults.skipped.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
+                                    ${activeTab === 'errors' && importResults.errors.length === 0 && pendingOverrides.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs hiba.</div>`}
                                 </div>
+                            </div>
+
+                            ${importResults.debugInfo && html`
+                                <details className="mt-4 p-2 bg-gray-100 rounded text-xs text-gray-600">
+                                    <summary className="cursor-pointer font-bold mb-2">Technikai Információk (Debug)</summary>
+                                    <pre className="whitespace-pre-wrap">
+Sheet: ${importResults.debugInfo.sheetName}
+Headers: ${JSON.stringify(importResults.debugInfo.headers)}
+Indices: ${JSON.stringify(importResults.debugInfo.indices, null, 2)}
+                                    </pre>
+                                </details>
                             `}
                         </div>
                     `}
