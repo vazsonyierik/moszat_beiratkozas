@@ -8,7 +8,7 @@
  */
 
 import { html, LoadingOverlay } from './UI.js'; // Import ConfirmationModal
-import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, setDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
+import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, setDoc, query, orderBy, deleteDoc, functions, httpsCallable, getDocs } from './firebase.js';
 import { useToast, useConfirmation } from './context/AppContext.js';
 import * as utils from './utils.js';
 import * as Icons from './Icons.js';
