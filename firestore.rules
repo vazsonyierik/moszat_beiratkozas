@@ -51,8 +51,8 @@ service cloud.firestore {
       allow update, delete: if false; // A naplók nem módosíthatók
     }
 
-    // Szabályok az automatizálási beállításokhoz
-    match /settings/automation {
+    // Szabályok a beállításokhoz (automatizálás, teszt config, stb.)
+    match /settings/{settingId} {
         allow read, write: if isAdmin();
     }
 

@@ -8,7 +8,7 @@
  */
 
 import { html, LoadingOverlay } from './UI.js'; // Import ConfirmationModal
-import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
+import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, setDoc, query, orderBy, deleteDoc, functions, httpsCallable, getDocs } from './firebase.js';
 import { useToast, useConfirmation } from './context/AppContext.js';
 import * as utils from './utils.js';
 import * as Icons from './Icons.js';
@@ -22,6 +22,7 @@ import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
+import { generateTestStudents } from './utils/testDataGenerator.js';
 
 const React = window.React;
 const { useState, useEffect, useMemo, useCallback, Fragment, useRef } = React;
@@ -254,7 +255,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const allowDelete = !reg.status_enrolled && !reg.courseCompletedAt;
 
                             return html`
-                            <${React.Fragment} key=${reg.id}>
+                            <${Fragment} key=${reg.id}>
                                 <tr className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
@@ -440,7 +441,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         </div>
                                     </td>
                                 </tr>
-                            </${React.Fragment}>
+                            </${Fragment}>
                         `})}
                     </tbody>
                 </table>
@@ -468,11 +469,14 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [expiredFilter, setExpiredFilter] = useState('all');
+    const [examResultFilter, setExamResultFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
     const [showIconLegend, setShowIconLegend] = useState(false);
     const [viewTestDataType, setViewTestDataType] = useState(false);
     const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -504,6 +508,35 @@ const AdminPanel = ({ user, handleLogout }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // ÚJ: Teszt email beállítás figyelése
+    useEffect(() => {
+        if (!viewTestDataType) return;
+
+        const unsubscribe = onSnapshot(doc(db, 'settings', 'testConfig'), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setTestEmailsEnabled(data.emailsEnabled !== false); // Default to true if undefined
+            } else {
+                setTestEmailsEnabled(true);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [viewTestDataType]);
+
+    const handleToggleTestEmails = async () => {
+        const newValue = !testEmailsEnabled;
+        try {
+            const configRef = doc(db, 'settings', 'testConfig');
+            await setDoc(configRef, { emailsEnabled: newValue }, { merge: true });
+            setTestEmailsEnabled(newValue);
+            showToast(`Teszt e-mailek ${newValue ? 'bekapcsolva' : 'kikapcsolva'}.`, 'success');
+        } catch (error) {
+            console.error("Hiba a teszt email beállítás mentésekor:", error);
+            showToast("Hiba a beállítás mentésekor", "error");
+        }
+    };
 
     useEffect(() => {
         if (!user) {
@@ -688,6 +721,57 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
+    const handleClearAllTestExams = async () => {
+        if (!viewTestDataType) return;
+
+        const confirmText = "TÖRLÉS";
+        const userInput = window.prompt(`FIGYELEM! Ezzel kitörlöd az ÖSSZES vizsgaeredményt a TESZT adatbázisból.\n\nA megerősítéshez írd be: ${confirmText}`);
+
+        if (userInput !== confirmText) {
+            if (userInput !== null) showToast("A törlés megszakítva (helytelen megerősítés).", "info");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const q = query(collection(db, "registrations_test"));
+            const snapshot = await getDocs(q);
+
+            let updatedCount = 0;
+            const updatePromises = snapshot.docs.map(docSnapshot => {
+                if (docSnapshot.data().examResults && docSnapshot.data().examResults.length > 0) {
+                    updatedCount++;
+                    return updateDoc(docSnapshot.ref, { examResults: [] });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(updatePromises);
+
+            showToast(`Sikeresen törölve ${updatedCount} tanuló vizsgaeredménye!`, "success");
+        } catch (error) {
+            console.error("Hiba az összes vizsgaeredmény törlésekor:", error);
+            showToast("Hiba történt a törlés során.", "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const handleGenerateTestData = async () => {
+        if (!viewTestDataType) return;
+
+        setIsGenerating(true);
+        try {
+            const count = await generateTestStudents(20);
+            showToast(`${count} teszt tanuló sikeresen generálva!`, 'success');
+        } catch (error) {
+            console.error("Hiba a generálás során:", error);
+            showToast("Hiba történt a generálás során.", "error");
+        } finally {
+            setIsGenerating(false);
+        }
+    };
+
     const handleModeSwitch = () => {
         const targetMode = !viewTestDataType;
         const modeName = targetMode ? 'TESZT' : 'ÉLES';
@@ -709,20 +793,49 @@ const AdminPanel = ({ user, handleLogout }) => {
     const filteredRegistrations = useMemo(() => {
         const iconChecks = iconFilterOptions.filter(opt => selectedIconFilters.includes(opt.key));
         return registrations.filter(reg => {
-            const term = searchTerm.toLowerCase();
+            const term = searchTerm.toLowerCase().trim();
             const fullName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName).toLowerCase();
             const motherFullName = utils.formatFullName(reg.mother_prefix, reg.mother_firstName, reg.mother_lastName, reg.mother_secondName).toLowerCase();
             const email = reg.email ? reg.email.toLowerCase() : '';
-            const matchesSearch = term === '' || fullName.includes(term) || motherFullName.includes(term) || email.includes(term);
+            const studentId = reg.studentId ? reg.studentId.toLowerCase() : '';
+
+            // Phone matching logic: strip non-digits from both stored phone and search term
+            const phoneNumberStored = reg.phone_number ? reg.phone_number.toString().replace(/[^0-9]/g, '') : '';
+            const termClean = term.replace(/[^0-9]/g, '');
+
+            const matchesPhone = termClean.length > 3 && phoneNumberStored.includes(termClean);
+
+            const matchesSearch = term === '' ||
+                fullName.includes(term) ||
+                motherFullName.includes(term) ||
+                email.includes(term) ||
+                studentId.includes(term) ||
+                matchesPhone;
+
             if (!matchesSearch) return false;
 
             const regDate = reg.createdAt?.seconds ? new Date(reg.createdAt.seconds * 1000) : null;
             if ((startDate && (!regDate || regDate < new Date(startDate)))) return false;
             if ((endDate && (!regDate || regDate > new Date(endDate)))) return false;
 
-            return iconChecks.every(check => check.check(reg));
+            const matchesExamFilter = (() => {
+                if (examResultFilter === 'all') return true;
+                const results = reg.examResults || [];
+                if (examResultFilter === 'successful') {
+                    return results.some(r => r.result.toLowerCase() === 'megfelelt' || r.result.toLowerCase() === 'sikeres');
+                }
+                if (examResultFilter === 'failed') {
+                    return results.some(r => r.result.toLowerCase() === 'nem felelt meg' || r.result.toLowerCase().includes('sikertelen'));
+                }
+                if (examResultFilter === 'missed') {
+                    return results.some(r => r.result.toLowerCase() === 'nem jelent meg');
+                }
+                return true;
+            })();
+
+            return matchesExamFilter && iconChecks.every(check => check.check(reg));
         });
-    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters]);
+    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter]);
 
     const { 
         enrolledRegistrations, 
@@ -801,6 +914,18 @@ const AdminPanel = ({ user, handleLogout }) => {
                             ${isRunningChecks ? 'Futtatás...' : 'Ellenőrzés'}
                         </button>
 
+                        ${viewTestDataType && html`
+                            <button
+                                onClick=${handleGenerateTestData}
+                                disabled=${isGenerating}
+                                className="bg-purple-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
+                                title="20 db teszt tanuló generálása"
+                            >
+                                ${isGenerating ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.FilePlusIcon} size=${20} />`}
+                                Generálás
+                            </button>
+                        `}
+
                         <div className="flex items-center gap-2">
                             <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
                                 <${Icons.UploadCloudIcon} size=${20} />
@@ -825,10 +950,23 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                             >
                                                 ${viewTestDataType
-                                                    ? html`<span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra`
-                                                    : html`<span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra`
+                                                    ? html`<${Fragment}><span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra</${Fragment}>`
+                                                    : html`<${Fragment}><span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra</${Fragment}>`
                                                 }
                                             </button>
+
+                                            ${viewTestDataType && html`
+                                                <button
+                                                    onClick=${handleToggleTestEmails}
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"
+                                                >
+                                                    <div className=${`w-8 h-4 rounded-full p-0.5 transition-colors ${testEmailsEnabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                                        <div className=${`w-3 h-3 bg-white rounded-full shadow transform transition-transform ${testEmailsEnabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                                    </div>
+                                                    <span>Teszt emailek ${testEmailsEnabled ? 'BE' : 'KI'}</span>
+                                                </button>
+                                            `}
+
                                             <button
                                                 onClick=${() => { setShowVersionHistory(true); setIsModeMenuOpen(false); }}
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"
@@ -836,6 +974,16 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                                 Verziókövetés
                                             </button>
+
+                                            ${viewTestDataType && html`
+                                                <button
+                                                    onClick=${() => { handleClearAllTestExams(); setIsModeMenuOpen(false); }}
+                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-100 font-bold"
+                                                >
+                                                    <${Icons.TrashIcon} size=${16} />
+                                                    Összes vizsga törlése
+                                                </button>
+                                            `}
                                         </div>
                                     </div>
                                 `}
@@ -852,12 +1000,33 @@ const AdminPanel = ({ user, handleLogout }) => {
                     <div className=${`transition-all duration-500 ease-in-out overflow-hidden ${isFilterVisible ? 'max-h-96' : 'max-h-0'}`}>
                         <div className="p-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                             <div className="md:col-span-1">
-                                <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Név, Email, Anyja neve)</label>
+                                <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Név, Email, Anyja, Azonosító, Tel.)</label>
                                 <input type="text" id="search" value=${searchTerm} onChange=${e => setSearchTerm(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Keresési kifejezés..." />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Jelentkezés -tól</label><input type="date" id="startDate" value=${startDate} onChange=${e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" /></div>
                                 <div><label htmlFor="endDate" className="block text-sm font-medium text-gray-700">Jelentkezés -ig</label><input type="date" id="endDate" value=${endDate} onChange=${e => setEndDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" /></div>
+                            </div>
+                            <div className="md:col-span-3">
+                                <label className="block text-sm font-medium text-gray-700 mb-2">Vizsgaeredmény szűrés (Van legalább egy ilyen eredménye)</label>
+                                <div className="flex flex-wrap gap-4">
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-indigo-600" name="examFilter" value="all" checked=${examResultFilter === 'all'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Összes</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-green-600" name="examFilter" value="successful" checked=${examResultFilter === 'successful'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Sikeres (M)</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-red-600" name="examFilter" value="failed" checked=${examResultFilter === 'failed'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Sikertelen (1)</span>
+                                    </label>
+                                    <label className="inline-flex items-center">
+                                        <input type="radio" className="form-radio text-yellow-600" name="examFilter" value="missed" checked=${examResultFilter === 'missed'} onChange=${e => setExamResultFilter(e.target.value)} />
+                                        <span className="ml-2 text-sm text-gray-700">Nem jelent meg (3)</span>
+                                    </label>
+                                </div>
                             </div>
                             <div>
                                 <div className="flex items-center justify-between">
@@ -868,14 +1037,15 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                        <button 
-                                            key=${key} 
-                                            onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
-                                            title=${title}
-                                            className=${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color} border-transparent` : 'border-gray-300 bg-white'}`}
-                                        >
-                                            <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
-                                        </button>
+                                        <div key=${key}>
+                                            <button
+                                                onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
+                                                title=${title}
+                                                className=${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color} border-transparent` : 'border-gray-300 bg-white'}`}
+                                            >
+                                                <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
+                                            </button>
+                                        </div>
                                     `})}
                                  </div>
                             </div>
@@ -957,7 +1127,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                 </${React.Fragment}>
                 
-                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} />`}
+                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}

@@ -14,6 +14,7 @@ import {
     doc, 
     onSnapshot, 
     updateDoc, 
+    setDoc, // ÚJ
     deleteDoc,
     query,
     orderBy,
@@ -22,7 +23,8 @@ import {
     getDocs,
     where,
     deleteField,
-    Timestamp
+    Timestamp,
+    limit // ÚJ
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { 
     getFunctions, 
@@ -71,6 +73,7 @@ export {
     doc,
     onSnapshot,
     updateDoc,
+    setDoc, // ÚJ
     deleteDoc,
     query,
     orderBy,
@@ -79,6 +82,7 @@ export {
     getDocs,
     where,
     deleteField,
+    limit, // ÚJ
     sendSignInLinkToEmail,
     isSignInWithEmailLink,
     signInWithEmailLink,
