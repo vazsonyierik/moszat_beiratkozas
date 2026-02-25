@@ -125,7 +125,7 @@ const generateRegistrationNumber = async (isTest = false) => {
  */
 const logNewRegistrationToSheet = async (studentData) => {
     const SPREADSHEET_ID = process.env.REGISTRATION_SHEET_ID;
-    
+
     if (!SPREADSHEET_ID) {
         logger.error("SHEET ID environment variable not set. Skipping sheet log for new registration.");
         return;
@@ -233,7 +233,7 @@ const updateRegistrationSheet = async (studentData) => {
  */
 const logEnrollmentToSheet = async (studentData) => {
     const SPREADSHEET_ID = process.env.ENROLLMENT_SHEET_ID;
-    
+
     if (!SPREADSHEET_ID) {
         logger.error("SHEET ID environment variable not set. Skipping sheet log for enrollment.");
         return;
@@ -252,7 +252,7 @@ const logEnrollmentToSheet = async (studentData) => {
 const logToFarSheet = async (studentData) => {
     const SPREADSHEET_ID = process.env.FAR_SHEET_ID;
     const SHEET_NAME = 'Résztvevők';
-    
+
     if (!SPREADSHEET_ID) {
         logger.error("SHEET ID environment variable not set. Skipping FAR sheet log.");
         return;
@@ -260,7 +260,7 @@ const logToFarSheet = async (studentData) => {
     const viseltNev = formatFullName(studentData.current_prefix, studentData.current_firstName, studentData.current_lastName, studentData.current_secondName);
     const szuletesiNev = formatFullName(studentData.birth_prefix, studentData.birth_firstName, studentData.birth_lastName, studentData.birth_secondName);
     const anyjaNeve = formatFullName(studentData.mother_prefix, studentData.mother_firstName, studentData.mother_lastName, studentData.mother_secondName);
-    
+
     // REVERT: Eredeti oszlopstruktúra visszaállítása (nincs tanfolyam kezdés az első oszlopban)
     const rowData = [
         studentData.education || '', viseltNev, szuletesiNev, anyjaNeve,
@@ -285,6 +285,22 @@ const sendEmail = async (studentData, template, isTest = false) => {
     if (!template || !template.subject || !template.html) {
         logger.error("Email template is invalid.", {studentId: studentData.id});
         return;
+    }
+
+    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
+    if (isTest) {
+        try {
+            const configDoc = await db.collection('settings').doc('testConfig').get();
+            if (configDoc.exists) {
+                const config = configDoc.data();
+                if (config.emailsEnabled === false) {
+                    logger.info("Test emails are disabled in settings. Skipping email send.", { to: studentData.email });
+                    return;
+                }
+            }
+        } catch (error) {
+            logger.warn("Failed to check test email settings. Proceeding with send.", { error: error.message });
+        }
     }
 
     const subjectPrefix = isTest ? '[TESZT] ' : '';
@@ -387,7 +403,7 @@ const runDailyChecks = async () => {
 // ÚJ FUNKCIÓ: Biztonságos regisztrációkezelés
 exports.submitRegistration = onCall({ region: "europe-west1" }, async (request) => {
     const formData = request.data;
-    
+
     // ÚJ: Teszt mód detektálása a kérésből
     const isTest = formData._isTest === true;
     delete formData._isTest; // Nem mentjük el az adatbázisba
@@ -560,11 +576,11 @@ exports.onRegistrationTestCreated = onDocumentCreated(
             // isTest = true paraméter átadása a sendEmail-nek
             await sendEmail(emailData, templates.registrationConfirmation(emailData), true);
         }
-        
+
         if (studentData.sendInitialEmail !== undefined) {
             await studentRef.update({sendInitialEmail: FieldValue.delete()});
         }
-        
+
         // MÓDOSÍTÁS: A teszt adatbázis NEM ír a sheet-be
         logger.info(`TEST Registration created for ${studentRef.id}. No sheet output.`);
     }
@@ -637,7 +653,7 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
     async (event) => {
         const before = event.data.before.data();
         const after = event.data.after.data();
-        
+
         // Teszt mód (isTest = true) - CSAK E-mailek küldése, nincs sheet írás
 
         if (!before.status_enrolled && after.status_enrolled) {
@@ -655,7 +671,7 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
         if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
             await sendEmail(after, templates.medicalCertificateReceived(after), true);
         }
-        
+
         logger.info(`TEST Registration updated for ${after.registrationNumber}. Emails sent if triggered. Sheet update SKIPPED.`);
     }
 );

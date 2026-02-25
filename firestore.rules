@@ -31,7 +31,7 @@ service cloud.firestore {
       // Csak a már bejelentkezett adminok listázhatják az ÖSSZES admint, vagy írhatnak a gyűjteménybe.
       allow list, write: if isAdmin();
     }
-    
+
     // Szabályok a Trigger Email kiterjesztés levelezési sorához
     match /mail/{mailId} {
       // E-mailt csak authentikált folyamat (pl. Cloud Function) hozhat létre.
@@ -44,15 +44,15 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow write: if false; // Csak a backend írhat
     }
-    
+
     // Szabályok az admin műveleti naplókhoz
     match /admin_logs/{logId} {
       allow read, create: if isAdmin(); // Az adminok létrehozhatnak és olvashatnak naplókat
       allow update, delete: if false; // A naplók nem módosíthatók
     }
-    
-    // Szabályok az automatizálási beállításokhoz
-    match /settings/automation {
+
+    // Szabályok a beállításokhoz (automatizálás, teszt config, stb.)
+    match /settings/{settingId} {
         allow read, write: if isAdmin();
     }
 

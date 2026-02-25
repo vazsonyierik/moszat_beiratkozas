@@ -20,7 +20,7 @@ import RegistrationForm from './RegistrationForm.js';
 import AdminPanel from './AdminPanel.js';
 import { useToast } from './context/AppContext.js';
 
-const { useState, useEffect, useCallback } = window.React;
+const { useState, useEffect, useCallback, Fragment } = window.React;
 
 // LoginCard component for the admin login form
 const LoginCard = ({ children }) => html`
@@ -186,10 +186,12 @@ function App() {
     const wrapperClass = view === 'form' ? 'form-view-wrapper' : 'admin-view-wrapper';
 
     return html`
-        ${isTest && html`<${TestModeIndicator} />`}
-        <div className=${wrapperClass} style=${isTest ? { marginTop: '40px' } : {}}>
-            ${renderContent()}
-        </div>
+        <${Fragment}>
+            ${isTest && html`<${TestModeIndicator} />`}
+            <div className=${wrapperClass} style=${isTest ? { marginTop: '40px' } : {}}>
+                ${renderContent()}
+            </div>
+        <//>
     `;
 }
 
