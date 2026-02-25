@@ -287,6 +287,22 @@ const sendEmail = async (studentData, template, isTest = false) => {
         return;
     }
 
+    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
+    if (isTest) {
+        try {
+            const configDoc = await db.collection('settings').doc('testConfig').get();
+            if (configDoc.exists) {
+                const config = configDoc.data();
+                if (config.emailsEnabled === false) {
+                    logger.info("Test emails are disabled in settings. Skipping email send.", { to: studentData.email });
+                    return;
+                }
+            }
+        } catch (error) {
+            logger.warn("Failed to check test email settings. Proceeding with send.", { error: error.message });
+        }
+    }
+
     const subjectPrefix = isTest ? '[TESZT] ' : '';
 
     const mailPayload = {

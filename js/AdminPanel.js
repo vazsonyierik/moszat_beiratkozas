@@ -8,7 +8,7 @@
  */
 
 import { html, LoadingOverlay } from './UI.js'; // Import ConfirmationModal
-import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
+import { db, serverTimestamp, collection, doc, onSnapshot, updateDoc, setDoc, query, orderBy, deleteDoc, functions, httpsCallable } from './firebase.js';
 import { useToast, useConfirmation } from './context/AppContext.js';
 import * as utils from './utils.js';
 import * as Icons from './Icons.js';
@@ -476,6 +476,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
     const [isGenerating, setIsGenerating] = useState(false);
+    const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -507,6 +508,35 @@ const AdminPanel = ({ user, handleLogout }) => {
             document.removeEventListener('mousedown', handleClickOutside);
         };
     }, []);
+
+    // ÚJ: Teszt email beállítás figyelése
+    useEffect(() => {
+        if (!viewTestDataType) return;
+
+        const unsubscribe = onSnapshot(doc(db, 'settings', 'testConfig'), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                setTestEmailsEnabled(data.emailsEnabled !== false); // Default to true if undefined
+            } else {
+                setTestEmailsEnabled(true);
+            }
+        });
+
+        return () => unsubscribe();
+    }, [viewTestDataType]);
+
+    const handleToggleTestEmails = async () => {
+        const newValue = !testEmailsEnabled;
+        try {
+            const configRef = doc(db, 'settings', 'testConfig');
+            await setDoc(configRef, { emailsEnabled: newValue }, { merge: true });
+            setTestEmailsEnabled(newValue);
+            showToast(`Teszt e-mailek ${newValue ? 'bekapcsolva' : 'kikapcsolva'}.`, 'success');
+        } catch (error) {
+            console.error("Hiba a teszt email beállítás mentésekor:", error);
+            showToast("Hiba a beállítás mentésekor", "error");
+        }
+    };
 
     useEffect(() => {
         if (!user) {
@@ -874,6 +904,19 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                     : html`<${Fragment}><span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra</${Fragment}>`
                                                 }
                                             </button>
+
+                                            ${viewTestDataType && html`
+                                                <button
+                                                    onClick=${handleToggleTestEmails}
+                                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"
+                                                >
+                                                    <div className=${`w-8 h-4 rounded-full p-0.5 transition-colors ${testEmailsEnabled ? 'bg-green-500' : 'bg-gray-300'}`}>
+                                                        <div className=${`w-3 h-3 bg-white rounded-full shadow transform transition-transform ${testEmailsEnabled ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                                                    </div>
+                                                    <span>Teszt emailek ${testEmailsEnabled ? 'BE' : 'KI'}</span>
+                                                </button>
+                                            `}
+
                                             <button
                                                 onClick=${() => { setShowVersionHistory(true); setIsModeMenuOpen(false); }}
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"

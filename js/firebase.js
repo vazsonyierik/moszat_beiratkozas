@@ -14,6 +14,7 @@ import {
     doc, 
     onSnapshot, 
     updateDoc, 
+    setDoc, // ÚJ
     deleteDoc,
     query,
     orderBy,
@@ -71,6 +72,7 @@ export {
     doc,
     onSnapshot,
     updateDoc,
+    setDoc, // ÚJ
     deleteDoc,
     query,
     orderBy,
