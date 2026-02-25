@@ -255,7 +255,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const allowDelete = !reg.status_enrolled && !reg.courseCompletedAt;
 
                             return html`
-                            <${React.Fragment} key=${reg.id}>
+                            <${Fragment} key=${reg.id}>
                                 <tr className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
@@ -441,7 +441,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         </div>
                                     </td>
                                 </tr>
-                            </${React.Fragment}>
+                            </${Fragment}>
                         `})}
                     </tbody>
                 </table>
