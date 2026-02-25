@@ -1,5 +1,5 @@
 import { html } from '../../UI.js';
-import { db, collection, query, where, getDocs, updateDoc, doc } from '../../firebase.js';
+import { db, collection, query, where, getDocs, updateDoc, doc, addDoc, orderBy, limit, deleteDoc } from '../../firebase.js';
 import * as Icons from '../../Icons.js';
 
 const { useState, useRef, useEffect } = window.React;
@@ -12,7 +12,42 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
     const [error, setError] = useState(null);
     const [pendingOverrides, setPendingOverrides] = useState([]);
     const [activeTab, setActiveTab] = useState('errors');
+    const [importHistory, setImportHistory] = useState([]);
+    const [showHistory, setShowHistory] = useState(false);
     const fileInputRef = useRef(null);
+
+    const fetchHistory = async () => {
+        try {
+            const q = query(collection(db, 'import_logs'), orderBy('createdAt', 'desc'), limit(5));
+            const snapshot = await getDocs(q);
+            setImportHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        } catch (err) {
+            console.error("Nem sikerült betölteni az előzményeket:", err);
+        }
+    };
+
+    const saveImportLog = async (finalResults) => {
+        try {
+            const logEntry = {
+                createdAt: new Date().toISOString(),
+                isTest: isTestView,
+                ...finalResults
+            };
+
+            // 1. Save new log
+            await addDoc(collection(db, 'import_logs'), logEntry);
+
+            // 2. Cleanup: keep only latest 5
+            const q = query(collection(db, 'import_logs'), orderBy('createdAt', 'desc'));
+            const snapshot = await getDocs(q);
+            if (snapshot.size > 5) {
+                const toDelete = snapshot.docs.slice(5);
+                toDelete.forEach(doc => deleteDoc(doc.ref));
+            }
+        } catch (err) {
+            console.error("Hiba a log mentésekor:", err);
+        }
+    };
 
     const handleFileChange = (e) => {
         const selectedFile = e.target.files[0];
@@ -289,6 +324,12 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
                 setImportResults(results);
                 setPendingOverrides(overrides);
+
+                // Only save log if there are no pending overrides (or after overrides are resolved)
+                if (overrides.length === 0) {
+                     saveImportLog(results);
+                }
+
                 if (onImportComplete) onImportComplete();
 
             } catch (err) {
@@ -314,23 +355,85 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
             setPendingOverrides(newOverrides);
 
             // Update success count visually
-            setImportResults(prev => ({
-                ...prev,
-                success: [...prev.success, {
-                    studentId: overrideItem.row.studentId,
-                    subject: overrideItem.row.subject,
-                    date: overrideItem.row.examDateRaw instanceof Date ? overrideItem.row.examDateRaw.toLocaleDateString() : overrideItem.row.examDateRaw,
-                    result: overrideItem.row.result,
-                    location: overrideItem.row.location,
-                    note: "Kényszerített import"
-                }]
-            }));
+            setImportResults(prev => {
+                const updated = {
+                    ...prev,
+                    success: [...prev.success, {
+                        studentId: overrideItem.row.studentId,
+                        subject: overrideItem.row.subject,
+                        date: overrideItem.row.examDateRaw instanceof Date ? overrideItem.row.examDateRaw.toLocaleDateString() : overrideItem.row.examDateRaw,
+                        result: overrideItem.row.result,
+                        location: overrideItem.row.location,
+                        note: "Kényszerített import"
+                    }]
+                };
+
+                // If this was the last override, save the full log now
+                if (newOverrides.length === 0) {
+                    saveImportLog(updated);
+                }
+
+                return updated;
+            });
 
         } catch (err) {
             console.error("Force import failed:", err);
             setError("Hiba a kényszerített importálás során: " + err.message);
         }
     };
+
+    const handleShowHistory = () => {
+        if (!showHistory) {
+            fetchHistory();
+        }
+        setShowHistory(!showHistory);
+    };
+
+    const loadHistoryItem = (item) => {
+        setImportResults({
+            success: item.success,
+            updated: item.updated,
+            skipped: item.skipped,
+            errors: item.errors,
+            debugInfo: item.debugInfo
+        });
+        setPendingOverrides([]);
+        setShowHistory(false);
+    };
+
+    if (showHistory) {
+        return html`
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+                <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all flex flex-col max-h-[90vh]">
+                    <header className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                        <h3 className="text-xl font-bold text-gray-800">Importálási Előzmények (Utolsó 5)</h3>
+                        <button onClick=${() => setShowHistory(false)} className="text-gray-400 hover:text-gray-600"><${Icons.XIcon} size=${24} /></button>
+                    </header>
+                    <div className="p-4 overflow-y-auto">
+                        ${importHistory.length === 0 ? html`<p className="text-center text-gray-500">Nincsenek korábbi importálások.</p>` :
+                            html`<ul className="divide-y divide-gray-200">
+                                ${importHistory.map(log => html`
+                                    <li key=${log.id} className="py-4 hover:bg-gray-50 cursor-pointer rounded px-2 transition-colors" onClick=${() => loadHistoryItem(log)}>
+                                        <div className="flex justify-between items-center">
+                                            <div>
+                                                <p className="text-sm font-medium text-gray-900">${new Date(log.createdAt).toLocaleString('hu-HU')}</p>
+                                                <p className="text-xs text-gray-500">
+                                                    Sikeres: ${log.success?.length || 0},
+                                                    Frissítve: ${log.updated?.length || 0},
+                                                    Hiba: ${log.errors?.length || 0}
+                                                </p>
+                                            </div>
+                                            <${Icons.ChevronRightIcon} size=${20} className="text-gray-400" />
+                                        </div>
+                                    </li>
+                                `)}
+                            </ul>`
+                        }
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -340,9 +443,12 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         <${Icons.UploadCloudIcon} size=${24} className="text-indigo-600"/>
                         Vizsgaeredmények Importálása (KAV)
                     </h3>
-                    <button onClick=${onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
-                        <${Icons.XIcon} size=${24} />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick=${handleShowHistory} className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-md transition-colors mr-2">Előzmények</button>
+                        <button onClick=${onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                            <${Icons.XIcon} size=${24} />
+                        </button>
+                    </div>
                 </header>
 
                 <main className="p-6 overflow-y-auto flex-grow">

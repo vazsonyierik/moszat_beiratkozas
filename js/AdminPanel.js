@@ -721,6 +721,42 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
+    const handleClearAllTestExams = async () => {
+        if (!viewTestDataType) return;
+
+        const confirmText = "TÖRLÉS";
+        const userInput = window.prompt(`FIGYELEM! Ezzel kitörlöd az ÖSSZES vizsgaeredményt a TESZT adatbázisból.\n\nA megerősítéshez írd be: ${confirmText}`);
+
+        if (userInput !== confirmText) {
+            if (userInput !== null) showToast("A törlés megszakítva (helytelen megerősítés).", "info");
+            return;
+        }
+
+        setIsLoading(true);
+        try {
+            const q = query(collection(db, "registrations_test"));
+            const snapshot = await getDocs(q);
+
+            let updatedCount = 0;
+            const updatePromises = snapshot.docs.map(docSnapshot => {
+                if (docSnapshot.data().examResults && docSnapshot.data().examResults.length > 0) {
+                    updatedCount++;
+                    return updateDoc(docSnapshot.ref, { examResults: [] });
+                }
+                return Promise.resolve();
+            });
+
+            await Promise.all(updatePromises);
+
+            showToast(`Sikeresen törölve ${updatedCount} tanuló vizsgaeredménye!`, "success");
+        } catch (error) {
+            console.error("Hiba az összes vizsgaeredmény törlésekor:", error);
+            showToast("Hiba történt a törlés során.", "error");
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handleGenerateTestData = async () => {
         if (!viewTestDataType) return;
 
@@ -757,11 +793,25 @@ const AdminPanel = ({ user, handleLogout }) => {
     const filteredRegistrations = useMemo(() => {
         const iconChecks = iconFilterOptions.filter(opt => selectedIconFilters.includes(opt.key));
         return registrations.filter(reg => {
-            const term = searchTerm.toLowerCase();
+            const term = searchTerm.toLowerCase().trim();
             const fullName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName).toLowerCase();
             const motherFullName = utils.formatFullName(reg.mother_prefix, reg.mother_firstName, reg.mother_lastName, reg.mother_secondName).toLowerCase();
             const email = reg.email ? reg.email.toLowerCase() : '';
-            const matchesSearch = term === '' || fullName.includes(term) || motherFullName.includes(term) || email.includes(term);
+            const studentId = reg.studentId ? reg.studentId.toLowerCase() : '';
+
+            // Phone matching logic: strip non-digits from both stored phone and search term
+            const phoneNumberStored = reg.phone_number ? reg.phone_number.toString().replace(/[^0-9]/g, '') : '';
+            const termClean = term.replace(/[^0-9]/g, '');
+
+            const matchesPhone = termClean.length > 3 && phoneNumberStored.includes(termClean);
+
+            const matchesSearch = term === '' ||
+                fullName.includes(term) ||
+                motherFullName.includes(term) ||
+                email.includes(term) ||
+                studentId.includes(term) ||
+                matchesPhone;
+
             if (!matchesSearch) return false;
 
             const regDate = reg.createdAt?.seconds ? new Date(reg.createdAt.seconds * 1000) : null;
@@ -924,6 +974,16 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                                                 Verziókövetés
                                             </button>
+
+                                            ${viewTestDataType && html`
+                                                <button
+                                                    onClick=${() => { handleClearAllTestExams(); setIsModeMenuOpen(false); }}
+                                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 border-t border-gray-100 font-bold"
+                                                >
+                                                    <${Icons.TrashIcon} size=${16} />
+                                                    Összes vizsga törlése
+                                                </button>
+                                            `}
                                         </div>
                                     </div>
                                 `}
@@ -940,7 +1000,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     <div className=${`transition-all duration-500 ease-in-out overflow-hidden ${isFilterVisible ? 'max-h-96' : 'max-h-0'}`}>
                         <div className="p-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                             <div className="md:col-span-1">
-                                <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Név, Email, Anyja neve)</label>
+                                <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Név, Email, Anyja, Azonosító, Tel.)</label>
                                 <input type="text" id="search" value=${searchTerm} onChange=${e => setSearchTerm(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Keresési kifejezés..." />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
