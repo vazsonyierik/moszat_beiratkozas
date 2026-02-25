@@ -870,8 +870,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                                             >
                                                 ${viewTestDataType
-                                                    ? html`<span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra`
-                                                    : html`<span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra`
+                                                    ? html`<${Fragment}><span className="w-3 h-3 rounded-full bg-green-500"></span> Váltás ÉLES módra</${Fragment}>`
+                                                    : html`<${Fragment}><span className="w-3 h-3 rounded-full bg-red-500"></span> Váltás TESZT módra</${Fragment}>`
                                                 }
                                             </button>
                                             <button
