@@ -10,6 +10,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
     const [isProcessing, setIsProcessing] = useState(false);
     const [importResults, setImportResults] = useState(null);
     const [error, setError] = useState(null);
+    const [pendingOverrides, setPendingOverrides] = useState([]);
     const fileInputRef = useRef(null);
 
     const handleFileChange = (e) => {
@@ -17,6 +18,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         if (selectedFile) {
             setFile(selectedFile);
             setError(null);
+            setImportResults(null);
+            setPendingOverrides([]);
         }
     };
 
@@ -59,6 +62,66 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         return null;
     };
 
+    const importRow = async (row, docRef, studentData, results, isForce = false) => {
+        // FIX: Round time to nearest minute to handle floating point errors
+        let formattedExamDate = "";
+        if (row.examDateRaw instanceof Date) {
+            // Round to nearest minute: add 30 seconds, then floor to minute
+            const roundedTime = new Date(Math.round(row.examDateRaw.getTime() / 60000) * 60000);
+
+            const y = roundedTime.getFullYear();
+            const m = String(roundedTime.getMonth() + 1).padStart(2, '0');
+            const d = String(roundedTime.getDate()).padStart(2, '0');
+            const hours = String(roundedTime.getHours()).padStart(2, '0');
+            const mins = String(roundedTime.getMinutes()).padStart(2, '0');
+            formattedExamDate = `${y}.${m}.${d}. ${hours}:${mins}`;
+        } else {
+            formattedExamDate = row.examDateRaw.toString();
+        }
+
+        const existingResults = studentData.examResults || [];
+
+        // Logic: Find existing exam by Subject + Date
+        const existingIndex = existingResults.findIndex(ex =>
+            ex.subject === row.subject && ex.date === formattedExamDate
+        );
+
+        if (existingIndex !== -1) {
+            // Found match. Check if we should update.
+            const existingExam = existingResults[existingIndex];
+
+            const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
+            const isNewConcrete = row.result && row.result !== "Kiírva";
+
+            if (isExistingPlaceholder && isNewConcrete) {
+                // Update logic
+                const updatedExam = { ...existingExam, result: row.result, importedAt: new Date().toISOString() };
+                const newResults = [...existingResults];
+                newResults[existingIndex] = updatedExam;
+
+                await updateDoc(docRef, { examResults: newResults });
+                if (results) results.updated++;
+            } else {
+                // Duplicate or no update needed
+                if (results) results.skipped++;
+            }
+        } else {
+            // New exam entry
+            const examResult = {
+                subject: row.subject,
+                date: formattedExamDate,
+                result: row.result,
+                location: row.location,
+                importedAt: new Date().toISOString()
+            };
+
+            await updateDoc(docRef, {
+                examResults: [...existingResults, examResult]
+            });
+            if (results) results.success++;
+        }
+    };
+
     const processExcel = async () => {
         if (!file) {
             setError("Kérlek válassz ki egy fájlt!");
@@ -68,6 +131,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         setIsProcessing(true);
         setImportResults(null);
         setError(null);
+        setPendingOverrides([]);
 
         const reader = new FileReader();
         reader.onload = async (e) => {
@@ -91,10 +155,12 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
                 const results = {
                     success: 0,
-                    updated: 0, // Track updates separately from creates
+                    updated: 0,
                     errors: [],
                     skipped: 0
                 };
+
+                const overrides = [];
 
                 const collectionName = isTestView ? 'registrations_test' : 'registrations';
 
@@ -114,8 +180,6 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     }
 
                     if (headerRowIndex === -1) {
-                        // Skip sheet if no valid header found, but log warning if it was a target sheet?
-                        // For now, continue to next sheet.
                         continue;
                     }
 
@@ -128,7 +192,6 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     const locationIdx = headers.indexOf('Vizsgahely');
 
                     if (studentIdIdx === -1 || birthDateIdx === -1 || subjectIdx === -1 || examDateIdx === -1) {
-                         // Critical columns missing for this sheet
                          continue;
                     }
 
@@ -157,22 +220,6 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         // Normalize dates
                         const excelBirthDate = normalizeDate(birthDateRaw);
 
-                        // FIX: Round time to nearest minute to handle floating point errors
-                        let formattedExamDate = "";
-                        if (examDateRaw instanceof Date) {
-                            // Round to nearest minute: add 30 seconds, then floor to minute
-                            const roundedTime = new Date(Math.round(examDateRaw.getTime() / 60000) * 60000);
-
-                            const y = roundedTime.getFullYear();
-                            const m = String(roundedTime.getMonth() + 1).padStart(2, '0');
-                            const d = String(roundedTime.getDate()).padStart(2, '0');
-                            const hours = String(roundedTime.getHours()).padStart(2, '0');
-                            const mins = String(roundedTime.getMinutes()).padStart(2, '0');
-                            formattedExamDate = `${y}.${m}.${d}. ${hours}:${mins}`;
-                        } else {
-                            formattedExamDate = examDateRaw.toString();
-                        }
-
                         // Query Firestore for student
                         const q = query(collection(db, collectionName), where("studentId", "==", studentId));
                         const querySnapshot = await getDocs(q);
@@ -188,70 +235,28 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         // Verify Birth Date
                         const dbBirthDate = normalizeDate(studentData.birthDate);
 
-                        if (!excelBirthDate) {
-                             results.errors.push({
-                                id: studentId,
-                                msg: `Érvénytelen születési dátum formátum az Excelben: ${birthDateRaw}`
+                        // Error handling: if mismatched, add to overrides queue instead of failing immediately
+                        if (!excelBirthDate || dbBirthDate !== excelBirthDate) {
+                            overrides.push({
+                                row: { studentId, subject, examDateRaw, result, location },
+                                errorMsg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate || birthDateRaw})`,
+                                docRef,
+                                studentData
                             });
                             continue;
                         }
 
-                        if (dbBirthDate !== excelBirthDate) {
-                            results.errors.push({
-                                id: studentId,
-                                msg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate}).`
-                            });
-                            continue;
-                        }
-
-                        const existingResults = studentData.examResults || [];
-
-                        // Logic: Find existing exam by Subject + Date
-                        const existingIndex = existingResults.findIndex(ex =>
-                            ex.subject === subject && ex.date === formattedExamDate
+                        await importRow(
+                            { studentId, subject, examDateRaw, result, location },
+                            docRef,
+                            studentData,
+                            results
                         );
-
-                        if (existingIndex !== -1) {
-                            // Found match. Check if we should update.
-                            const existingExam = existingResults[existingIndex];
-
-                            // If existing result is 'Kiírva' (or empty) AND we have a concrete result (anything other than 'Kiírva' or empty), UPDATE.
-                            // OR if we are just re-importing the same 'Kiírva' reservation, we might skip.
-
-                            const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-                            const isNewConcrete = result && result !== "Kiírva";
-
-                            if (isExistingPlaceholder && isNewConcrete) {
-                                // Update logic
-                                const updatedExam = { ...existingExam, result: result, importedAt: new Date().toISOString() };
-                                const newResults = [...existingResults];
-                                newResults[existingIndex] = updatedExam;
-
-                                await updateDoc(docRef, { examResults: newResults });
-                                results.updated++;
-                            } else {
-                                // Duplicate or no update needed
-                                results.skipped++;
-                            }
-                        } else {
-                            // New exam entry
-                            const examResult = {
-                                subject: subject,
-                                date: formattedExamDate,
-                                result: result,
-                                location: location,
-                                importedAt: new Date().toISOString()
-                            };
-
-                            await updateDoc(docRef, {
-                                examResults: [...existingResults, examResult]
-                            });
-                            results.success++;
-                        }
                     }
                 }
 
                 setImportResults(results);
+                setPendingOverrides(overrides);
                 if (onImportComplete) onImportComplete();
 
             } catch (err) {
@@ -265,9 +270,32 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         reader.readAsArrayBuffer(file);
     };
 
+    const handleForceImport = async (overrideItem, index) => {
+        if (!window.confirm("Biztosan importálod ezt a tételt a hiba ellenére?")) return;
+
+        try {
+            await importRow(overrideItem.row, overrideItem.docRef, overrideItem.studentData, null, true);
+
+            // Remove from list
+            const newOverrides = [...pendingOverrides];
+            newOverrides.splice(index, 1);
+            setPendingOverrides(newOverrides);
+
+            // Update success count visually
+            setImportResults(prev => ({
+                ...prev,
+                success: prev.success + 1
+            }));
+
+        } catch (err) {
+            console.error("Force import failed:", err);
+            setError("Hiba a kényszerített importálás során: " + err.message);
+        }
+    };
+
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all flex flex-col max-h-[90vh]">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl transform transition-all flex flex-col max-h-[90vh]">
                 <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
                     <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <${Icons.UploadCloudIcon} size=${24} className="text-indigo-600"/>
@@ -333,16 +361,52 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                     <div className="text-xs text-yellow-800 uppercase font-semibold tracking-wide">Kihagyva</div>
                                 </div>
                                 <div className="bg-red-100 p-4 rounded-lg border border-red-200">
-                                    <div className="text-2xl font-bold text-red-700">${importResults.errors.length}</div>
-                                    <div className="text-xs text-red-800 uppercase font-semibold tracking-wide">Hiba</div>
+                                    <div className="text-2xl font-bold text-red-700">${importResults.errors.length + pendingOverrides.length}</div>
+                                    <div className="text-xs text-red-800 uppercase font-semibold tracking-wide">Hiba/Eltérés</div>
                                 </div>
                             </div>
+
+                            ${pendingOverrides.length > 0 && html`
+                                <div>
+                                    <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                        <${Icons.AlertTriangleIcon} size=${18} className="text-orange-500"/>
+                                        Eltérések (Kényszeríthető)
+                                    </h4>
+                                    <div className="bg-orange-50 border border-orange-200 rounded-lg overflow-hidden max-h-60 overflow-y-auto">
+                                        <table className="min-w-full divide-y divide-orange-200 text-sm">
+                                            <thead className="bg-orange-100">
+                                                <tr>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Azonosító</th>
+                                                    <th className="px-4 py-2 text-left font-medium text-gray-600">Probléma</th>
+                                                    <th className="px-4 py-2 text-right font-medium text-gray-600">Művelet</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-orange-200 bg-white">
+                                                ${pendingOverrides.map((item, idx) => html`
+                                                    <tr key=${idx}>
+                                                        <td className="px-4 py-3 font-mono text-xs text-gray-700 align-top">${item.row.studentId}</td>
+                                                        <td className="px-4 py-3 text-orange-800 align-top">${item.errorMsg}</td>
+                                                        <td className="px-4 py-3 text-right align-top">
+                                                            <button
+                                                                onClick=${() => handleForceImport(item, idx)}
+                                                                className="bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded hover:bg-orange-700 transition-colors shadow-sm"
+                                                            >
+                                                                Importálás
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                `)}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            `}
 
                             ${importResults.errors.length > 0 && html`
                                 <div>
                                     <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
-                                        <${Icons.AlertTriangleIcon} size=${18} className="text-orange-500"/>
-                                        Hibalista
+                                        <${Icons.XCircleIcon} size=${18} className="text-red-500"/>
+                                        Kritikus Hibák
                                     </h4>
                                     <div className="bg-gray-50 border rounded-lg overflow-hidden max-h-60 overflow-y-auto">
                                         <table className="min-w-full divide-y divide-gray-200 text-sm">
