@@ -2,7 +2,7 @@ import { html } from '../../UI.js';
 import { db, collection, query, where, getDocs, updateDoc, doc, addDoc, orderBy, limit, deleteDoc } from '../../firebase.js';
 import * as Icons from '../../Icons.js';
 
-const { useState, useRef, useEffect } = window.React;
+const { useState, useRef, useEffect, Fragment } = window.React;
 const XLSX = window.XLSX;
 
 const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
@@ -414,16 +414,16 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                             html`<ul className="divide-y divide-gray-200">
                                 ${importHistory.map(log => html`
                                     <li key=${log.id} className="py-4 hover:bg-gray-50 cursor-pointer rounded px-2 transition-colors" onClick=${() => loadHistoryItem(log)}>
-                                        <div className="flex justify-between items-center">
-                                            <div>
-                                                <p className="text-sm font-medium text-gray-900">${new Date(log.createdAt).toLocaleString('hu-HU')}</p>
-                                                <p className="text-xs text-gray-500">
+                                        <div key=${'content-' + log.id} className="flex justify-between items-center">
+                                            <div key=${'text-' + log.id}>
+                                                <p key=${'date-' + log.id} className="text-sm font-medium text-gray-900">${new Date(log.createdAt).toLocaleString('hu-HU')}</p>
+                                                <p key=${'stats-' + log.id} className="text-xs text-gray-500">
                                                     Sikeres: ${log.success?.length || 0},
                                                     Frissítve: ${log.updated?.length || 0},
                                                     Hiba: ${log.errors?.length || 0}
                                                 </p>
                                             </div>
-                                            <${Icons.ChevronRightIcon} size=${20} className="text-gray-400" />
+                                            <${Icons.ChevronRightIcon} key=${'icon-' + log.id} size=${20} className="text-gray-400" />
                                         </div>
                                     </li>
                                 `)}
@@ -625,14 +625,16 @@ Indices: ${JSON.stringify(importResults.debugInfo.indices, null, 2)}
 
                 <footer className="p-4 sm:p-6 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
                     ${!importResults ? html`
-                        <button onClick=${onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Mégse</button>
-                        <button
-                            onClick=${processExcel}
-                            disabled=${!file || isProcessing}
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-all flex items-center gap-2"
-                        >
-                            ${isProcessing ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Feldolgozás...` : 'Importálás indítása'}
-                        </button>
+                        <${Fragment}>
+                            <button onClick=${onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Mégse</button>
+                            <button
+                                onClick=${processExcel}
+                                disabled=${!file || isProcessing}
+                                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-all flex items-center gap-2"
+                            >
+                                ${isProcessing ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Feldolgozás...` : 'Importálás indítása'}
+                            </button>
+                        </${Fragment}>
                     ` : html`
                         <button onClick=${onClose} className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium shadow-sm transition-all">Bezárás</button>
                     `}

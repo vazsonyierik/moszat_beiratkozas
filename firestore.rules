@@ -51,6 +51,13 @@ service cloud.firestore {
       allow update, delete: if false; // A naplók nem módosíthatók
     }
 
+    // Szabályok az importálási naplókhoz (ÚJ)
+    match /import_logs/{logId} {
+        allow read, create: if isAdmin();
+        allow delete: if isAdmin(); // Törlés engedélyezése a tisztításhoz (limit 5)
+        allow update: if false;
+    }
+
     // Szabályok a beállításokhoz (automatizálás, teszt config, stb.)
     match /settings/{settingId} {
         allow read, write: if isAdmin();
