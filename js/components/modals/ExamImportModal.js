@@ -2,7 +2,7 @@ import { html } from '../../UI.js';
 import { db, collection, query, where, getDocs, updateDoc, doc, addDoc, orderBy, limit, deleteDoc } from '../../firebase.js';
 import * as Icons from '../../Icons.js';
 
-const { useState, useRef, useEffect } = window.React;
+const { useState, useRef, useEffect, Fragment } = window.React;
 const XLSX = window.XLSX;
 
 const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
@@ -446,7 +446,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
     };
 
     if (showHistory) {
-         // ... (History UI - unchanged)
+         // Fix: Ensure Icons are used correctly and destructured Fragment is used for list
          return html`
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all flex flex-col max-h-[90vh]">

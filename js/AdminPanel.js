@@ -846,8 +846,8 @@ const AdminPanel = ({ user, handleLogout }) => {
 
             if (!matchesSearch) return false;
 
-            // Archiváltak szűrése keresésnél: ha nincs bekapcsolva a "Keresés archívumban", akkor az archiváltakat ne mutassa
-            if (!searchInArchive && reg.status === 'archived') {
+            // Archiváltak szűrése keresésnél: ha nincs bekapcsolva a "Keresés archívumban" ÉS nem az archív fülön vagyunk, akkor az archiváltakat ne mutassa
+            if (!searchInArchive && reg.status === 'archived' && activeTab !== 'archived') {
                 return false;
             }
 
@@ -872,7 +872,7 @@ const AdminPanel = ({ user, handleLogout }) => {
 
             return matchesExamFilter && iconChecks.every(check => check.check(reg));
         });
-    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter, searchInArchive]);
+    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter, searchInArchive, activeTab]);
 
     const { 
         enrolledRegistrations, 
@@ -1220,6 +1220,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 onEditDetails=${setEditingStudent} 
                                 onDelete=${handleDeleteRequest} 
                                 onRestore=${handleRestoreRequest}
+                                onArchive=${handleArchiveRequest}
+                                allowArchive=${true}
                                 onCommentSave=${handleCommentSave}
                                 allowRestore=${true}
                                 allowIdEditing=${false} 
