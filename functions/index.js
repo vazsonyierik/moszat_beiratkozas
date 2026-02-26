@@ -365,22 +365,39 @@ const processIncomingEmails = async (isTest = false) => {
         const since = new Date();
         since.setTime(Date.now() - delay);
 
+        // MÓDOSÍTÁS: Egyszerűsített keresés az ékezetek miatt.
+        // Csak olvasatlan és dátum alapján szűrünk, a tárgyat JS-ben ellenőrizzük.
         const searchCriteria = [
             'UNSEEN',
-            ['HEADER', 'SUBJECT', 'Adatközlés'],
-            ['SINCE', since.toISOString()]
+            ['SINCE', since] // Date objektumot adunk át, nem stringet
         ];
 
         const fetchOptions = {
             bodies: ['HEADER', 'TEXT', ''],
-            markSeen: true // Megjelöljük olvasottként feldolgozás után
+            markSeen: false // Kézzel jelöljük olvasottnak, ha feldolgoztuk vagy ha releváns
         };
 
         const messages = await connection.search(searchCriteria, fetchOptions);
-        logger.info(`Found ${messages.length} matching emails.`);
+        logger.info(`Found ${messages.length} UNSEEN emails since ${since}. filtering for subject...`);
 
         for (const message of messages) {
             try {
+                // Tárgy ellenőrzése
+                const headerPart = message.parts.find(p => p.which === 'HEADER');
+                const subjectObj = headerPart && headerPart.body && headerPart.body.subject;
+                const subject = Array.isArray(subjectObj) ? subjectObj[0] : subjectObj;
+
+                if (!subject || !subject.includes("Adatközlés")) {
+                    // Ha nem releváns a tárgy, nem nyúlunk hozzá (marad olvasatlan)
+                    // Vagy ha azt akarjuk, hogy ne zavarjon többé, megjelölhetjük olvasottnak:
+                    // await connection.addFlags(message.attributes.uid, '\\Seen');
+                    continue;
+                }
+
+                // Ha idáig eljutottunk, akkor ez egy "Adatközlés" email.
+                // Megjelöljük olvasottnak, mert megpróbáljuk feldolgozni.
+                await connection.addFlags(message.attributes.uid, '\\Seen');
+
                 const parts = imaps.getParts(message.attributes.struct);
                 const attachments = parts.filter(part =>
                     part.disposition &&
