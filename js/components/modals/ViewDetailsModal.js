@@ -242,26 +242,37 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         };
         const mainParts = [];
         if (get('country')) mainParts.push(get('country'));
-        const cityPart = [get('zip'), get('city')].filter(Boolean).join(' ');
-        if (cityPart) mainParts.push(cityPart);
-        let streetDetails = '';
-        const streetNameAndType = [get('street'), get('streetType')].filter(Boolean).join(' ');
-        if (streetNameAndType) {
-            let fullStreetPart = streetNameAndType;
-            const houseNumber = formatWithPeriod(get('houseNumber'));
-            if (houseNumber) fullStreetPart += ` ${houseNumber}`;
-            streetDetails += fullStreetPart;
-        }
-        const building = formatWithPeriod(get('building'));
-        if (building) streetDetails += (streetDetails ? ', ' : '') + `ép. ${building}`;
-        const staircase = formatWithPeriod(get('staircase'));
-        if (staircase) streetDetails += (streetDetails ? ', ' : '') + `lph. ${staircase}`;
-        const floor = formatWithPeriod(get('floor'));
-        if (floor) streetDetails += (streetDetails ? ', ' : '') + `${floor} em.`;
-        const door = formatWithPeriod(get('door'));
-        if (door) streetDetails += (streetDetails ? ', ' : '') + `${door} ajtó`;
 
-        if (streetDetails) mainParts.push(streetDetails);
+        const cityPart = [get('zip'), get('city')].filter(Boolean).join(' ').trim();
+        if (cityPart) mainParts.push(cityPart);
+
+        const streetParts = [];
+        const streetNameAndType = [get('street'), get('streetType')].filter(Boolean).join(' ').trim();
+
+        if (streetNameAndType) {
+            let s = streetNameAndType;
+            const houseNumber = formatWithPeriod(get('houseNumber'));
+            if (houseNumber) s += ` ${houseNumber}`;
+            streetParts.push(s);
+        } else {
+             const houseNumber = formatWithPeriod(get('houseNumber'));
+             if (houseNumber) streetParts.push(houseNumber);
+        }
+
+        const building = formatWithPeriod(get('building'));
+        if (building) streetParts.push(`${building} ép.`);
+
+        const staircase = formatWithPeriod(get('staircase'));
+        if (staircase) streetParts.push(`${staircase} lph.`);
+
+        const floor = formatWithPeriod(get('floor'));
+        if (floor) streetParts.push(`${floor} em.`);
+
+        const door = formatWithPeriod(get('door'));
+        if (door) streetParts.push(`${door} ajtó`);
+
+        if (streetParts.length > 0) mainParts.push(streetParts.join(' '));
+
         return mainParts.length > 0 ? mainParts.join(', ') : 'N/A';
     };
 
