@@ -376,23 +376,30 @@ const processIncomingEmails = async (isTest = false) => {
         };
 
         const messages = await connection.search(searchCriteria, fetchOptions);
-        logger.info(`Found ${messages.length} total emails since ${since}. Filtering for subject 'Adatközlés'...`);
+        logger.info(`Found ${messages.length} total emails since ${since}. Filtering for sender 'noreply@kavk.hu'...`);
 
         for (const message of messages) {
             try {
-                // Tárgy ellenőrzése
+                // Fejléc ellenőrzése
                 const headerPart = message.parts.find(p => p.which === 'HEADER');
-                const subjectObj = headerPart && headerPart.body && headerPart.body.subject;
-                const subject = Array.isArray(subjectObj) ? subjectObj[0] : subjectObj;
 
-                if (!subject || !subject.includes("Adatközlés")) {
+                // Küldő ellenőrzése
+                const fromObj = headerPart && headerPart.body && headerPart.body.from;
+                const from = Array.isArray(fromObj) ? fromObj[0] : fromObj;
+
+                // Tárgy (csak logoláshoz és visszajelzéshez kell most már)
+                const subjectObj = headerPart && headerPart.body && headerPart.body.subject;
+                const subject = Array.isArray(subjectObj) ? subjectObj[0] : subjectObj || "Tárgy nélkül";
+
+                // MÓDOSÍTÁS: Szűrés a feladó alapján (Tárgy helyett)
+                if (!from || !from.includes("noreply@kavk.hu")) {
                     continue;
                 }
 
                 // Ellenőrizzük, hogy olvasott-e
                 const isSeen = message.attributes.flags && message.attributes.flags.includes('\\Seen');
                 if (isSeen) {
-                    logger.info(`Skipping email '${subject}' because it is marked as READ (SEEN). Mark as UNREAD to process.`);
+                    logger.info(`Skipping email '${subject}' (from ${from}) because it is marked as READ (SEEN). Mark as UNREAD to process.`);
                     processedResults.skipped.push({
                         subject: subject,
                         reason: "Az email már OLVASOTT (SEEN). Jelöld olvasatlannak a feldolgozáshoz!"
@@ -400,7 +407,7 @@ const processIncomingEmails = async (isTest = false) => {
                     continue;
                 }
 
-                // Ha idáig eljutottunk, akkor ez egy releváns, OLVASATLAN email.
+                // Ha idáig eljutottunk, akkor ez egy releváns, OLVASATLAN email a KAV-tól.
                 // Megjelöljük olvasottnak, mert megpróbáljuk feldolgozni.
                 await connection.addFlags(message.attributes.uid, '\\Seen');
 
