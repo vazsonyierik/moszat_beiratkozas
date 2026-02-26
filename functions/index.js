@@ -396,20 +396,14 @@ const processIncomingEmails = async (isTest = false) => {
                     continue;
                 }
 
-                // Ellenőrizzük, hogy olvasott-e
+                // Ellenőrizzük, hogy olvasott-e (De most már nem hagyjuk ki!)
                 const isSeen = message.attributes.flags && message.attributes.flags.includes('\\Seen');
-                if (isSeen) {
-                    logger.info(`Skipping email '${subject}' (from ${from}) because it is marked as READ (SEEN). Mark as UNREAD to process.`);
-                    processedResults.skipped.push({
-                        subject: subject,
-                        reason: "Az email már OLVASOTT (SEEN). Jelöld olvasatlannak a feldolgozáshoz!"
-                    });
-                    continue;
-                }
 
-                // Ha idáig eljutottunk, akkor ez egy releváns, OLVASATLAN email a KAV-tól.
-                // Megjelöljük olvasottnak, mert megpróbáljuk feldolgozni.
-                await connection.addFlags(message.attributes.uid, '\\Seen');
+                // Ha idáig eljutottunk, akkor ez egy releváns email a KAV-tól (akár olvasott, akár nem).
+                // Megjelöljük olvasottnak, ha eddig nem volt az.
+                if (!isSeen) {
+                     await connection.addFlags(message.attributes.uid, '\\Seen');
+                }
 
                 const parts = imaps.getParts(message.attributes.struct);
                 const attachments = parts.filter(part =>
