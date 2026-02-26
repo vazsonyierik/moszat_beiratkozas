@@ -488,6 +488,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
     const [isGenerating, setIsGenerating] = useState(false);
     const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
+    const [isProcessingEmails, setIsProcessingEmails] = useState(false); // ÚJ: Email feldolgozás állapota
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -804,6 +805,56 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     };
 
+    const handleProcessEmails = async () => {
+        if (isProcessingEmails) return;
+
+        const modeText = viewTestDataType ? "TESZT" : "ÉLES";
+        
+        showConfirmation({
+            message: `Biztosan elindítod az email alapú adatok feldolgozását (${modeText} módban)?<br><br>Ez a folyamat letölti a 'jogsiszoftiroda@gmail.com' fiókból az elmúlt 7 nap 'Adatközlés' tárgyú leveleit, és frissíti a tanulók 'Ügy iktatva' státuszát, ha az Excel csatolmányban megtalálhatóak.`,
+            onConfirm: async () => {
+                setIsProcessingEmails(true);
+                showToast("Email feldolgozás indítása... Ez eltarthat egy percig.", "info");
+
+                try {
+                    const processEmails = httpsCallable(functions, 'processIncomingEmailsManual');
+                    const response = await processEmails({ isTest: viewTestDataType });
+                    const results = response.data.results;
+
+                    if (results) {
+                         let message = `Feldolgozás kész! ${results.processedCount} levélben talált adatot.`;
+                         if (results.updatedStudents.length > 0) {
+                             message += ` ${results.updatedStudents.length} tanuló státusza frissült.`;
+                         } else {
+                             message += ` Nem volt frissítendő tanuló.`;
+                         }
+                         
+                         if (results.skipped.length > 0) {
+                             console.warn("Skipped emails:", results.skipped);
+                             message += ` (Kihagyva: ${results.skipped.length})`;
+                         }
+                         
+                         showToast(message, "success");
+                    } else {
+                        showToast("A feldolgozás lefutott, de nem érkezett részletes válasz.", "warning");
+                    }
+
+                } catch (error) {
+                    console.error("Hiba az email feldolgozás során:", error);
+                    let errorMsg = "Hiba történt a feldolgozás során.";
+                    if (error.message.includes("GMAIL_APP_PASSWORD")) {
+                        errorMsg = "A szerver nincs konfigurálva (hiányzó jelszó).";
+                    } else if (error.message.includes("IMAP")) {
+                        errorMsg = "Nem sikerült kapcsolódni a Gmail fiókhoz.";
+                    }
+                    showToast(errorMsg, "error");
+                } finally {
+                    setIsProcessingEmails(false);
+                }
+            }
+        });
+    };
+
     const handleModeSwitch = () => {
         const targetMode = !viewTestDataType;
         const modeName = targetMode ? 'TESZT' : 'ÉLES';
@@ -886,7 +937,7 @@ const AdminPanel = ({ user, handleLogout }) => {
         
         const archivedStudents = source.filter(reg => reg.status === 'archived');
         const expiredStudents = source.filter(reg => reg.status && reg.status.startsWith('expired'));
-        
+
         // Exclude archived and expired from active sets
         const excludedIds = new Set([...archivedStudents, ...expiredStudents].map(s => s.id));
         const activeStudents = source.filter(reg => !excludedIds.has(reg.id));
@@ -923,10 +974,10 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [allExpiredRegistrations, expiredFilter]);
 
     const isSearchActive = useMemo(() => {
-        return searchTerm.trim() !== '' || 
-               selectedIconFilters.length > 0 || 
-               examResultFilter !== 'all' || 
-               startDate !== '' || 
+        return searchTerm.trim() !== '' ||
+               selectedIconFilters.length > 0 ||
+               examResultFilter !== 'all' ||
+               startDate !== '' ||
                endDate !== '';
    }, [searchTerm, selectedIconFilters, examResultFilter, startDate, endDate]);
 
@@ -987,6 +1038,15 @@ const AdminPanel = ({ user, handleLogout }) => {
                         `}
 
                         <div className="flex items-center gap-2">
+                            <button 
+                                onClick=${handleProcessEmails} 
+                                disabled=${isProcessingEmails}
+                                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-wait"
+                                title="Email alapú adatközlés feldolgozása"
+                            >
+                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
+                                Email Feldolgozás
+                            </button>
                             <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
                                 <${Icons.UploadCloudIcon} size=${20} />
                                 Importálás (KAV)
@@ -1062,11 +1122,11 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <div className="md:col-span-1">
                                 <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Enterrel)</label>
                                 <div className="relative rounded-md shadow-sm mt-1">
-                                    <input 
-                                        type="text" 
-                                        id="search" 
-                                        className="block w-full rounded-md border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" 
-                                        placeholder="Keresés..." 
+                                    <input
+                                        type="text"
+                                        id="search"
+                                        className="block w-full rounded-md border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        placeholder="Keresés..."
                                         onKeyDown=${(e) => { if (e.key === 'Enter') setSearchTerm(e.target.value); }}
                                     />
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
@@ -1146,15 +1206,15 @@ const AdminPanel = ({ user, handleLogout }) => {
                             Szűrők törlése
                         </button>
                     </div>
-                    <${StudentTable} 
-                        adminUser=${user} 
+                    <${StudentTable}
+                        adminUser=${user}
                         key="search_results"
-                        title="Találati lista" 
-                        students=${filteredRegistrations} 
-                        onStatusChange=${handleStatusChangeRequest} 
-                        onShowDetails=${setViewingStudent} 
-                        onEditDetails=${setEditingStudent} 
-                        onDelete=${handleDeleteRequest} 
+                        title="Találati lista"
+                        students=${filteredRegistrations}
+                        onStatusChange=${handleStatusChangeRequest}
+                        onShowDetails=${setViewingStudent}
+                        onEditDetails=${setEditingStudent}
+                        onDelete=${handleDeleteRequest}
                         onRestore=${handleRestoreRequest}
                         onIdSave=${handleIdSave}
                         onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation}
@@ -1232,15 +1292,15 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                     ${activeTab === 'archived' && html`
                         <div key="archived-tab">
-                            <${StudentTable} 
+                            <${StudentTable}
                                 adminUser=${user}
-                                key="archived_students" 
-                                title="Archivált tanulók" 
-                                students=${archivedRegistrations} 
-                                onStatusChange=${handleStatusChangeRequest} 
-                                onShowDetails=${setViewingStudent} 
-                                onEditDetails=${setEditingStudent} 
-                                onDelete=${handleDeleteRequest} 
+                                key="archived_students"
+                                title="Archivált tanulók"
+                                students=${archivedRegistrations}
+                                onStatusChange=${handleStatusChangeRequest}
+                                onShowDetails=${setViewingStudent}
+                                onEditDetails=${setEditingStudent}
+                                onDelete=${handleDeleteRequest}
                                 onRestore=${handleRestoreRequest}
                                 onCommentSave=${handleCommentSave}
                                 allowRestore=${true}
