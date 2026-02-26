@@ -739,12 +739,12 @@ const AdminPanel = ({ user, handleLogout }) => {
 
     const handleRunChecks = useCallback(async () => {
         setIsRunningChecks(true);
-        showToast('Az ellenőrzés elindult a háttérben...', 'info');
+        showToast('Az ellenőrzés (és email feldolgozás) elindult a háttérben...', 'info');
         try {
             const manualChecks = httpsCallable(functions, 'manualDailyChecks');
             const result = await manualChecks();
             const count = result.data.logCount || 0;
-            showToast(`Sikeres futtatás! ${count} automatikus művelet hajtódott végre. Az adatok frissülhetnek.`, 'success');
+            showToast(`Sikeres futtatás! Email feldolgozás és ${count} automatikus művelet megtörtént. Az adatok frissülhetnek.`, 'success');
         } catch (error) {
             console.error("Hiba a manuális ellenőrzés során:", error);
             showToast(`Hiba a futtatás során: ${error.message}`, 'error');
