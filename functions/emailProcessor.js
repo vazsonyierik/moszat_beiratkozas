@@ -101,14 +101,23 @@ const processIncomingEmails = async () => {
                                 let headerRowIndex = -1;
                                 let studentIdIdx = -1;
 
-                                for (let i = 0; i < jsonData.length; i++) {
+                                // Search only in the first 10 rows
+                                const searchLimit = Math.min(jsonData.length, 10);
+
+                                for (let i = 0; i < searchLimit; i++) {
                                     const row = jsonData[i];
+                                    // Use .trim() and precise match
                                     const idx = row.findIndex(cell => cell && cell.toString().trim() === "Tanuló azonosító");
                                     if (idx !== -1) {
                                         headerRowIndex = i;
                                         studentIdIdx = idx;
                                         break;
                                     }
+                                }
+
+                                if (headerRowIndex === -1) {
+                                    logger.warn(`Could not find 'Tanuló azonosító' column in the first 10 rows of sheet ${sheetName} in file ${filename}. Skipping.`);
+                                    continue;
                                 }
 
                                 if (headerRowIndex !== -1 && studentIdIdx !== -1) {
