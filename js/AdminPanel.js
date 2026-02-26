@@ -740,7 +740,7 @@ const AdminPanel = ({ user, handleLogout }) => {
 
     const handleRunChecks = useCallback(async () => {
         setIsRunningChecks(true);
-        showToast('A napi ellenőrzés (és email feldolgozás) elindult...', 'info');
+        showToast('A napi ellenőrzés elindult...', 'info');
         try {
             const manualChecks = httpsCallable(functions, 'manualDailyChecks');
             const result = await manualChecks();

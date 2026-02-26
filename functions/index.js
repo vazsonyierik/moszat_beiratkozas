@@ -329,14 +329,6 @@ const sendEmail = async (studentData, template, isTest = false) => {
 const runDailyChecks = async () => {
     logger.info("Starting daily checks with new logic...");
 
-    // 1. Email Processing
-    try {
-        const processedEmails = await processIncomingEmails();
-        logger.info(`Email processing complete. Processed ${processedEmails} updates.`);
-    } catch (error) {
-        logger.error("Error during email processing phase of daily checks:", error);
-    }
-
     const today = new Date();
     const automationLogs = [];
     const snapshot = await db.collection("registrations").where("status", "==", "active").get();
