@@ -482,6 +482,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [examResultFilter, setExamResultFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
+    const [isProcessingEmails, setIsProcessingEmails] = useState(false); // ÚJ állapot
     const [showIconLegend, setShowIconLegend] = useState(false);
     const [viewTestDataType, setViewTestDataType] = useState(false);
     const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
@@ -739,17 +740,34 @@ const AdminPanel = ({ user, handleLogout }) => {
 
     const handleRunChecks = useCallback(async () => {
         setIsRunningChecks(true);
-        showToast('Az ellenőrzés (és email feldolgozás) elindult a háttérben...', 'info');
+        showToast('A napi ellenőrzés (és email feldolgozás) elindult...', 'info');
         try {
             const manualChecks = httpsCallable(functions, 'manualDailyChecks');
             const result = await manualChecks();
             const count = result.data.logCount || 0;
-            showToast(`Sikeres futtatás! Email feldolgozás és ${count} automatikus művelet megtörtént. Az adatok frissülhetnek.`, 'success');
+            showToast(`Sikeres futtatás! ${count} automatikus művelet megtörtént.`, 'success');
         } catch (error) {
             console.error("Hiba a manuális ellenőrzés során:", error);
             showToast(`Hiba a futtatás során: ${error.message}`, 'error');
         } finally {
             setIsRunningChecks(false);
+        }
+    }, [showToast]);
+
+    // ÚJ: Külön gomb az email feldolgozáshoz
+    const handleProcessEmails = useCallback(async () => {
+        setIsProcessingEmails(true);
+        showToast('Email feldolgozás indítása...', 'info');
+        try {
+            const processEmails = httpsCallable(functions, 'processEmailsManual');
+            const result = await processEmails();
+            const count = result.data.processedCount || 0;
+            showToast(`Sikeres! ${count} db email feldolgozva.`, 'success');
+        } catch (error) {
+            console.error("Hiba az email feldolgozás során:", error);
+            showToast(`Hiba: ${error.message}`, 'error');
+        } finally {
+            setIsProcessingEmails(false);
         }
     }, [showToast]);
 
@@ -970,8 +988,14 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${Icons.LogoutIcon} size=${16} />
                             Kijelentkezés
                         </button>
+
+                        <button onClick=${handleProcessEmails} disabled=${isProcessingEmails} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
+                            ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
+                            Email feldolgozás
+                        </button>
+
                         <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
-                            ${isRunningChecks ? 'Futtatás...' : 'Ellenőrzés'}
+                            ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
                         </button>
 
                         ${viewTestDataType && html`

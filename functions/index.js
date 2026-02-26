@@ -537,6 +537,22 @@ exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => 
     return {success: true, logCount};
 });
 
+// Manuális email feldolgozás (KIZÁRÓLAG email)
+exports.processEmailsManual = onCall({region: "europe-west1"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+    try {
+        const processedCount = await processIncomingEmails();
+        logger.info(`Manual email processing triggered by ${userEmail}. Updates: ${processedCount}`);
+        return {success: true, processedCount};
+    } catch (error) {
+        logger.error("Error manual email processing:", error);
+        throw new HttpsError("internal", "Hiba az e-mailek feldolgozása közben.");
+    }
+});
+
 // Dokumentum létrehozásakor lefutó trigger
 exports.onRegistrationCreated = onDocumentCreated(
     {
