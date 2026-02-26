@@ -40,7 +40,8 @@ const processIncomingEmails = async () => {
     try {
         logger.info("Connecting to IMAP...");
         connection = await imaps.connect(config);
-        await connection.openBox("INBOX");
+        // Open '[Gmail]/All Mail' to find emails even if archived or filtered out of Inbox
+        await connection.openBox("[Gmail]/All Mail");
 
         // BROADER SEARCH: Fetch ALL unread emails to ensure we don't miss anything due to sender mismatch
         const searchCriteria = ["UNSEEN"];
