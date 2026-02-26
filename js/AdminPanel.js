@@ -36,6 +36,7 @@ const StatusIcon = ({ Icon, color, title }) => html`
 const iconFilterOptions = [
     { key: 'medical', Icon: Icons.MedicalIcon, title: 'Orvosi igazolás leadva', check: (reg) => reg.hasMedicalCertificate, color: "bg-pink-500" },
     { key: 'hasId', Icon: Icons.IdCardIcon, title: 'Tanulói azonosító kitöltve', check: (reg) => !!reg.studentId, color: "bg-purple-500" },
+    { key: 'caseFiled', Icon: Icons.FolderIcon, title: 'Ügy iktatva', check: (reg) => reg.isCaseFiled, color: "bg-teal-500" }, // ÚJ
     { key: 'prevLicense', Icon: Icons.CarIcon, title: 'Van már jogosítványa', check: (reg) => reg.has_previous_license === 'igen', color: "bg-green-500" },
     { key: 'under18', Icon: Icons.AlertIcon, title: '18 év alatti', check: (reg) => utils.isStudentUnder18(reg.birthDate), color: "bg-red-500" },
     { key: 'studiedElsewhere', Icon: Icons.HelpIcon, title: 'Tanult már máshol/nálunk', check: (reg) => reg.studied_elsewhere_radio !== 'nem', color: "bg-yellow-500" },
@@ -241,7 +242,8 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                 reg.registeredBy === 'admin' && { Icon: Icons.AdminUserIcon, color: "bg-slate-500", title: "Admin által rögzített", key: 'adminReg' },
                                 utils.hasMedicalCertificate(reg) && { Icon: Icons.MedicalIcon, color: "bg-pink-500", title: "Orvosi igazolás leadva", key: 'med' },
                                 utils.hasCompletedCourse(reg) && { Icon: Icons.GraduationCapIcon, color: "bg-cyan-500", title: "A tanfolyamot befejezte", key: 'grad' },
-                                utils.hasStudentId(reg) && { Icon: Icons.IdCardIcon, color: "bg-purple-500", title: "Tanulói azonosító kitöltve", key: 'id' }
+                                utils.hasStudentId(reg) && { Icon: Icons.IdCardIcon, color: "bg-purple-500", title: "Tanulói azonosító kitöltve", key: 'id' },
+                                reg.isCaseFiled && { Icon: Icons.FolderIcon, color: "bg-teal-500", title: "Ügy iktatva", key: 'case' }
                             ].filter(Boolean);
 
                             const studentIcons = [
@@ -880,6 +882,23 @@ const AdminPanel = ({ user, handleLogout }) => {
         return [];
     }, [allExpiredRegistrations, expiredFilter]);
 
+    const isSearchActive = useMemo(() => {
+        return searchTerm.trim() !== '' ||
+               selectedIconFilters.length > 0 ||
+               examResultFilter !== 'all' ||
+               startDate !== '' ||
+               endDate !== '';
+   }, [searchTerm, selectedIconFilters, examResultFilter, startDate, endDate]);
+
+   const clearFilters = () => {
+       setSearchTerm('');
+       setSelectedIconFilters([]);
+       setExamResultFilter('all');
+       setStartDate('');
+       setEndDate('');
+       setIsFilterVisible(false);
+   };
+
     if (isLoading) return html`<${LoadingOverlay} text="Admin felület betöltése..." />`;
     if (error) return html`<div className="text-center p-8 text-red-500 bg-red-50 rounded-lg">${error}</div>`;
 
@@ -1053,6 +1072,39 @@ const AdminPanel = ({ user, handleLogout }) => {
                     </div>
                 </div>
 
+                ${isSearchActive ? html`
+                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <${Icons.InfoIcon} size=${24} className="text-yellow-600" />
+                            <div>
+                                <span className="font-bold">Keresés/Szűrés aktív:</span>
+                                <span className="ml-1">Az eredmények a teljes adatbázisból származnak (minden kategóriából).</span>
+                            </div>
+                        </div>
+                        <button onClick=${clearFilters} className="text-sm font-bold text-yellow-700 hover:text-yellow-900 underline flex items-center gap-1">
+                            <${Icons.XCircleIcon} size=${16} />
+                            Szűrők törlése
+                        </button>
+                    </div>
+                    <${StudentTable}
+                        adminUser=${user}
+                        key="search_results"
+                        title="Találati lista"
+                        students=${filteredRegistrations}
+                        onStatusChange=${handleStatusChangeRequest}
+                        onShowDetails=${setViewingStudent}
+                        onEditDetails=${setEditingStudent}
+                        onDelete=${handleDeleteRequest}
+                        onRestore=${handleRestoreRequest}
+                        onIdSave=${handleIdSave}
+                        onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation}
+                        onCommentSave=${handleCommentSave}
+                        showDayCounter=${true}
+                        allowIdEditing=${true}
+                        allowRestore=${true}
+                        paginated=${true}
+                    />
+                ` : html`
                 <${React.Fragment}>
                     <div className="border-b border-gray-200 mb-8">
                         <nav className="-mb-px flex justify-between items-center" aria-label="Tabs">
@@ -1125,7 +1177,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${AdminLog} />
                         </div>
                     `}
-                </${React.Fragment}>
+                </${React.Fragment}>`}
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
