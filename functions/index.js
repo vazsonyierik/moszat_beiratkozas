@@ -9,6 +9,9 @@ const {getAuth} = require("firebase-admin/auth"); // getAuth importálása
 const {google} = require("googleapis");
 const templates = require("./emailTemplates");
 const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
+const imaps = require("imap-simple");
+const {simpleParser} = require("mailparser");
+const XLSX = require("xlsx");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
@@ -324,6 +327,139 @@ const sendEmail = async (studentData, template, isTest = false) => {
     }
 };
 
+// --- EMAIL FELDOLGOZÓ FUNKCIÓ ---
+const processIncomingEmails = async (isTest = false) => {
+    const EMAIL_USER = "jogsiszoftiroda@gmail.com";
+    const EMAIL_PASS = process.env.GMAIL_APP_PASSWORD; // Environment variable!
+
+    if (!EMAIL_PASS) {
+        throw new HttpsError('failed-precondition', 'A GMAIL_APP_PASSWORD környezeti változó nincs beállítva.');
+    }
+
+    const config = {
+        imap: {
+            user: EMAIL_USER,
+            password: EMAIL_PASS,
+            host: 'imap.gmail.com',
+            port: 993,
+            tls: true,
+            authTimeout: 3000
+        }
+    };
+
+    let connection;
+    const processedResults = {
+        processedCount: 0,
+        updatedStudents: [],
+        errors: [],
+        skipped: []
+    };
+
+    try {
+        connection = await imaps.connect(config);
+        await connection.openBox('INBOX');
+
+        // Keresési feltételek: Olvasatlan, Tárgy: "Adatközlés", Utolsó 7 nap
+        const delay = 7 * 24 * 3600 * 1000;
+        const since = new Date();
+        since.setTime(Date.now() - delay);
+
+        const searchCriteria = [
+            'UNSEEN',
+            ['HEADER', 'SUBJECT', 'Adatközlés'],
+            ['SINCE', since.toISOString()]
+        ];
+
+        const fetchOptions = {
+            bodies: ['HEADER', 'TEXT', ''],
+            markSeen: true // Megjelöljük olvasottként feldolgozás után
+        };
+
+        const messages = await connection.search(searchCriteria, fetchOptions);
+        logger.info(`Found ${messages.length} matching emails.`);
+
+        for (const message of messages) {
+            try {
+                const parts = imaps.getParts(message.attributes.struct);
+                const attachments = parts.filter(part =>
+                    part.disposition &&
+                    part.disposition.type.toUpperCase() === 'ATTACHMENT' &&
+                    (part.params.name.endsWith('.xls') || part.params.name.endsWith('.xlsx'))
+                );
+
+                if (attachments.length === 0) {
+                    processedResults.skipped.push({ subject: message.parts[0].body.subject, reason: "Nincs Excel csatolmány" });
+                    continue;
+                }
+
+                for (const attachment of attachments) {
+                    const partData = await connection.getPartData(message, attachment);
+
+                    // Excel beolvasása memóriából
+                    const workbook = XLSX.read(partData, { type: 'buffer' });
+
+                    // "Ügy iktatva" munkalap keresése
+                    const targetSheetName = workbook.SheetNames.find(name => name.toLowerCase().includes('ügy iktatva') || name.toLowerCase().includes('ugy iktatva'));
+
+                    if (!targetSheetName) {
+                         processedResults.skipped.push({ subject: message.parts[0].body.subject, reason: `Nincs "Ügy iktatva" munkalap a fájlban: ${attachment.params.name}` });
+                         continue;
+                    }
+
+                    const worksheet = workbook.Sheets[targetSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                    // Adatok feldolgozása
+                    let updatedCountInEmail = 0;
+                    for (const row of jsonData) {
+                        // Keresés: "Tanuló azonosító" oszlop (vagy hasonló)
+                        // A SheetJS néha furán kezeli a fejléceket, ezért megpróbáljuk megtalálni a kulcsot
+                        const idKey = Object.keys(row).find(k => k.toLowerCase().includes('azonosító') || k.toLowerCase().includes('azonosite'));
+
+                        if (idKey && row[idKey]) {
+                            const studentId = row[idKey].toString().trim();
+
+                            // Keresés a Firestore-ban
+                            const collectionName = isTest ? "registrations_test" : "registrations";
+                            const q = await db.collection(collectionName).where('studentId', '==', studentId).get();
+
+                            if (!q.empty) {
+                                const docRef = q.docs[0].ref;
+                                const studentData = q.docs[0].data();
+
+                                if (!studentData.isCaseFiled) {
+                                    await docRef.update({ isCaseFiled: true });
+                                    processedResults.updatedStudents.push({
+                                        name: formatFullName(studentData.current_prefix, studentData.current_firstName, studentData.current_lastName, studentData.current_secondName),
+                                        id: studentId
+                                    });
+                                    updatedCountInEmail++;
+                                }
+                            }
+                        }
+                    }
+                    if (updatedCountInEmail > 0) {
+                        processedResults.processedCount++;
+                    }
+                }
+            } catch (err) {
+                logger.error(`Error processing email: ${err.message}`);
+                processedResults.errors.push({ subject: "Ismeretlen", error: err.message });
+            }
+        }
+
+    } catch (error) {
+        logger.error(`IMAP connection error: ${error.message}`);
+        throw new HttpsError('internal', `IMAP hiba: ${error.message}`);
+    } finally {
+        if (connection) {
+            connection.end();
+        }
+    }
+
+    return processedResults;
+};
+
 // --- AUTOMATIZÁLÁSI FUNKCIÓ ---
 const runDailyChecks = async () => {
     logger.info("Starting daily checks with new logic...");
@@ -527,6 +663,19 @@ exports.manualDailyChecks = onCall({ region: "europe-west1" }, async (request) =
     }
     const logCount = await runDailyChecks();
     return { success: true, logCount };
+});
+
+// Manuális email feldolgozás indítása
+exports.processIncomingEmailsManual = onCall({ region: "europe-west1" }, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError('permission-denied', 'Nincs jogosultságod a funkció futtatásához.');
+    }
+
+    const isTest = request.data.isTest === true; // Teszt mód támogatása
+    const results = await processIncomingEmails(isTest);
+
+    return { success: true, results };
 });
 
 // Dokumentum létrehozásakor lefutó trigger
