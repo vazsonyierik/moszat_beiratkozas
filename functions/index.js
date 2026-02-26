@@ -343,7 +343,8 @@ const processIncomingEmails = async (isTest = false) => {
             host: 'imap.gmail.com',
             port: 993,
             tls: true,
-            authTimeout: 3000
+            authTimeout: 3000,
+            tlsOptions: { rejectUnauthorized: false }
         }
     };
 
