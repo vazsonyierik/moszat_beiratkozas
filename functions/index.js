@@ -666,7 +666,7 @@ exports.manualDailyChecks = onCall({ region: "europe-west1" }, async (request) =
 });
 
 // Manuális email feldolgozás indítása
-exports.processIncomingEmailsManual = onCall({ region: "europe-west1" }, async (request) => {
+exports.processIncomingEmailsManual = onCall({ region: "europe-west1", secrets: ["GMAIL_APP_PASSWORD"] }, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError('permission-denied', 'Nincs jogosultságod a funkció futtatásához.');
