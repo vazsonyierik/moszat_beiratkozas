@@ -6,7 +6,7 @@ const logger = require("firebase-functions/logger");
 
 /**
  * Processes incoming emails from KAV to update student statuses.
- * Looks for emails from 'noreply@kavk.hu' with Excel attachments.
+ * Looks for emails from 'noreply@kavk.hu' or with 'Adatközlés' subject with Excel attachments.
  * Parses the 'Ügy iktatva' sheet and updates 'isCaseFiled' for students.
  */
 const processIncomingEmails = async () => {
@@ -42,19 +42,16 @@ const processIncomingEmails = async () => {
         connection = await imaps.connect(config);
         await connection.openBox("INBOX");
 
-        // Search for UNSEEN emails from KAV
-        // Note: Gmail might not support complex OR queries easily via IMAP, so we filter by FROM.
-        // If 'noreply@kavk.hu' is strict, use it.
-        const searchCriteria = ["UNSEEN", ["FROM", "noreply@kavk.hu"]];
-        // const searchCriteria = ['UNSEEN']; // For testing all unread
+        // BROADER SEARCH: Fetch ALL unread emails to ensure we don't miss anything due to sender mismatch
+        const searchCriteria = ["UNSEEN"];
 
         const fetchOptions = {
             bodies: [""], // Fetch the entire raw message body
-            markSeen: false // We will mark as seen only after successful processing
+            markSeen: false // We will mark as seen only if it matches our criteria
         };
 
         const messages = await connection.search(searchCriteria, fetchOptions);
-        logger.info(`Found ${messages.length} unread emails from KAV.`);
+        logger.info(`Found ${messages.length} unread emails in total.`);
 
         for (const message of messages) {
             try {
@@ -65,11 +62,29 @@ const processIncomingEmails = async () => {
                 // Parse the email
                 const parsed = await simpleParser(idHeader + all.body);
 
+                // --- ROBUST SENDER/SUBJECT CHECK ---
+                const fromText = parsed.from?.text || "";
+                const fromAddress = parsed.from?.value?.[0]?.address || "";
+                const subject = parsed.subject || "";
+
+                logger.info(`Checking email UID:${id} | Subject: "${subject}" | From: "${fromText}" (${fromAddress})`);
+
+                const isKavSender = fromAddress.toLowerCase().includes("kav") || fromText.toLowerCase().includes("kav");
+                const isKavSubject = subject.toLowerCase().includes("adatközlés");
+
+                // Strict filtering: Must be from KAV or have specific subject
+                if (!isKavSender && !isKavSubject) {
+                    logger.info(`Skipping non-relevant email. (UID: ${id})`);
+                    continue;
+                }
+
+                logger.info(`Processing relevant email (UID: ${id})...`);
+
                 if (parsed.attachments && parsed.attachments.length > 0) {
                     for (const attachment of parsed.attachments) {
                         const filename = attachment.filename || "";
                         if (filename.endsWith(".xls") || filename.endsWith(".xlsx")) {
-                            logger.info(`Processing attachment: ${filename} from email subject: ${parsed.subject}`);
+                            logger.info(`Processing attachment: ${filename}`);
 
                             // Parse Excel
                             const workbook = XLSX.read(attachment.content, {type: "buffer"});
@@ -130,10 +145,15 @@ const processIncomingEmails = async () => {
                             }
                         }
                     }
+                } else {
+                    logger.info(`Relevant email has no attachments. (UID: ${id})`);
                 }
 
-                // Mark email as seen after processing
+                // Mark email as seen ONLY if it was identified as relevant (KAV email)
+                // This prevents us from processing it again next time.
+                // Even if no rows were updated (e.g., all students already updated), we mark as seen.
                 await connection.addFlags(id, "\\Seen");
+                logger.info(`Marked email ${id} as seen.`);
             } catch (err) {
                 logger.error(`Error processing individual email (UID: ${message.attributes.uid}):`, err);
             }
