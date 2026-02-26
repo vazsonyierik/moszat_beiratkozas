@@ -426,7 +426,24 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         }
     };
 
-    // ... (UI components remain mostly the same, adding Case Filed tab)
+    const handleShowHistory = () => {
+        if (!showHistory) {
+            fetchHistory();
+        }
+        setShowHistory(!showHistory);
+    };
+
+    const loadHistoryItem = (item) => {
+        setImportResults({
+            success: item.success,
+            updated: item.updated,
+            skipped: item.skipped,
+            errors: item.errors,
+            debugInfo: item.debugInfo
+        });
+        setPendingOverrides([]);
+        setShowHistory(false);
+    };
 
     if (showHistory) {
          // ... (History UI - unchanged)
