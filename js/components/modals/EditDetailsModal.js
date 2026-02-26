@@ -255,8 +255,10 @@ const EditDetailsModal = ({ student, onClose, onUpdate, adminUser }) => {
                                     <${EditableField} label="Tanult máshol/nálunk" name="studied_elsewhere_radio" value=${formData.studied_elsewhere_radio} onChange=${handleChange} type="select" options=${[{value: 'nem', label: 'Nem'}, {value: 'igen_nalunk', label: 'Igen, nálunk'}, {value: 'igen_mashol', label: 'Igen, máshol'}]} />
                                     <${EditableField} label="Hány sikertelen vizsga" name="failed_exam_count" value=${formData.failed_exam_count} onChange=${handleChange} type="number" />
                                 <//>
-                                <${Section} title="Adminisztratív időbélyegek">
-                                    <div className="text-sm text-gray-600 space-y-3">
+                                <${Section} title="Adminisztráció">
+                                    <${EditableField} label="Ügy iktatva" name="isCaseFiled" value=${formData.isCaseFiled} onChange=${handleChange} type="checkbox" />
+                                    <div className="text-sm text-gray-600 space-y-3 mt-4 pt-4 border-t">
+                                        <h5 className="font-semibold text-gray-700 mb-2">Időbélyegek</h5>
                                         ${['createdAt', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt'].map(field => html`
                                             <div key=${field} className="flex justify-between items-center">
                                                 <span>${{createdAt: 'Jelentkezés', enrolledAt: 'Beiratkozás', studentIdAssignedAt: 'Azonosító kiadva', courseCompletedAt: 'Tanfolyam kész'}[field]}: <strong>${formatSingleTimestamp(formData[field]) || 'N/A'}</strong></span>

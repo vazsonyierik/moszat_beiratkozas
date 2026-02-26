@@ -37,12 +37,12 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
 
     // Sort by date descending (newest first)
     const sortedResults = [...resultsWithIndex].sort((a, b) => {
-        // Handle YYYY.MM.DD. HH:MM format or simple string. 
+        // Handle YYYY.MM.DD. HH:MM format or simple string.
         // We strip trailing dots and replace separators to make it standard ISO-like (YYYY-MM-DD)
         const normalize = (d) => d.split(' ')[0].replace(/\.$/, '').replace(/\./g, '-');
         const dateA = new Date(normalize(a.date));
         const dateB = new Date(normalize(b.date));
-        
+
         if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
         return b.date.localeCompare(a.date);
     });
@@ -76,39 +76,39 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                             badgeClass = 'bg-yellow-100 text-yellow-800';
                             displayResult = '3';
                         }
-                        
+
                         if (isEditing) {
                             return html`
                                 <tr key=${res.originalIndex} className="bg-blue-50">
                                     <td className="px-3 py-2 align-top">
-                                        <input 
-                                            type="text" 
-                                            value=${tempExamData.date} 
+                                        <input
+                                            type="text"
+                                            value=${tempExamData.date}
                                             onChange=${e => setTempExamData({...tempExamData, date: e.target.value})}
                                             className="w-full text-xs border rounded p-1 focus:ring-blue-500 focus:border-blue-500"
                                             placeholder="ÉÉÉÉ.HH.NN. ÓÓ:PP"
                                         />
                                     </td>
                                     <td className="px-3 py-2 align-top">
-                                        <input 
-                                            type="text" 
-                                            value=${tempExamData.subject} 
+                                        <input
+                                            type="text"
+                                            value=${tempExamData.subject}
                                             onChange=${e => setTempExamData({...tempExamData, subject: e.target.value})}
                                             className="w-full text-xs border rounded p-1 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </td>
                                     <td className="px-3 py-2 align-top">
-                                        <input 
-                                            type="text" 
-                                            value=${tempExamData.result} 
+                                        <input
+                                            type="text"
+                                            value=${tempExamData.result}
                                             onChange=${e => setTempExamData({...tempExamData, result: e.target.value})}
                                             className="w-full text-xs border rounded p-1 focus:ring-blue-500 focus:border-blue-500"
                                         />
                                     </td>
                                     <td className="px-3 py-2 align-top">
-                                        <input 
-                                            type="text" 
-                                            value=${tempExamData.location} 
+                                        <input
+                                            type="text"
+                                            value=${tempExamData.location}
                                             onChange=${e => setTempExamData({...tempExamData, location: e.target.value})}
                                             className="w-full text-xs border rounded p-1 focus:ring-blue-500 focus:border-blue-500"
                                         />
@@ -159,7 +159,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     const [localStudent, setLocalStudent] = useState(student);
     const [editingExamIndex, setEditingExamIndex] = useState(null);
     const [tempExamData, setTempExamData] = useState({});
-    
+
     const showConfirmation = useConfirmation();
     const showToast = useToast();
 
@@ -193,13 +193,13 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
         try {
             const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
-            
+
             // Update parent (Firestore)
             await onUpdate(localStudent.id, { examResults: newExamResults }, studentName);
-            
+
             // Update local state immediately for responsiveness
             setLocalStudent(prev => ({ ...prev, examResults: newExamResults }));
-            
+
             showToast("Vizsgaeredmény sikeresen frissítve!", "success");
             handleCancelExamEdit();
         } catch (error) {
@@ -213,16 +213,16 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             message: "Biztosan törölni szeretnéd ezt a vizsgaeredményt? A művelet nem visszavonható.",
             onConfirm: async () => {
                 const newExamResults = (localStudent.examResults || []).filter((_, i) => i !== index);
-                
+
                 try {
                     const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
-                    
+
                     // Update parent
                     await onUpdate(localStudent.id, { examResults: newExamResults }, studentName);
-                    
+
                     // Update local state
                     setLocalStudent(prev => ({ ...prev, examResults: newExamResults }));
-                    
+
                     showToast("Vizsgaeredmény törölve!", "success");
                 } catch (error) {
                     console.error("Hiba a törlés során:", error);
@@ -312,7 +312,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                         <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                     </button>
                 </header>
-                
+
                 <main className="p-6 overflow-y-auto flex-grow bg-gray-50">
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-6">
@@ -325,7 +325,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                                 <${DisplayField} label="Állampolgárság" value=${localStudent.nationality} />
                                 ${localStudent.secondNationality && html`<${DisplayField} label="Második állampolgárság" value=${localStudent.secondNationality} />`}
                             <//>
-                            
+
                             <${Section} title="Elérhetőségek">
                                 <${DisplayField} label="Email" value=${localStudent.email} />
                                 <${DisplayField} label="Telefonszám" value=${localStudent.phone_number} />
@@ -339,6 +339,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
                         <div className="space-y-6">
                             <${Section} title="Adminisztráció és Státusz">
+                                <${DisplayField} label="Ügy iktatva" value=${localStudent.isCaseFiled ? 'Igen' : 'Nem'} />
                                 <${DisplayField} label="Tanuló azonosító" value=${localStudent.studentId} />
                                 <${DisplayField} label="Sorszám" value=${localStudent.registrationNumber} />
                                 <${DisplayField} label="Jelentkezés ideje" value=${formatSingleTimestamp(localStudent.createdAt)} />
@@ -372,8 +373,8 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                     ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
                     <div className="mt-6">
                         <${Section} title="Vizsgaeredmények (KAV Import)" className="border-indigo-100 ring-4 ring-indigo-50">
-                            <${ExamResultsTable} 
-                                results=${localStudent.examResults} 
+                            <${ExamResultsTable}
+                                results=${localStudent.examResults}
                                 onEdit=${handleEditExam}
                                 onDelete=${handleDeleteExam}
                                 onSave=${handleSaveExam}
@@ -392,7 +393,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                         <//>
                     </div>
                 </main>
-                
+
                 <footer className="p-4 bg-white rounded-b-xl border-t flex justify-end gap-3 z-10">
                     <button onClick=${onClose} className="bg-gray-800 text-white font-semibold py-2 px-6 rounded-lg hover:bg-gray-900 transition-colors shadow-sm">Bezárás</button>
                 </footer>
