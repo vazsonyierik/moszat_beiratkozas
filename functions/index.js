@@ -10,7 +10,6 @@ const {google} = require("googleapis");
 const templates = require("./emailTemplates");
 const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
 const imaps = require("imap-simple");
-const {simpleParser} = require("mailparser");
 const XLSX = require("xlsx");
 
 // Firebase Admin SDK inicializálása
@@ -360,25 +359,24 @@ const processIncomingEmails = async (isTest = false) => {
         connection = await imaps.connect(config);
         await connection.openBox('INBOX');
 
-        // Keresési feltételek: Olvasatlan, Tárgy: "Adatközlés", Utolsó 7 nap
+        // Keresési feltételek: Tárgy: "Adatközlés", Utolsó 7 nap (Olvasottakat is lekérjük, de szűrjük)
         const delay = 7 * 24 * 3600 * 1000;
         const since = new Date();
         since.setTime(Date.now() - delay);
 
         // MÓDOSÍTÁS: Egyszerűsített keresés az ékezetek miatt.
-        // Csak olvasatlan és dátum alapján szűrünk, a tárgyat JS-ben ellenőrizzük.
+        // Minden levelet lekérünk az elmúlt 7 napból, és kézzel szűrjük az olvasott státuszt.
         const searchCriteria = [
-            'UNSEEN',
-            ['SINCE', since] // Date objektumot adunk át, nem stringet
+            ['SINCE', since]
         ];
 
         const fetchOptions = {
             bodies: ['HEADER', 'TEXT', ''],
-            markSeen: false // Kézzel jelöljük olvasottnak, ha feldolgoztuk vagy ha releváns
+            markSeen: false
         };
 
         const messages = await connection.search(searchCriteria, fetchOptions);
-        logger.info(`Found ${messages.length} UNSEEN emails since ${since}. filtering for subject...`);
+        logger.info(`Found ${messages.length} total emails since ${since}. Filtering for subject 'Adatközlés'...`);
 
         for (const message of messages) {
             try {
@@ -388,13 +386,21 @@ const processIncomingEmails = async (isTest = false) => {
                 const subject = Array.isArray(subjectObj) ? subjectObj[0] : subjectObj;
 
                 if (!subject || !subject.includes("Adatközlés")) {
-                    // Ha nem releváns a tárgy, nem nyúlunk hozzá (marad olvasatlan)
-                    // Vagy ha azt akarjuk, hogy ne zavarjon többé, megjelölhetjük olvasottnak:
-                    // await connection.addFlags(message.attributes.uid, '\\Seen');
                     continue;
                 }
 
-                // Ha idáig eljutottunk, akkor ez egy "Adatközlés" email.
+                // Ellenőrizzük, hogy olvasott-e
+                const isSeen = message.attributes.flags && message.attributes.flags.includes('\\Seen');
+                if (isSeen) {
+                    logger.info(`Skipping email '${subject}' because it is marked as READ (SEEN). Mark as UNREAD to process.`);
+                    processedResults.skipped.push({
+                        subject: subject,
+                        reason: "Az email már OLVASOTT (SEEN). Jelöld olvasatlannak a feldolgozáshoz!"
+                    });
+                    continue;
+                }
+
+                // Ha idáig eljutottunk, akkor ez egy releváns, OLVASATLAN email.
                 // Megjelöljük olvasottnak, mert megpróbáljuk feldolgozni.
                 await connection.addFlags(message.attributes.uid, '\\Seen');
 
