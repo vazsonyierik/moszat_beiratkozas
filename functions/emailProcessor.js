@@ -4,8 +4,6 @@ const XLSX = require("xlsx");
 const {getFirestore} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
 
-const db = getFirestore();
-
 /**
  * Processes incoming emails from KAV to update student statuses.
  * Looks for emails from 'noreply@kavk.hu' with Excel attachments.
@@ -21,6 +19,8 @@ const processIncomingEmails = async () => {
         logger.warn("Email credentials not set (EMAIL_USER, EMAIL_PASS). Skipping email processing.");
         return 0;
     }
+
+    const db = getFirestore();
 
     const config = {
         imap: {
