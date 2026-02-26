@@ -339,6 +339,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
                         <div className="space-y-6">
                             <${Section} title="Adminisztráció és Státusz">
+                                <${DisplayField} label="Ügy iktatva" value=${localStudent.isCaseFiled ? 'Igen' : 'Nem'} />
                                 <${DisplayField} label="Tanuló azonosító" value=${localStudent.studentId} />
                                 <${DisplayField} label="Sorszám" value=${localStudent.registrationNumber} />
                                 <${DisplayField} label="Jelentkezés ideje" value=${formatSingleTimestamp(localStudent.createdAt)} />

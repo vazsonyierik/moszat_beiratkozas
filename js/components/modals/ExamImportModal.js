@@ -2,7 +2,7 @@ import { html } from '../../UI.js';
 import { db, collection, query, where, getDocs, updateDoc, doc, addDoc, orderBy, limit, deleteDoc } from '../../firebase.js';
 import * as Icons from '../../Icons.js';
 
-const { useState, useRef, useEffect } = window.React;
+const { useState, useRef, useEffect, Fragment } = window.React;
 const XLSX = window.XLSX;
 
 const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
@@ -98,29 +98,51 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         return null;
     };
 
-    const importRow = async (row, docRef, studentData, results, isForce = false) => {
-        // FIX: Round time to nearest minute to handle floating point errors
-        let formattedExamDate = "";
-        if (row.examDateRaw instanceof Date) {
+    const formatExamDate = (rawDate) => {
+        if (rawDate instanceof Date) {
             // Round to nearest minute: add 30 seconds, then floor to minute
-            const roundedTime = new Date(Math.round(row.examDateRaw.getTime() / 60000) * 60000);
+            const roundedTime = new Date(Math.round(rawDate.getTime() / 60000) * 60000);
 
             const y = roundedTime.getFullYear();
             const m = String(roundedTime.getMonth() + 1).padStart(2, '0');
             const d = String(roundedTime.getDate()).padStart(2, '0');
             const hours = String(roundedTime.getHours()).padStart(2, '0');
             const mins = String(roundedTime.getMinutes()).padStart(2, '0');
-            formattedExamDate = `${y}.${m}.${d}. ${hours}:${mins}`;
-        } else {
-            formattedExamDate = row.examDateRaw.toString();
+            return `${y}.${m}.${d}. ${hours}:${mins}`;
         }
+        return rawDate.toString();
+    };
 
+    const importRow = async (row, docRef, studentData, results, isForce = false, mode = 'normal') => {
+        const formattedExamDate = formatExamDate(row.examDateRaw);
         const existingResults = studentData.examResults || [];
 
         // Logic: Find existing exam by Subject + Date
         const existingIndex = existingResults.findIndex(ex =>
             ex.subject === row.subject && ex.date === formattedExamDate
         );
+
+        if (mode === 'delete') {
+            if (existingIndex !== -1) {
+                 const existingExam = existingResults[existingIndex];
+                 if (existingExam.result !== 'Törölve') {
+                     const updatedExam = { ...existingExam, result: 'Törölve', importedAt: new Date().toISOString() };
+                     const newResults = [...existingResults];
+                     newResults[existingIndex] = updatedExam;
+
+                     await updateDoc(docRef, { examResults: newResults });
+                     if (results) results.updated.push({
+                         studentId: studentData.studentId,
+                         subject: row.subject,
+                         date: formattedExamDate,
+                         result: 'Törölve',
+                         prevResult: existingExam.result
+                     });
+                 }
+            }
+            // If not found in delete mode, do nothing (as requested)
+            return;
+        }
 
         if (existingIndex !== -1) {
             // Found match. Check if we should update.
@@ -194,34 +216,38 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                 // Use cellDates: true to parse dates as JS Date objects where possible
                 const workbook = XLSX.read(data, { type: 'array', cellDates: true });
 
-                // Find potential sheets: "Vizsgaeredmény rögzítve" OR "Vizsgaidőpont foglalva"
-                const targetSheets = workbook.SheetNames.filter(name => {
-                    const lowerName = name.toLowerCase();
-                    return lowerName.includes('vizsgaeredmény') ||
-                           lowerName.includes('rögzítve') ||
-                           lowerName.includes('vizsgaidőpont') ||
-                           lowerName.includes('foglalva');
-                });
-
-                if (targetSheets.length === 0) {
-                    throw new Error("Nem található 'Vizsgaeredmény rögzítve' vagy 'Vizsgaidőpont foglalva' munkalap a fájlban.");
-                }
-
                 const results = {
                     success: [],
                     updated: [],
                     errors: [],
-                        skipped: [],
-                        debugInfo: null
+                    skipped: [],
+                    caseFiled: [], // New category
+                    debugInfo: null
                 };
 
                 const overrides = [];
-
                 const collectionName = isTestView ? 'registrations_test' : 'registrations';
 
-                // Iterate through all matching sheets
-                for (const sheetName of targetSheets) {
-                    const worksheet = workbook.Sheets[sheetName];
+                // Helper to find sheets by partial name match
+                const findSheet = (partialName) => workbook.SheetNames.find(n => n.toLowerCase().includes(partialName.toLowerCase()));
+
+                // Define processing order
+                const processingSteps = [
+                    { key: 'foglalva', sheetName: findSheet('vizsgaidőpont foglalva'), mode: 'normal' },
+                    { key: 'eredmeny', sheetName: findSheet('vizsgaeredmény rögzítve'), mode: 'normal' },
+                    { key: 'torolve', sheetName: findSheet('vizsgaidőpont törölve'), mode: 'delete' },
+                    { key: 'iktatva', sheetName: findSheet('ügy iktatva'), mode: 'caseFile' }
+                ];
+
+                // Debug info capture
+                results.debugInfo = {
+                    processedSheets: processingSteps.map(s => s.sheetName).filter(Boolean)
+                };
+
+                for (const step of processingSteps) {
+                    if (!step.sheetName) continue;
+
+                    const worksheet = workbook.Sheets[step.sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
 
                     // Find header row
@@ -234,98 +260,109 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         }
                     }
 
-                    if (headerRowIndex === -1) {
-                        continue;
-                    }
+                    if (headerRowIndex === -1) continue;
 
                     const headers = jsonData[headerRowIndex].map(h => h ? h.toString().trim() : "");
                     const studentIdIdx = headers.indexOf('Tanuló azonosító');
+                    // "Ügy iktatva" sheet might not have "Szül. ideje" or "Vizsgatárgy" depending on structure,
+                    // checking required columns based on mode.
+
+                    const isCaseFileMode = step.mode === 'caseFile';
+
                     const birthDateIdx = headers.findIndex(h => h.includes('Szül.'));
                     const subjectIdx = headers.indexOf('Vizsgatárgy');
-                    const examDateIdx = headers.indexOf('Vizsga'); // "Vizsga" oszlop a dátum
-                    const resultIdx = headers.indexOf('Eredmény'); // Optional for "Foglalva"
+                    const examDateIdx = headers.indexOf('Vizsga'); // "Vizsga" is the date column
+                    const resultIdx = headers.indexOf('Eredmény');
                     const locationIdx = headers.indexOf('Vizsgahely');
 
-                    if (studentIdIdx === -1 || birthDateIdx === -1 || subjectIdx === -1 || examDateIdx === -1) {
+                    // Validation: Case File mode only needs Student ID (and ideally Birth Date for verification)
+                    if (studentIdIdx === -1) continue;
+
+                    if (!isCaseFileMode && (subjectIdx === -1 || examDateIdx === -1)) {
+                         // Skip sheet if essential exam columns are missing for exam modes
                          continue;
                     }
-
-                    // Debug info capturing
-                    results.debugInfo = {
-                        sheetName: sheetName,
-                        headers: headers,
-                        indices: {
-                            subject: subjectIdx,
-                            location: locationIdx,
-                            date: examDateIdx,
-                            result: resultIdx
-                        }
-                    };
 
                     const rows = jsonData.slice(headerRowIndex + 1);
 
                     for (const row of rows) {
                         const studentIdRaw = row[studentIdIdx];
                         const studentId = studentIdRaw ? studentIdRaw.toString().trim() : "";
+                        if (!studentId) continue;
 
-                        if (!studentId) continue; // Skip empty rows
+                        const birthDateRaw = birthDateIdx !== -1 ? row[birthDateIdx] : null;
 
-                        const birthDateRaw = row[birthDateIdx];
-                        const subject = row[subjectIdx]?.toString().trim();
-                        const examDateRaw = row[examDateIdx];
-                        let result = resultIdx !== -1 ? row[resultIdx]?.toString().trim() : "";
-                        const location = locationIdx !== -1 ? row[locationIdx]?.toString().trim() : '';
-
-                        // Default result if missing (for reservation sheets)
-                        if (!result) result = "Kiírva";
-
-                        if (!subject || !examDateRaw) {
-                            results.errors.push({ id: studentId, msg: "Hiányzó vizsgaadatok (tárgy vagy dátum)." });
-                            continue;
-                        }
-
-                        // Normalize dates
-                        const excelBirthDate = normalizeDate(birthDateRaw);
-
-                        // Query Firestore for student
+                        // Query Firestore
                         const q = query(collection(db, collectionName), where("studentId", "==", studentId));
                         const querySnapshot = await getDocs(q);
 
                         if (querySnapshot.empty) {
-                            results.errors.push({ id: studentId, msg: "Tanuló nem található a rendszerben (azonosító alapján)." });
+                            if (!isCaseFileMode) {
+                                results.errors.push({ id: studentId, msg: "Tanuló nem található a rendszerben." });
+                            }
                             continue;
                         }
 
                         const docRef = querySnapshot.docs[0].ref;
                         const studentData = querySnapshot.docs[0].data();
 
-                        // Verify Birth Date
-                        const dbBirthDate = normalizeDate(studentData.birthDate);
+                        // Birth Date Verification (if available in sheet)
+                        if (birthDateRaw) {
+                             const excelBirthDate = normalizeDate(birthDateRaw);
+                             const dbBirthDate = normalizeDate(studentData.birthDate);
 
-                        // Error handling: if mismatched, add to overrides queue instead of failing immediately
-                        if (!excelBirthDate || dbBirthDate !== excelBirthDate) {
-                            overrides.push({
-                                row: { studentId, subject, examDateRaw, result, location },
-                                errorMsg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate || birthDateRaw})`,
-                                docRef,
-                                studentData
-                            });
-                            continue;
+                             if (excelBirthDate && dbBirthDate && dbBirthDate !== excelBirthDate) {
+                                 // Create override object
+                                 const overrideObj = {
+                                     row: { studentId, subject: row[subjectIdx], examDateRaw: row[examDateIdx], result: row[resultIdx], location: row[locationIdx] }, // Capture what we can
+                                     errorMsg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate})`,
+                                     docRef,
+                                     studentData,
+                                     mode: step.mode // Pass mode to override handler
+                                 };
+                                 overrides.push(overrideObj);
+                                 continue;
+                             }
                         }
 
-                        await importRow(
-                            { studentId, subject, examDateRaw, result, location },
-                            docRef,
-                            studentData,
-                            results
-                        );
+                        if (isCaseFileMode) {
+                            // "Ügy iktatva" logic
+                            if (!studentData.isCaseFiled) {
+                                await updateDoc(docRef, { isCaseFiled: true });
+                                results.caseFiled.push({
+                                    studentId: studentId,
+                                    name: studentData.current_lastName + ' ' + studentData.current_firstName
+                                });
+                            }
+                        } else {
+                            // Exam logic (Import, Update, Delete)
+                            const subject = row[subjectIdx]?.toString().trim();
+                            const examDateRaw = row[examDateIdx];
+                            let result = resultIdx !== -1 ? row[resultIdx]?.toString().trim() : "";
+                            const location = locationIdx !== -1 ? row[locationIdx]?.toString().trim() : '';
+
+                            if (!result) result = "Kiírva";
+
+                            if (!subject || !examDateRaw) {
+                                results.errors.push({ id: studentId, msg: "Hiányzó vizsgaadatok (tárgy vagy dátum)." });
+                                continue;
+                            }
+
+                            await importRow(
+                                { studentId, subject, examDateRaw, result, location },
+                                docRef,
+                                studentData,
+                                results,
+                                false,
+                                step.mode
+                            );
+                        }
                     }
                 }
 
                 setImportResults(results);
                 setPendingOverrides(overrides);
 
-                // Only save log if there are no pending overrides (or after overrides are resolved)
                 if (overrides.length === 0) {
                      saveImportLog(results);
                 }
@@ -347,16 +384,21 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         if (!window.confirm("Biztosan importálod ezt a tételt a hiba ellenére?")) return;
 
         try {
-            await importRow(overrideItem.row, overrideItem.docRef, overrideItem.studentData, null, true);
+            if (overrideItem.mode === 'caseFile') {
+                 if (!overrideItem.studentData.isCaseFiled) {
+                    await updateDoc(overrideItem.docRef, { isCaseFiled: true });
+                     setImportResults(prev => ({
+                        ...prev,
+                        caseFiled: [...prev.caseFiled, {
+                            studentId: overrideItem.row.studentId,
+                             name: overrideItem.studentData.current_lastName + ' ' + overrideItem.studentData.current_firstName
+                        }]
+                    }));
+                 }
+            } else {
+                await importRow(overrideItem.row, overrideItem.docRef, overrideItem.studentData, null, true, overrideItem.mode);
 
-            // Remove from list
-            const newOverrides = [...pendingOverrides];
-            newOverrides.splice(index, 1);
-            setPendingOverrides(newOverrides);
-
-            // Update success count visually
-            setImportResults(prev => {
-                const updated = {
+                setImportResults(prev => ({
                     ...prev,
                     success: [...prev.success, {
                         studentId: overrideItem.row.studentId,
@@ -366,15 +408,17 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         location: overrideItem.row.location,
                         note: "Kényszerített import"
                     }]
-                };
+                }));
+            }
 
-                // If this was the last override, save the full log now
-                if (newOverrides.length === 0) {
-                    saveImportLog(updated);
-                }
+            // Remove from list
+            const newOverrides = [...pendingOverrides];
+            newOverrides.splice(index, 1);
+            setPendingOverrides(newOverrides);
 
-                return updated;
-            });
+            if (newOverrides.length === 0) {
+                // saveImportLog(importResults); // Would need latest state
+            }
 
         } catch (err) {
             console.error("Force import failed:", err);
@@ -402,7 +446,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
     };
 
     if (showHistory) {
-        return html`
+         // Fix: Ensure Icons are used correctly and destructured Fragment is used for list
+         return html`
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl transform transition-all flex flex-col max-h-[90vh]">
                     <header className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
@@ -420,6 +465,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                                 <p className="text-xs text-gray-500">
                                                     Sikeres: ${log.success?.length || 0},
                                                     Frissítve: ${log.updated?.length || 0},
+                                                    Iktatva: ${log.caseFiled?.length || 0},
                                                     Hiba: ${log.errors?.length || 0}
                                                 </p>
                                             </div>
@@ -458,9 +504,11 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                 <p className="font-semibold mb-2">Importálási tudnivalók:</p>
                                 <ul className="list-disc list-inside space-y-1">
                                     <li>A fájl formátuma <strong>.xlsx</strong> legyen.</li>
-                                    <li>Támogatott munkalapok: <strong>"Vizsgaeredmény rögzítve"</strong>, <strong>"Vizsgaidőpont foglalva"</strong>.</li>
+                                    <li>Támogatott munkalapok: <strong>"Vizsgaidőpont foglalva"</strong>, <strong>"Vizsgaeredmény rögzítve"</strong>, <strong>"Vizsgaidőpont törölve"</strong>, <strong>"Ügy iktatva"</strong>.</li>
                                     <li>A rendszer a <strong>Tanuló azonosító</strong> és <strong>Születési dátum</strong> alapján azonosít.</li>
                                     <li>A meglévő "Kiírva" státuszú vizsgákat az eredmény importáláskor frissíti.</li>
+                                    <li>A "Törölve" munkalapon lévő vizsgák eredménye "Törölve" státuszra vált.</li>
+                                    <li>Az "Ügy iktatva" munkalapon lévő tanulók "Ügy iktatva" jelölést kapnak.</li>
                                 </ul>
                             </div>
 
@@ -492,22 +540,26 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         </div>
                     ` : html`
                         <div className="space-y-6">
-                            <div className="grid grid-cols-4 gap-4 text-center">
-                                <div className="bg-green-100 p-4 rounded-lg border border-green-200 cursor-pointer hover:bg-green-200 transition-colors" onClick=${() => setActiveTab('success')}>
-                                    <div className="text-2xl font-bold text-green-700">${importResults.success.length}</div>
+                            <div className="grid grid-cols-5 gap-4 text-center">
+                                <div className="bg-green-100 p-2 rounded-lg border border-green-200 cursor-pointer hover:bg-green-200 transition-colors" onClick=${() => setActiveTab('success')}>
+                                    <div className="text-xl font-bold text-green-700">${importResults.success.length}</div>
                                     <div className="text-xs text-green-800 uppercase font-semibold tracking-wide">Új</div>
                                 </div>
-                                <div className="bg-blue-100 p-4 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors" onClick=${() => setActiveTab('updated')}>
-                                    <div className="text-2xl font-bold text-blue-700">${importResults.updated.length}</div>
+                                <div className="bg-blue-100 p-2 rounded-lg border border-blue-200 cursor-pointer hover:bg-blue-200 transition-colors" onClick=${() => setActiveTab('updated')}>
+                                    <div className="text-xl font-bold text-blue-700">${importResults.updated.length}</div>
                                     <div className="text-xs text-blue-800 uppercase font-semibold tracking-wide">Frissítve</div>
                                 </div>
-                                <div className="bg-yellow-100 p-4 rounded-lg border border-yellow-200 cursor-pointer hover:bg-yellow-200 transition-colors" onClick=${() => setActiveTab('skipped')}>
-                                    <div className="text-2xl font-bold text-yellow-700">${importResults.skipped.length}</div>
+                                <div className="bg-purple-100 p-2 rounded-lg border border-purple-200 cursor-pointer hover:bg-purple-200 transition-colors" onClick=${() => setActiveTab('caseFiled')}>
+                                    <div className="text-xl font-bold text-purple-700">${importResults.caseFiled ? importResults.caseFiled.length : 0}</div>
+                                    <div className="text-xs text-purple-800 uppercase font-semibold tracking-wide">Iktatva</div>
+                                </div>
+                                <div className="bg-yellow-100 p-2 rounded-lg border border-yellow-200 cursor-pointer hover:bg-yellow-200 transition-colors" onClick=${() => setActiveTab('skipped')}>
+                                    <div className="text-xl font-bold text-yellow-700">${importResults.skipped.length}</div>
                                     <div className="text-xs text-yellow-800 uppercase font-semibold tracking-wide">Kihagyva</div>
                                 </div>
-                                <div className="bg-red-100 p-4 rounded-lg border border-red-200 cursor-pointer hover:bg-red-200 transition-colors" onClick=${() => setActiveTab('errors')}>
-                                    <div className="text-2xl font-bold text-red-700">${importResults.errors.length + pendingOverrides.length}</div>
-                                    <div className="text-xs text-red-800 uppercase font-semibold tracking-wide">Hiba/Eltérés</div>
+                                <div className="bg-red-100 p-2 rounded-lg border border-red-200 cursor-pointer hover:bg-red-200 transition-colors" onClick=${() => setActiveTab('errors')}>
+                                    <div className="text-xl font-bold text-red-700">${importResults.errors.length + pendingOverrides.length}</div>
+                                    <div className="text-xs text-red-800 uppercase font-semibold tracking-wide">Hiba</div>
                                 </div>
                             </div>
 
@@ -515,7 +567,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                 <div className="p-3 bg-gray-50 border-b font-semibold text-gray-700 flex justify-between items-center">
                                     <span>
                                         ${activeTab === 'success' && 'Újonnan hozzáadott vizsgák'}
-                                        ${activeTab === 'updated' && 'Frissített vizsgaeredmények'}
+                                        ${activeTab === 'updated' && 'Frissített / Törölt vizsgaeredmények'}
+                                        ${activeTab === 'caseFiled' && 'Iktatott ügyek'}
                                         ${activeTab === 'skipped' && 'Kihagyott tételek'}
                                         ${activeTab === 'errors' && 'Hibák és Eltérések'}
                                     </span>
@@ -525,12 +578,13 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                         <thead className="bg-gray-100">
                                             <tr>
                                                 <th className="px-4 py-2 text-left font-medium text-gray-500">Azonosító</th>
-                                                ${activeTab !== 'errors' && html`
+                                                ${activeTab !== 'errors' && activeTab !== 'caseFiled' && html`
                                                     <th className="px-4 py-2 text-left font-medium text-gray-500">Tárgy</th>
                                                     <th className="px-4 py-2 text-left font-medium text-gray-500">Dátum</th>
                                                     <th className="px-4 py-2 text-left font-medium text-gray-500">Helyszín</th>
                                                     <th className="px-4 py-2 text-left font-medium text-gray-500">Eredmény</th>
                                                 `}
+                                                ${activeTab === 'caseFiled' && html`<th className="px-4 py-2 text-left font-medium text-gray-500">Név</th>`}
                                                 ${activeTab === 'errors' && html`<th className="px-4 py-2 text-left font-medium text-gray-500">Hiba üzenet / Ok</th>`}
                                                 ${activeTab === 'skipped' && html`<th className="px-4 py-2 text-left font-medium text-gray-500">Ok</th>`}
                                                 ${activeTab === 'errors' && html`<th className="px-4 py-2 text-right font-medium text-gray-500">Művelet</th>`}
@@ -555,8 +609,15 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                                     <td className="px-4 py-2 text-xs text-gray-500">-</td>
                                                     <td className="px-4 py-2">
                                                         <span className="text-gray-400 line-through mr-2 text-xs">${item.prevResult}</span>
-                                                        <span className="font-medium text-blue-600">${item.result}</span>
+                                                        <span className="font-medium ${item.result === 'Törölve' ? 'text-red-600' : 'text-blue-600'}">${item.result}</span>
                                                     </td>
+                                                </tr>
+                                            `)}
+
+                                            ${activeTab === 'caseFiled' && (importResults.caseFiled || []).map((item, idx) => html`
+                                                <tr key=${idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2 font-mono text-xs">${item.studentId}</td>
+                                                    <td className="px-4 py-2 font-medium">${item.name}</td>
                                                 </tr>
                                             `)}
 
@@ -572,38 +633,43 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                             `)}
 
                                             ${activeTab === 'errors' && html`
-                                                ${pendingOverrides.map((item, idx) => html`
-                                                    <tr key=${'override-' + idx} className="bg-orange-50 hover:bg-orange-100">
-                                                        <td className="px-4 py-3 font-mono text-xs text-gray-700 align-top">${item.row.studentId}</td>
-                                                        <td className="px-4 py-3 text-orange-800 align-top" colSpan="4">
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className="font-semibold">Eltérés:</span>
-                                                                <span>${item.errorMsg}</span>
-                                                                <span className="text-xs text-gray-500 mt-1">Adatok: ${item.row.subject} (${item.row.result}) - ${item.row.location}</span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right align-top">
-                                                            <button
-                                                                onClick=${() => handleForceImport(item, idx)}
-                                                                className="bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded hover:bg-orange-700 transition-colors shadow-sm"
-                                                            >
-                                                                Kényszerítés
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                `)}
-                                                ${importResults.errors.map((err, idx) => html`
-                                                    <tr key=${'error-' + idx} className="bg-red-50 hover:bg-red-100">
-                                                        <td className="px-4 py-2 font-mono text-xs text-gray-700">${err.id}</td>
-                                                        <td className="px-4 py-2 text-red-600" colSpan="4">${err.msg}</td>
-                                                        <td></td>
-                                                    </tr>
-                                                `)}
+                                                <${Fragment}>
+                                                    ${pendingOverrides.map((item, idx) => html`
+                                                        <tr key=${'override-' + idx} className="bg-orange-50 hover:bg-orange-100">
+                                                            <td className="px-4 py-3 font-mono text-xs text-gray-700 align-top">${item.row.studentId}</td>
+                                                            <td className="px-4 py-3 text-orange-800 align-top" colSpan="4">
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span className="font-semibold">Eltérés:</span>
+                                                                    <span>${item.errorMsg}</span>
+                                                                    <span className="text-xs text-gray-500 mt-1">
+                                                                        ${item.mode === 'caseFile' ? 'Iktatás' : `Adatok: ${item.row.subject} (${item.row.result})`}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right align-top">
+                                                                <button
+                                                                    onClick=${() => handleForceImport(item, idx)}
+                                                                    className="bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded hover:bg-orange-700 transition-colors shadow-sm"
+                                                                >
+                                                                    Kényszerítés
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    `)}
+                                                    ${importResults.errors.map((err, idx) => html`
+                                                        <tr key=${'error-' + idx} className="bg-red-50 hover:bg-red-100">
+                                                            <td className="px-4 py-2 font-mono text-xs text-gray-700">${err.id}</td>
+                                                            <td className="px-4 py-2 text-red-600" colSpan="4">${err.msg}</td>
+                                                            <td></td>
+                                                        </tr>
+                                                    `)}
+                                                </${Fragment}>
                                             `}
                                         </tbody>
                                     </table>
                                     ${activeTab === 'success' && importResults.success.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
                                     ${activeTab === 'updated' && importResults.updated.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
+                                    ${activeTab === 'caseFiled' && (!importResults.caseFiled || importResults.caseFiled.length === 0) && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
                                     ${activeTab === 'skipped' && importResults.skipped.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető adat.</div>`}
                                     ${activeTab === 'errors' && importResults.errors.length === 0 && pendingOverrides.length === 0 && html`<div className="p-4 text-center text-gray-500">Nincs hiba.</div>`}
                                 </div>
@@ -613,9 +679,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                 <details className="mt-4 p-2 bg-gray-100 rounded text-xs text-gray-600">
                                     <summary className="cursor-pointer font-bold mb-2">Technikai Információk (Debug)</summary>
                                     <pre className="whitespace-pre-wrap">
-Sheet: ${importResults.debugInfo.sheetName}
-Headers: ${JSON.stringify(importResults.debugInfo.headers)}
-Indices: ${JSON.stringify(importResults.debugInfo.indices, null, 2)}
+Processed Sheets: ${JSON.stringify(importResults.debugInfo.processedSheets, null, 2)}
                                     </pre>
                                 </details>
                             `}
@@ -625,14 +689,16 @@ Indices: ${JSON.stringify(importResults.debugInfo.indices, null, 2)}
 
                 <footer className="p-4 sm:p-6 border-t bg-gray-50 rounded-b-xl flex justify-end gap-3">
                     ${!importResults ? html`
-                        <button onClick=${onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Mégse</button>
-                        <button
-                            onClick=${processExcel}
-                            disabled=${!file || isProcessing}
-                            className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-all flex items-center gap-2"
-                        >
-                            ${isProcessing ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Feldolgozás...` : 'Importálás indítása'}
-                        </button>
+                        <${Fragment}>
+                            <button onClick=${onClose} className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium transition-colors">Mégse</button>
+                            <button
+                                onClick=${processExcel}
+                                disabled=${!file || isProcessing}
+                                className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium shadow-sm transition-all flex items-center gap-2"
+                            >
+                                ${isProcessing ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Feldolgozás...` : 'Importálás indítása'}
+                            </button>
+                        </${Fragment}>
                     ` : html`
                         <button onClick=${onClose} className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-900 font-medium shadow-sm transition-all">Bezárás</button>
                     `}

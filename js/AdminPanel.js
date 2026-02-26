@@ -36,6 +36,7 @@ const StatusIcon = ({ Icon, color, title }) => html`
 const iconFilterOptions = [
     { key: 'medical', Icon: Icons.MedicalIcon, title: 'Orvosi igazolás leadva', check: (reg) => reg.hasMedicalCertificate, color: "bg-pink-500" },
     { key: 'hasId', Icon: Icons.IdCardIcon, title: 'Tanulói azonosító kitöltve', check: (reg) => !!reg.studentId, color: "bg-purple-500" },
+    { key: 'caseFiled', Icon: Icons.FolderIcon, title: 'Ügy iktatva', check: (reg) => reg.isCaseFiled, color: "bg-teal-500" }, // ÚJ
     { key: 'prevLicense', Icon: Icons.CarIcon, title: 'Van már jogosítványa', check: (reg) => reg.has_previous_license === 'igen', color: "bg-green-500" },
     { key: 'under18', Icon: Icons.AlertIcon, title: '18 év alatti', check: (reg) => utils.isStudentUnder18(reg.birthDate), color: "bg-red-500" },
     { key: 'studiedElsewhere', Icon: Icons.HelpIcon, title: 'Tanult már máshol/nálunk', check: (reg) => reg.studied_elsewhere_radio !== 'nem', color: "bg-yellow-500" },
@@ -116,7 +117,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     `;
 };
 
-const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false }) => {
+const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false }) => {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [editingRowId, setEditingRowId] = React.useState(null);
@@ -184,6 +185,9 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
     const totalPages = paginated ? Math.ceil(students.length / itemsPerPage) : 1;
     
     const getRowBgClass = (reg) => {
+        if (reg.status === 'archived') {
+            return 'bg-gray-100 text-gray-500 hover:bg-gray-200';
+        }
         if (reg.status === 'expired_unpaid') {
             return 'bg-amber-100 hover:bg-amber-200';
         }
@@ -241,7 +245,8 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                 reg.registeredBy === 'admin' && { Icon: Icons.AdminUserIcon, color: "bg-slate-500", title: "Admin által rögzített", key: 'adminReg' },
                                 utils.hasMedicalCertificate(reg) && { Icon: Icons.MedicalIcon, color: "bg-pink-500", title: "Orvosi igazolás leadva", key: 'med' },
                                 utils.hasCompletedCourse(reg) && { Icon: Icons.GraduationCapIcon, color: "bg-cyan-500", title: "A tanfolyamot befejezte", key: 'grad' },
-                                utils.hasStudentId(reg) && { Icon: Icons.IdCardIcon, color: "bg-purple-500", title: "Tanulói azonosító kitöltve", key: 'id' }
+                                utils.hasStudentId(reg) && { Icon: Icons.IdCardIcon, color: "bg-purple-500", title: "Tanulói azonosító kitöltve", key: 'id' },
+                                reg.isCaseFiled && { Icon: Icons.FolderIcon, color: "bg-teal-500", title: "Ügy iktatva", key: 'case' }
                             ].filter(Boolean);
 
                             const studentIcons = [
@@ -397,6 +402,11 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                                             <${Icons.EditIcon} size=${20} />
                                                         </button>
                                                     `}
+                                                    ${allowArchive && html`
+                                                        <button onClick=${() => onArchive(reg)} className="text-amber-600 hover:text-amber-800" title="Archiválás">
+                                                            <${Icons.ArchiveIcon} size=${20} />
+                                                        </button>
+                                                    `}
                                                     ${allowRestore && html`
                                                         <button onClick=${() => onRestore(reg)} className="text-green-600 hover:text-green-800" title="Tanuló visszaállítása">
                                                             <${Icons.RestoreIcon} size=${20} />
@@ -462,6 +472,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [editingStudent, setEditingStudent] = useState(null);
     const [activeTab, setActiveTab] = useState('applicants');
     const [searchTerm, setSearchTerm] = useState('');
+    const [searchInArchive, setSearchInArchive] = useState(false); // ÚJ
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [isFilterVisible, setIsFilterVisible] = useState(false);
@@ -705,6 +716,27 @@ const AdminPanel = ({ user, handleLogout }) => {
         });
     }, [showConfirmation, handleRestoreStudent]);
 
+    const handleArchiveStudent = useCallback(async (id, studentName) => {
+        const collectionName = viewTestDataType ? "registrations_test" : "registrations";
+        const regRef = doc(db, collectionName, id);
+        try {
+            await updateDoc(regRef, { status: 'archived' });
+            await logAdminAction(user.email, `Tanuló archiválása (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
+            showToast('Tanuló sikeresen archiválva!', 'success');
+        } catch (err) {
+            console.error("Hiba az archiválás során: ", err);
+            showToast('Hiba az archiválás során!', 'error');
+        }
+    }, [user, showToast, viewTestDataType]);
+
+    const handleArchiveRequest = useCallback((reg) => {
+        const studentName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName);
+        showConfirmation({
+            message: `Biztosan archiválni szeretnéd ${studentName} tanulót?`,
+            onConfirm: () => handleArchiveStudent(reg.id, studentName),
+        });
+    }, [showConfirmation, handleArchiveStudent]);
+
     const handleRunChecks = useCallback(async () => {
         setIsRunningChecks(true);
         showToast('Az ellenőrzés elindult a háttérben...', 'info');
@@ -814,6 +846,11 @@ const AdminPanel = ({ user, handleLogout }) => {
 
             if (!matchesSearch) return false;
 
+            // Archiváltak szűrése keresésnél: ha nincs bekapcsolva a "Keresés archívumban" ÉS nem az archív fülön vagyunk, akkor az archiváltakat ne mutassa
+            if (!searchInArchive && reg.status === 'archived' && activeTab !== 'archived') {
+                return false;
+            }
+
             const regDate = reg.createdAt?.seconds ? new Date(reg.createdAt.seconds * 1000) : null;
             if ((startDate && (!regDate || regDate < new Date(startDate)))) return false;
             if ((endDate && (!regDate || regDate > new Date(endDate)))) return false;
@@ -835,20 +872,24 @@ const AdminPanel = ({ user, handleLogout }) => {
 
             return matchesExamFilter && iconChecks.every(check => check.check(reg));
         });
-    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter]);
+    }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter, searchInArchive, activeTab]);
 
     const { 
         enrolledRegistrations, 
         paidRegistrations, 
         pendingRegistrations, 
         completedRegistrations,
-        allExpiredRegistrations
+        allExpiredRegistrations,
+        archivedRegistrations
     } = useMemo(() => {
         const source = filteredRegistrations;
         
+        const archivedStudents = source.filter(reg => reg.status === 'archived');
         const expiredStudents = source.filter(reg => reg.status && reg.status.startsWith('expired'));
-        const expiredIds = new Set(expiredStudents.map(s => s.id));
-        const activeStudents = source.filter(reg => !expiredIds.has(reg.id));
+
+        // Exclude archived and expired from active sets
+        const excludedIds = new Set([...archivedStudents, ...expiredStudents].map(s => s.id));
+        const activeStudents = source.filter(reg => !excludedIds.has(reg.id));
 
         const completed = activeStudents.filter(reg => reg.courseCompletedAt);
         const enrolled = activeStudents.filter(reg => reg.status_enrolled && !reg.courseCompletedAt);
@@ -860,7 +901,8 @@ const AdminPanel = ({ user, handleLogout }) => {
             paidRegistrations: paid, 
             pendingRegistrations: pending, 
             completedRegistrations: completed,
-            allExpiredRegistrations: expiredStudents
+            allExpiredRegistrations: expiredStudents,
+            archivedRegistrations: archivedStudents
         };
     }, [filteredRegistrations]);
 
@@ -879,6 +921,24 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
         return [];
     }, [allExpiredRegistrations, expiredFilter]);
+
+    const isSearchActive = useMemo(() => {
+        return searchTerm.trim() !== '' ||
+               selectedIconFilters.length > 0 ||
+               examResultFilter !== 'all' ||
+               startDate !== '' ||
+               endDate !== '';
+   }, [searchTerm, selectedIconFilters, examResultFilter, startDate, endDate]);
+
+   const clearFilters = () => {
+       setSearchTerm('');
+       setSearchInArchive(false);
+       setSelectedIconFilters([]);
+       setExamResultFilter('all');
+       setStartDate('');
+       setEndDate('');
+       setIsFilterVisible(false);
+   };
 
     if (isLoading) return html`<${LoadingOverlay} text="Admin felület betöltése..." />`;
     if (error) return html`<div className="text-center p-8 text-red-500 bg-red-50 rounded-lg">${error}</div>`;
@@ -1000,8 +1060,27 @@ const AdminPanel = ({ user, handleLogout }) => {
                     <div className=${`transition-all duration-500 ease-in-out overflow-hidden ${isFilterVisible ? 'max-h-96' : 'max-h-0'}`}>
                         <div className="p-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                             <div className="md:col-span-1">
-                                <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Név, Email, Anyja, Azonosító, Tel.)</label>
-                                <input type="text" id="search" value=${searchTerm} onChange=${e => setSearchTerm(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" placeholder="Keresési kifejezés..." />
+                                <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Enterrel)</label>
+                                <div className="relative rounded-md shadow-sm mt-1">
+                                    <input
+                                        type="text"
+                                        id="search"
+                                        className="block w-full rounded-md border-gray-300 pr-10 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        placeholder="Keresés..."
+                                        onKeyDown=${(e) => { if (e.key === 'Enter') setSearchTerm(e.target.value); }}
+                                    />
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                                            <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div className="mt-2">
+                                    <label className="inline-flex items-center">
+                                        <input type="checkbox" checked=${searchInArchive} onChange=${(e) => setSearchInArchive(e.target.checked)} className="rounded border-gray-300 text-indigo-600 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50" />
+                                        <span className="ml-2 text-sm text-gray-600">Keresés az archívumban is</span>
+                                    </label>
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-4">
                                 <div><label htmlFor="startDate" className="block text-sm font-medium text-gray-700">Jelentkezés -tól</label><input type="date" id="startDate" value=${startDate} onChange=${e => setStartDate(e.target.value)} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm" /></div>
@@ -1053,6 +1132,39 @@ const AdminPanel = ({ user, handleLogout }) => {
                     </div>
                 </div>
 
+                ${isSearchActive ? html`
+                    <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 flex items-center justify-between shadow-sm">
+                        <div className="flex items-center gap-3">
+                            <${Icons.InfoIcon} size=${24} className="text-yellow-600" />
+                            <div>
+                                <span className="font-bold">Keresés/Szűrés aktív:</span>
+                                <span className="ml-1">Az eredmények a teljes adatbázisból származnak (minden kategóriából).</span>
+                            </div>
+                        </div>
+                        <button onClick=${clearFilters} className="text-sm font-bold text-yellow-700 hover:text-yellow-900 underline flex items-center gap-1">
+                            <${Icons.XCircleIcon} size=${16} />
+                            Szűrők törlése
+                        </button>
+                    </div>
+                    <${StudentTable}
+                        adminUser=${user}
+                        key="search_results"
+                        title="Találati lista"
+                        students=${filteredRegistrations}
+                        onStatusChange=${handleStatusChangeRequest}
+                        onShowDetails=${setViewingStudent}
+                        onEditDetails=${setEditingStudent}
+                        onDelete=${handleDeleteRequest}
+                        onRestore=${handleRestoreRequest}
+                        onIdSave=${handleIdSave}
+                        onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation}
+                        onCommentSave=${handleCommentSave}
+                        showDayCounter=${true}
+                        allowIdEditing=${true}
+                        allowRestore=${true}
+                        paginated=${true}
+                    />
+                ` : html`
                 <${React.Fragment}>
                     <div className="border-b border-gray-200 mb-8">
                         <nav className="-mb-px flex justify-between items-center" aria-label="Tabs">
@@ -1061,6 +1173,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${TabButton} tabName="enrolled" label="Beiratkozott tanulók" />
                                 <${TabButton} tabName="completed" label="E-learninget befejezte" />
                                 <${TabButton} tabName="expired" label="Lejárt tanulók" />
+                                <${TabButton} tabName="archived" label="Archivált" />
                             </div>
                             <div className="flex space-x-8">
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
@@ -1068,9 +1181,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                             </div>
                         </nav>
                     </div>
-                    ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} key="paid_students" title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} showDayCounter=${true} /><${StudentTable} adminUser=${user} key="pending_students" title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} paginated=${true} showDayCounter=${true} /></div>`}
-                    ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} key="enrolled_students" title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
-                    ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} key="completed_students" title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
+                    ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} key="paid_students" title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} key="pending_students" title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
+                    ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} key="enrolled_students" title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
+                    ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} key="completed_students" title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
                     
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">
@@ -1107,9 +1220,30 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 onEditDetails=${setEditingStudent} 
                                 onDelete=${handleDeleteRequest} 
                                 onRestore=${handleRestoreRequest}
+                                onArchive=${handleArchiveRequest}
+                                allowArchive=${true}
                                 onCommentSave=${handleCommentSave}
                                 allowRestore=${true}
                                 allowIdEditing=${false} 
+                                paginated=${true}
+                                showDayCounter=${false}
+                            />
+                        </div>
+                    `}
+                    ${activeTab === 'archived' && html`
+                        <div key="archived-tab">
+                            <${StudentTable}
+                                adminUser=${user}
+                                key="archived_students"
+                                title="Archivált tanulók"
+                                students=${archivedRegistrations}
+                                onStatusChange=${handleStatusChangeRequest}
+                                onShowDetails=${setViewingStudent}
+                                onEditDetails=${setEditingStudent}
+                                onDelete=${handleDeleteRequest}
+                                onRestore=${handleRestoreRequest}
+                                onCommentSave=${handleCommentSave}
+                                allowRestore=${true}
                                 paginated=${true}
                                 showDayCounter=${false}
                             />
@@ -1125,7 +1259,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${AdminLog} />
                         </div>
                     `}
-                </${React.Fragment}>
+                </${React.Fragment}>`}
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
