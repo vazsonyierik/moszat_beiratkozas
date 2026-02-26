@@ -633,35 +633,37 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                             `)}
 
                                             ${activeTab === 'errors' && html`
-                                                ${pendingOverrides.map((item, idx) => html`
-                                                    <tr key=${'override-' + idx} className="bg-orange-50 hover:bg-orange-100">
-                                                        <td className="px-4 py-3 font-mono text-xs text-gray-700 align-top">${item.row.studentId}</td>
-                                                        <td className="px-4 py-3 text-orange-800 align-top" colSpan="4">
-                                                            <div className="flex flex-col gap-1">
-                                                                <span className="font-semibold">Eltérés:</span>
-                                                                <span>${item.errorMsg}</span>
-                                                                <span className="text-xs text-gray-500 mt-1">
-                                                                    ${item.mode === 'caseFile' ? 'Iktatás' : `Adatok: ${item.row.subject} (${item.row.result})`}
-                                                                </span>
-                                                            </div>
-                                                        </td>
-                                                        <td className="px-4 py-3 text-right align-top">
-                                                            <button
-                                                                onClick=${() => handleForceImport(item, idx)}
-                                                                className="bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded hover:bg-orange-700 transition-colors shadow-sm"
-                                                            >
-                                                                Kényszerítés
-                                                            </button>
-                                                        </td>
-                                                    </tr>
-                                                `)}
-                                                ${importResults.errors.map((err, idx) => html`
-                                                    <tr key=${'error-' + idx} className="bg-red-50 hover:bg-red-100">
-                                                        <td className="px-4 py-2 font-mono text-xs text-gray-700">${err.id}</td>
-                                                        <td className="px-4 py-2 text-red-600" colSpan="4">${err.msg}</td>
-                                                        <td></td>
-                                                    </tr>
-                                                `)}
+                                                <${Fragment}>
+                                                    ${pendingOverrides.map((item, idx) => html`
+                                                        <tr key=${'override-' + idx} className="bg-orange-50 hover:bg-orange-100">
+                                                            <td className="px-4 py-3 font-mono text-xs text-gray-700 align-top">${item.row.studentId}</td>
+                                                            <td className="px-4 py-3 text-orange-800 align-top" colSpan="4">
+                                                                <div className="flex flex-col gap-1">
+                                                                    <span className="font-semibold">Eltérés:</span>
+                                                                    <span>${item.errorMsg}</span>
+                                                                    <span className="text-xs text-gray-500 mt-1">
+                                                                        ${item.mode === 'caseFile' ? 'Iktatás' : `Adatok: ${item.row.subject} (${item.row.result})`}
+                                                                    </span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="px-4 py-3 text-right align-top">
+                                                                <button
+                                                                    onClick=${() => handleForceImport(item, idx)}
+                                                                    className="bg-orange-600 text-white text-xs font-bold py-1.5 px-3 rounded hover:bg-orange-700 transition-colors shadow-sm"
+                                                                >
+                                                                    Kényszerítés
+                                                                </button>
+                                                            </td>
+                                                        </tr>
+                                                    `)}
+                                                    ${importResults.errors.map((err, idx) => html`
+                                                        <tr key=${'error-' + idx} className="bg-red-50 hover:bg-red-100">
+                                                            <td className="px-4 py-2 font-mono text-xs text-gray-700">${err.id}</td>
+                                                            <td className="px-4 py-2 text-red-600" colSpan="4">${err.msg}</td>
+                                                            <td></td>
+                                                        </tr>
+                                                    `)}
+                                                </${Fragment}>
                                             `}
                                         </tbody>
                                     </table>
