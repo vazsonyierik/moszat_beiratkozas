@@ -45,6 +45,12 @@ service cloud.firestore {
       allow write: if false; // Csak a backend írhat
     }
 
+    // Szabályok az email feldolgozási naplókhoz (ÚJ)
+    match /email_import_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Csak a backend írhat
+    }
+
     // Szabályok az admin műveleti naplókhoz
     match /admin_logs/{logId} {
       allow read, create: if isAdmin(); // Az adminok létrehozhatnak és olvashatnak naplókat
