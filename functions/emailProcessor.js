@@ -40,8 +40,17 @@ const processIncomingEmails = async () => {
     try {
         logger.info("Connecting to IMAP...");
         connection = await imaps.connect(config);
-        // Open '[Gmail]/All Mail' to find emails even if archived or filtered out of Inbox
-        await connection.openBox("[Gmail]/All Mail");
+        // Open the appropriate 'All Mail' folder to find emails even if archived
+        try {
+            // First try the Hungarian folder name
+            await connection.openBox("[Gmail]/Összes levél");
+            logger.info("Successfully opened '[Gmail]/Összes levél' mailbox.");
+        } catch (huError) {
+            logger.warn("Could not open '[Gmail]/Összes levél', trying English name...");
+            // Fallback to the English folder name
+            await connection.openBox("[Gmail]/All Mail");
+            logger.info("Successfully opened '[Gmail]/All Mail' mailbox.");
+        }
 
         // BROADER SEARCH: Fetch ALL unread emails to ensure we don't miss anything due to sender mismatch
         const searchCriteria = ["UNSEEN"];
