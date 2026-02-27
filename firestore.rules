@@ -51,6 +51,11 @@ service cloud.firestore {
       allow write: if false; // Csak a backend írhat
     }
 
+    // Szabályok a kézi importálás naplókhoz (ÚJ)
+    match /import_logs/{document} {
+      allow read, write: if request.auth != null;
+    }
+
     // Szabályok az admin műveleti naplókhoz
     match /admin_logs/{logId} {
       allow read, create: if isAdmin(); // Az adminok létrehozhatnak és olvashatnak naplókat
