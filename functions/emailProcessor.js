@@ -117,13 +117,26 @@ const processIncomingEmails = async () => {
                                 let headerRowIndex = -1;
                                 let studentIdIdx = -1;
 
-                                // Search only in the first 10 rows
-                                const searchLimit = Math.min(jsonData.length, 10);
+                                // Search only in the first 20 rows to be safe
+                                const searchLimit = Math.min(jsonData.length, 20);
+
+                                // DEBUG LOGGING: Lássuk, hogyan olvassa be az XLSX csomag a sorokat
+                                logger.info(`--- DEBUG: ${filename} első 5 sora ---`);
+                                for (let d = 0; d < Math.min(jsonData.length, 5); d++) {
+                                    logger.info(`Sor ${d}: ${JSON.stringify(jsonData[d])}`);
+                                }
+                                logger.info("---------------------------------------");
 
                                 for (let i = 0; i < searchLimit; i++) {
                                     const row = jsonData[i];
-                                    // Use .trim() and precise match
-                                    const idx = row.findIndex(cell => cell && cell.toString().trim() === "Tanuló azonosító");
+
+                                    // Szuper-robusztus keresés: minden szóköz (még a láthatatlan non-breaking space-ek is) eltávolítása
+                                    const idx = row.findIndex(cell => {
+                                        if (!cell) return false;
+                                        const cleanCell = cell.toString().toLowerCase().replace(/[\s\uFEFF\xA0]+/g, "");
+                                        return cleanCell.includes("tanulóazonosító") || cleanCell.includes("tanuloazonosito");
+                                    });
+
                                     if (idx !== -1) {
                                         headerRowIndex = i;
                                         studentIdIdx = idx;
@@ -132,7 +145,7 @@ const processIncomingEmails = async () => {
                                 }
 
                                 if (headerRowIndex === -1) {
-                                    logger.warn(`Could not find 'Tanuló azonosító' column in the first 10 rows of sheet ${sheetName} in file ${filename}. Skipping.`);
+                                    logger.warn(`Could not find 'Tanuló azonosító' column in the first 20 rows of sheet ${sheetName} in file ${filename}. Skipping.`);
                                     continue;
                                 }
 
