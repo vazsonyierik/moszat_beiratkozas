@@ -267,20 +267,38 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
                         if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
 
-                        // 2. Születési dátum mindig a B oszlopban (index 1)
+                        // --- VÉDŐHÁLÓ (FAIL-SAFE VALIDATION) ---
+                        // Születési dátum (Index 1) validálása
                         const birthDateRaw = row[1];
+                        const isBirthDateValid = birthDateRaw instanceof Date || (typeof birthDateRaw === 'string' && /\d{4}/.test(birthDateRaw));
+
+                        if (!isBirthDateValid) {
+                            results.errors.push({ id: studentId, msg: "Strukturális hiba: A születési dátum (B oszlop) érvénytelen. Változhatott a KAV Excel formátum!" });
+                            continue;
+                        }
+
+                        // Vizsga dátum (Index 7) validálása, ha nem "Ügy iktatva" fület dolgozunk fel
+                        let examDateRaw = null;
+
+                        if (!isCaseFileMode) {
+                            examDateRaw = row[7];
+                            const isExamDateValid = examDateRaw instanceof Date || (typeof examDateRaw === 'string' && /\d{4}/.test(examDateRaw));
+
+                            if (!isExamDateValid) {
+                                results.errors.push({ id: studentId, msg: "Strukturális hiba: A vizsga dátuma (H oszlop) érvénytelen. Változhatott a KAV Excel formátum!" });
+                                continue;
+                            }
+                        }
+                        // --- VÉDŐHÁLÓ VÉGE ---
 
                         // 3. Vizsgaadatok kinyerése (Ezek csak a vizsga lapokon lesznek használva)
                         // A G oszlop (index 6) a vizsgatárgy
                         const subjectRaw = row[6] ? row[6].toString().trim() : "Ismeretlen vizsgatárgy";
 
-                        // A H oszlop (index 7) a vizsga dátuma (Lehet JS Date vagy string)
-                        const examDateRaw = row[7];
-
                         // Az I oszlop (index 8) a helyszín
                         const locationRaw = row[8] ? row[8].toString().trim() : "";
 
-                        // A J oszlop (index 9) az eredmény (csak a 'Vizsgaeredmény rögzítve' fülön van kitöltve)
+                        // A J oszlop (index 9) az eredmény
                         let resultRaw = "Kiírva";
                         if (row[9]) {
                             const resultCell = row[9].toString().trim().toLowerCase();

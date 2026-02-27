@@ -195,8 +195,29 @@ const processIncomingEmails = async () => {
                                     // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
                                     if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
 
-                                    // 2. Születési dátum mindig a B oszlopban (index 1)
+                                    // --- VÉDŐHÁLÓ (FAIL-SAFE VALIDATION) ---
+                                    // Születési dátum (Index 1) validálása
                                     const birthDateRaw = row[1];
+                                    const isBirthDateValid = birthDateRaw instanceof Date || (typeof birthDateRaw === "string" && /\d{4}/.test(birthDateRaw));
+
+                                    if (!isBirthDateValid) {
+                                        logger.warn(`Strukturális hiba: A születési dátum (B oszlop) érvénytelen a ${filename} fájlban. ID: ${studentId}`);
+                                        continue;
+                                    }
+
+                                    // Vizsga dátum (Index 7) validálása, ha nem "Ügy iktatva" fület dolgozunk fel
+                                    let examDateRaw = null;
+
+                                    if (!isCaseFileMode) {
+                                        examDateRaw = row[7];
+                                        const isExamDateValid = examDateRaw instanceof Date || (typeof examDateRaw === "string" && /\d{4}/.test(examDateRaw));
+
+                                        if (!isExamDateValid) {
+                                            logger.warn(`Strukturális hiba: A vizsga dátuma (H oszlop) érvénytelen a ${filename} fájlban. ID: ${studentId}`);
+                                            continue;
+                                        }
+                                    }
+                                    // --- VÉDŐHÁLÓ VÉGE ---
 
                                     // Database lookup (Try 'registrations' then 'registrations_test')
                                     let q = db.collection("registrations").where("studentId", "==", studentId);
@@ -256,13 +277,10 @@ const processIncomingEmails = async () => {
                                         // A G oszlop (index 6) a vizsgatárgy
                                         const subject = row[6] ? row[6].toString().trim() : "Ismeretlen vizsgatárgy";
 
-                                        // A H oszlop (index 7) a vizsga dátuma (Lehet JS Date vagy string)
-                                        const examDateRaw = row[7];
-
                                         // Az I oszlop (index 8) a helyszín
                                         const location = row[8] ? row[8].toString().trim() : "";
 
-                                        // A J oszlop (index 9) az eredmény (csak a 'Vizsgaeredmény rögzítve' fülön van kitöltve)
+                                        // A J oszlop (index 9) az eredmény
                                         let result = "Kiírva";
                                         if (row[9]) {
                                             const resultCell = row[9].toString().trim().toLowerCase();
@@ -270,11 +288,6 @@ const processIncomingEmails = async () => {
                                             else if (["1", "nem felelt meg", "sikertelen"].includes(resultCell)) result = "Sikertelen (1)";
                                             else if (["3", "nem jelent meg"].includes(resultCell)) result = "Nem jelent meg (3)";
                                             else if (resultCell === "törölve") result = "Törölve";
-                                        }
-
-                                        if (!examDateRaw) {
-                                            logger.warn(`Missing exam date for ${studentId} in ${filename}. Skipping.`);
-                                            continue;
                                         }
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
