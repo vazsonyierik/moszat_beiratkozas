@@ -63,7 +63,7 @@ const formatExamDate = (rawDate) => {
  * Looks for emails from 'noreply@kavk.hu' or with 'Adatközlés' subject with Excel attachments.
  * Parses the 'Ügy iktatva' sheet and updates 'isCaseFiled' for students.
  */
-const processIncomingEmails = async () => {
+const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) => {
     const emailUser = process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASS;
     const emailHost = process.env.EMAIL_HOST || "imap.gmail.com";

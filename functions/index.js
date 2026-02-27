@@ -527,7 +527,7 @@ exports.scheduledEmailProcessor = onSchedule({
 }, async () => {
     logger.info("Scheduled email processing started.");
     try {
-        const processedCount = await processIncomingEmails();
+        const processedCount = await processIncomingEmails({daysBack: 2, unseenOnly: false});
         logger.info(`Scheduled email processing completed. Updates: ${processedCount}`);
     } catch (error) {
         logger.error("Error in scheduled email processing:", error);
@@ -550,9 +550,13 @@ exports.processEmailsManual = onCall({region: "europe-west1"}, async (request) =
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
     }
+
+    const daysBack = request.data.daysBack !== undefined ? request.data.daysBack : 2;
+    const unseenOnly = request.data.unseenOnly !== undefined ? request.data.unseenOnly : false;
+
     try {
-        const processedCount = await processIncomingEmails();
-        logger.info(`Manual email processing triggered by ${userEmail}. Updates: ${processedCount}`);
+        const processedCount = await processIncomingEmails({daysBack, unseenOnly});
+        logger.info(`Manual email processing triggered by ${userEmail}. Updates: ${processedCount} (Days: ${daysBack}, Unseen: ${unseenOnly})`);
         return {success: true, processedCount};
     } catch (error) {
         logger.error("Error manual email processing:", error);
