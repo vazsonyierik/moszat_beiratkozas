@@ -519,6 +519,21 @@ exports.sendAdminLoginLink = onCall({region: "europe-west1"}, async (request) =>
 // Napi ütemezett ellenőrzések
 exports.dailyScheduledChecks = onSchedule("every day 08:00", () => runDailyChecks());
 
+// Ütemezett email feldolgozás (Hétfőtől Péntekig, 06:00-18:00 között minden óra 5. percében)
+exports.scheduledEmailProcessor = onSchedule({
+    schedule: "5 6-18 * * 1-5",
+    timeZone: "Europe/Budapest",
+    region: "europe-west1",
+}, async () => {
+    logger.info("Scheduled email processing started.");
+    try {
+        const processedCount = await processIncomingEmails();
+        logger.info(`Scheduled email processing completed. Updates: ${processedCount}`);
+    } catch (error) {
+        logger.error("Error in scheduled email processing:", error);
+    }
+});
+
 // Manuális ellenőrzések
 exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => {
     const userEmail = request.auth?.token?.email;

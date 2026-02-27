@@ -107,13 +107,12 @@ const processIncomingEmails = async () => {
             logger.info("Successfully opened '[Gmail]/All Mail' mailbox.");
         }
 
-        // NARROWER SEARCH: Only fetch unread emails from the last 7 days containing 'kav' in the sender
-        const sevenDaysAgo = new Date();
-        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        // NARROWER SEARCH: Fetch emails (read or unread) from the last 2 days containing 'kav' in the sender
+        const twoDaysAgo = new Date();
+        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
 
         const searchCriteria = [
-            "UNSEEN",
-            ["SINCE", sevenDaysAgo],
+            ["SINCE", twoDaysAgo],
             ["FROM", "kav"]
         ];
 
