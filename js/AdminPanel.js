@@ -762,7 +762,7 @@ const AdminPanel = ({ user, handleLogout }) => {
             const processEmails = httpsCallable(functions, 'processEmailsManual');
             const result = await processEmails();
             const count = result.data.processedCount || 0;
-            showToast(`Sikeres! ${count} db email feldolgozva.`, 'success');
+            showToast(`Sikeres! ${count} db tanuló adata frissítve.`, 'success');
         } catch (error) {
             console.error("Hiba az email feldolgozás során:", error);
             showToast(`Hiba: ${error.message}`, 'error');

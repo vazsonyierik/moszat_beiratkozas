@@ -123,6 +123,7 @@ const processIncomingEmails = async () => {
                                     const studentIdCell = row.find(cell => {
                                         if (!cell) return false;
                                         const text = cell.toString().trim();
+                                        // "Szám / Szám / Szám / Szám"
                                         return /^\d+\/\d+\/\d+\/\d+$/.test(text);
                                     });
 
