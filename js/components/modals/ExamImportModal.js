@@ -249,52 +249,30 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
                     const worksheet = workbook.Sheets[step.sheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: "" });
-
-                    // Find header row
-                    let headerRowIndex = -1;
-                    for (let i = 0; i < jsonData.length; i++) {
-                        const row = jsonData[i];
-                        if (row.some(cell => typeof cell === 'string' && cell.includes('Tanuló azonosító'))) {
-                            headerRowIndex = i;
-                            break;
-                        }
-                    }
-
-                    if (headerRowIndex === -1) continue;
-
-                    const headers = jsonData[headerRowIndex].map(h => h ? h.toString().trim() : "");
-                    const studentIdIdx = headers.indexOf('Tanuló azonosító');
-                    // "Ügy iktatva" sheet might not have "Szül. ideje" or "Vizsgatárgy" depending on structure,
-                    // checking required columns based on mode.
-
                     const isCaseFileMode = step.mode === 'caseFile';
 
-                    const birthDateIdx = headers.findIndex(h => h.includes('Szül.'));
-                    const subjectIdx = headers.indexOf('Vizsgatárgy');
-                    const examDateIdx = headers.indexOf('Vizsga'); // "Vizsga" is the date column
-                    const resultIdx = headers.indexOf('Eredmény');
-                    const locationIdx = headers.indexOf('Vizsgahely');
+                    // Fejléc keresés elhagyva. Végigmegyünk az összes soron.
+                    for (let i = 0; i < jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if (!Array.isArray(row)) continue;
 
-                    // Validation: Case File mode only needs Student ID (and ideally Birth Date for verification)
-                    if (studentIdIdx === -1) continue;
+                        // 1. Tanuló azonosító keresése a sorban Regex-szel (pl. 9342/25/1469/2560)
+                        const idIndex = row.findIndex(cell => {
+                            if (!cell) return false;
+                            return /^\d+\/\d+\/\d+\/\d+$/.test(cell.toString().trim());
+                        });
 
-                    if (!isCaseFileMode && (subjectIdx === -1 || examDateIdx === -1)) {
-                         // Skip sheet if essential exam columns are missing for exam modes
-                         continue;
-                    }
+                        // Ha nincs azonosító a sorban, megyünk a következő sorra
+                        if (idIndex === -1) continue;
 
-                    const rows = jsonData.slice(headerRowIndex + 1);
+                        const studentId = row[idIndex].toString().trim();
 
-                    for (const row of rows) {
-                        const studentIdRaw = row[studentIdIdx];
-                        const studentId = studentIdRaw ? studentIdRaw.toString().trim() : "";
-                        if (!studentId) continue;
+                        // 2. Születési idő általában az azonosító előtti oszlop (idIndex - 1)
+                        const birthDateRaw = idIndex > 0 ? row[idIndex - 1] : null;
 
-                        const birthDateRaw = birthDateIdx !== -1 ? row[birthDateIdx] : null;
-
-                        // Query Firestore
-                        const q = query(collection(db, collectionName), where("studentId", "==", studentId));
-                        const querySnapshot = await getDocs(q);
+                        // Adatbázis lekérdezés mindkét kollekcióból (teszt és éles)
+                        let q = query(collection(db, collectionName), where("studentId", "==", studentId));
+                        let querySnapshot = await getDocs(q);
 
                         if (querySnapshot.empty) {
                             if (!isCaseFileMode) {
@@ -306,27 +284,32 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         const docRef = querySnapshot.docs[0].ref;
                         const studentData = querySnapshot.docs[0].data();
 
-                        // Birth Date Verification (if available in sheet)
+                        // 3. Születési dátum ellenőrzése
                         if (birthDateRaw) {
                              const excelBirthDate = normalizeDate(birthDateRaw);
                              const dbBirthDate = normalizeDate(studentData.birthDate);
 
                              if (excelBirthDate && dbBirthDate && dbBirthDate !== excelBirthDate) {
-                                 // Create override object
+                                 // Születési dátum eltérés esetén manuális felülbírálatra küldjük
+                                 // Hogy a felülbírálásnál meglegyenek az adatok, kinyerjük őket ideiglenesen
+                                 let tempExamDate = row.find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
+                                 let tempResult = row.find(c => typeof c === 'string' && /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c.trim())) || "Kiírva";
+
                                  const overrideObj = {
-                                     row: { studentId, subject: row[subjectIdx], examDateRaw: row[examDateIdx], result: row[resultIdx], location: row[locationIdx] }, // Capture what we can
+                                     row: { studentId, subject: row[idIndex + 2], examDateRaw: tempExamDate, result: tempResult, location: row[idIndex + 4] },
                                      errorMsg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate})`,
                                      docRef,
                                      studentData,
-                                     mode: step.mode // Pass mode to override handler
+                                     mode: step.mode
                                  };
                                  overrides.push(overrideObj);
                                  continue;
                              }
                         }
 
+                        // 4. Munkalap specifikus adatkinyerés és frissítés
                         if (isCaseFileMode) {
-                            // "Ügy iktatva" logic
+                            // "Ügy iktatva" lap
                             if (!studentData.isCaseFiled) {
                                 await updateDoc(docRef, { isCaseFiled: true });
                                 results.caseFiled.push({
@@ -335,16 +318,22 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                                 });
                             }
                         } else {
-                            // Exam logic (Import, Update, Delete)
-                            const subject = row[subjectIdx]?.toString().trim();
-                            const examDateRaw = row[examDateIdx];
-                            let result = resultIdx !== -1 ? row[resultIdx]?.toString().trim() : "";
-                            const location = locationIdx !== -1 ? row[locationIdx]?.toString().trim() : '';
+                            // Vizsga lapok ("Vizsgaidőpont foglalva", "Vizsgaeredmény rögzítve", "Vizsgaidőpont törölve")
 
-                            if (!result) result = "Kiírva";
+                            // Dátum keresése a sorban (JS Date objektum vagy éééé.hh.nn formátum)
+                            const examDateRaw = row.find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
 
-                            if (!subject || !examDateRaw) {
-                                results.errors.push({ id: studentId, msg: "Hiányzó vizsgaadatok (tárgy vagy dátum)." });
+                            // Eredmény keresése kulcsszavak alapján
+                            let result = "Kiírva";
+                            const resultCell = row.find(c => typeof c === 'string' && /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c.trim()));
+                            if (resultCell) result = resultCell.toString().trim();
+
+                            // Vizsgatárgy és helyszín kinyerése (KAV fájlokban általában fixen ID + 2 és ID + 4 pozícióban vannak)
+                            const subject = row[idIndex + 2] ? row[idIndex + 2].toString().trim() : "Ismeretlen tárgy";
+                            const location = row[idIndex + 4] ? row[idIndex + 4].toString().trim() : "";
+
+                            if (!examDateRaw) {
+                                results.errors.push({ id: studentId, msg: "Hiányzó vizsgaidőpont az adatsorban." });
                                 continue;
                             }
 
