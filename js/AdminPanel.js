@@ -20,6 +20,7 @@ import AdminAddStudentModal from './components/modals/AdminAddStudentModal.js';
 import ExamImportModal from './components/modals/ExamImportModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
+import EmailImportLog from './components/EmailImportLog.js'; // ÚJ
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import { generateTestStudents } from './utils/testDataGenerator.js';
@@ -754,15 +755,16 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
-    // ÚJ: Külön gomb az email feldolgozáshoz
-    const handleProcessEmails = useCallback(async () => {
+    // ÚJ: Külön gomb az email feldolgozáshoz (paraméterezhető)
+    const handleProcessEmails = useCallback(async ({ daysBack, unseenOnly }) => {
         setIsProcessingEmails(true);
-        showToast('Email feldolgozás indítása...', 'info');
+        const typeLabel = unseenOnly ? 'Mély' : 'Gyors';
+        showToast(`${typeLabel} email feldolgozás indítása...`, 'info');
         try {
             const processEmails = httpsCallable(functions, 'processEmailsManual');
-            const result = await processEmails();
+            const result = await processEmails({ daysBack, unseenOnly });
             const count = result.data.processedCount || 0;
-            showToast(`Sikeres! ${count} db email feldolgozva.`, 'success');
+            showToast(`Sikeres! ${count} db tanuló adata frissítve.`, 'success');
         } catch (error) {
             console.error("Hiba az email feldolgozás során:", error);
             showToast(`Hiba: ${error.message}`, 'error');
@@ -989,10 +991,27 @@ const AdminPanel = ({ user, handleLogout }) => {
                             Kijelentkezés
                         </button>
                         
-                        <button onClick=${handleProcessEmails} disabled=${isProcessingEmails} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2">
-                            ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
-                            Email feldolgozás
-                        </button>
+                        <div className="flex gap-2">
+                            <button
+                                onClick=${() => handleProcessEmails({ daysBack: 2, unseenOnly: false })}
+                                disabled=${isProcessingEmails}
+                                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
+                                title="Gyors ellenőrzés: Utolsó 2 nap, minden levél"
+                            >
+                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
+                                Gyors Email
+                            </button>
+                            
+                            <button
+                                onClick=${() => handleProcessEmails({ daysBack: 7, unseenOnly: true })}
+                                disabled=${isProcessingEmails}
+                                className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-sky-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
+                                title="Mély ellenőrzés: Utolsó 7 nap, csak olvasatlan levelek"
+                            >
+                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.SearchIcon} size=${20} />`}
+                                Mély Email
+                            </button>
+                        </div>
 
                         <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
                             ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
@@ -1202,6 +1221,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <div className="flex space-x-8">
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
                                 <${TabButton} tabName="admin_logs" label="Admin Napló" />
+                                <${TabButton} tabName="email_logs" label="Email Feldolgozás Napló" />
                             </div>
                         </nav>
                     </div>
@@ -1281,6 +1301,11 @@ const AdminPanel = ({ user, handleLogout }) => {
                      ${activeTab === 'admin_logs' && html`
                         <div key="admin-logs-tab">
                             <${AdminLog} />
+                        </div>
+                    `}
+                    ${activeTab === 'email_logs' && html`
+                        <div key="email-logs-tab">
+                            <${EmailImportLog} />
                         </div>
                     `}
                 </${React.Fragment}>`}
