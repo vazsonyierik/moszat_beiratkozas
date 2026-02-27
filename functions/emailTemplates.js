@@ -12,14 +12,14 @@
 
 // Helper function to format full name
 const getFullName = (studentData) => {
-    return [studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(' ');
+    return [studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
 };
 
 // Helper function to check if student is under 18
 const isUnder18 = (birthDateStr) => {
     if (!birthDateStr) return false;
-    const cleanedDateStr = birthDateStr.endsWith('.') ? birthDateStr.slice(0, -1) : birthDateStr;
-    const parts = cleanedDateStr.split('.').map(p => parseInt(p.trim(), 10));
+    const cleanedDateStr = birthDateStr.endsWith(".") ? birthDateStr.slice(0, -1) : birthDateStr;
+    const parts = cleanedDateStr.split(".").map(p => parseInt(p.trim(), 10));
     if (parts.length < 3 || parts.some(isNaN)) return false;
     const [year, month, day] = parts;
     const birthDate = new Date(year, month - 1, day);
@@ -38,7 +38,7 @@ const isUnder18 = (birthDateStr) => {
 // Sablon ID: E-1
 // 1. New Registration Confirmation
 exports.registrationConfirmation = (studentData) => ({
-    subject: 'Sikeres jelentkezés! Már csak egy lépés van hátra',
+    subject: "Sikeres jelentkezés! Már csak egy lépés van hátra",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -94,7 +94,7 @@ exports.registrationConfirmation = (studentData) => ({
 // Sablon ID: E-2
 // 2. Enrolled Student Information
 exports.enrolledConfirmation = (studentData) => ({
-    subject: 'Fontos információk a KRESZ-tanfolyamodról!',
+    subject: "Fontos információk a KRESZ-tanfolyamodról!",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -181,10 +181,10 @@ exports.enrolledConfirmation = (studentData) => ({
 exports.courseCompletedMedicalNeeded = (studentData) => {
     const under18WarningHtml = isUnder18(studentData.birthDate)
         ? `<p>⚠️ <b>Figyelem, ha még nem múltál el 18!</b> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <b>ő is jöjjön veled!</b> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>`
-        : '';
+        : "";
 
     return {
-        subject: 'Következő lépések a KRESZ-vizsgád felé',
+        subject: "Következő lépések a KRESZ-vizsgád felé",
         html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -228,7 +228,7 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
         </div>
         `
-    }
+    };
 };
 
 // Sablon ID: E-4
@@ -236,10 +236,10 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
 exports.courseCompletedReadyToSign = (studentData) => {
     const under18WarningHtml = isUnder18(studentData.birthDate)
         ? `<p>⚠️ <strong>Figyelem, ha még nem múltál el 18!</strong> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <strong>ő is jöjjön veled!</strong> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>`
-        : '';
+        : "";
 
     return {
-        subject: 'Következő lépés a KRESZ-vizsgád felé',
+        subject: "Következő lépés a KRESZ-vizsgád felé",
         html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -275,13 +275,13 @@ exports.courseCompletedReadyToSign = (studentData) => {
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
         </div>
         `
-    }
+    };
 };
 
 // Sablon ID: E-5
 // 5. Medical Certificate Received
 exports.medicalCertificateReceived = (studentData) => ({
-    subject: 'Orvosi alkalmassági vélemény rögzítve',
+    subject: "Orvosi alkalmassági vélemény rögzítve",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -297,7 +297,7 @@ exports.medicalCertificateReceived = (studentData) => ({
 // Sablon ID: T-1
 // Jelentkezés utáni 4. nap
 exports.paymentReminderDay4 = (studentData) => ({
-    subject: 'Emlékeztető a befejezetlen regisztrációdról',
+    subject: "Emlékeztető a befejezetlen regisztrációdról",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -311,7 +311,7 @@ exports.paymentReminderDay4 = (studentData) => ({
 // Sablon ID: T-2
 // Jelentkezés utáni 10. nap
 exports.paymentReminderDay10 = (studentData) => ({
-    subject: 'Fontos: a regisztrációddal kapcsolatban',
+    subject: "Fontos: a regisztrációddal kapcsolatban",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -330,7 +330,7 @@ exports.paymentReminderDay10 = (studentData) => ({
 // Sablon ID: T-3
 // Tanfolyamkezdési emlékeztetők (30 nap)
 exports.courseStartReminderDay30 = (studentData) => ({
-    subject: 'Emlékeztető: Aktiváld a KRESZ-hozzáférésedet!',
+    subject: "Emlékeztető: Aktiváld a KRESZ-hozzáférésedet!",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -346,7 +346,7 @@ exports.courseStartReminderDay30 = (studentData) => ({
 // Sablon ID: T-4
 // Tanfolyamkezdési emlékeztetők (60 nap)
 exports.courseStartReminderDay60 = (studentData) => ({
-    subject: 'Figyelmeztetés: a regisztrációd 30 napon belül lejár!',
+    subject: "Figyelmeztetés: a regisztrációd 30 napon belül lejár!",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -362,7 +362,7 @@ exports.courseStartReminderDay60 = (studentData) => ({
 // Sablon ID: T-5
 // Tanfolyamkezdési emlékeztetők (85 nap)
 exports.courseStartReminderDay85 = (studentData) => ({
-    subject: 'Fontos! Már csak 5 napod maradt elkezdeni a KRESZ tanfolyamot!',
+    subject: "Fontos! Már csak 5 napod maradt elkezdeni a KRESZ tanfolyamot!",
     html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
             <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -384,10 +384,10 @@ exports.elearningProgressReminderDay90 = (studentData) => {
                 <li><strong>Már megszerezted az orvosi igazolást?</strong> Kérjük, küldd el nekünk a <a href="mailto:iroda@mosolyzona.hu">iroda@mosolyzona.hu</a> címre, hogy rögzíthessük.</li>
                 <li><strong>Ha még nincs orvosi alkalmassági véleményed,</strong> semmi gond! Írj nekünk egy e-mailt, és örömmel elküldjük a tudnivalókat, hogy hogyan tudod a legegyszerűbben beszerezni.</li>
             </ul>`
-        : '';
+        : "";
 
     return {
-        subject: 'Fontos információk az e-learninges KRESZ tanfolyamodhoz',
+        subject: "Fontos információk az e-learninges KRESZ tanfolyamodhoz",
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
                 <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
@@ -407,10 +407,10 @@ exports.elearningProgressReminderDay90 = (studentData) => {
 exports.elearningProgressReminderDay180 = (studentData) => {
     const medicalReminderHtml = !studentData.hasMedicalCertificate
         ? `<p>Végül, de nem utolsósorban, szeretnénk emlékeztetni <strong>a vizsgára jelentkezés másik fontos feltételére, az orvosi alkalmassági véleményre.</strong><br>A már meglévő orvosi igazolásodat kérjük, küldd el a <strong><a href="mailto:iroda@mosolyzona.hu" target="_blank">iroda@mosolyzona.hu</a></strong> címre, hogy rögzíteni tudjuk. Annak hiányában pedig írj nekünk egy e-mailt, és örömmel elküldjük a beszerzéséhez szükséges tudnivalókat.</p>`
-        : '';
+        : "";
 
     return {
-        subject: 'Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről',
+        subject: "Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről",
         html: `
             <div dir="ltr" style="font-family: sans-serif; line-height: 1.6; color: #333;">
                 <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
