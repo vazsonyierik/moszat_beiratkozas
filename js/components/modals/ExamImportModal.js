@@ -256,39 +256,39 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         const row = jsonData[i];
                         if (!Array.isArray(row)) continue;
 
-                        // 1. Find Student ID index
-                        const idIdx = row.findIndex(c => c && /^\d+\/\d+\/\d+\/\d+$/.test(c.toString().trim()));
-                        if (idIdx === -1) continue;
-                        const studentId = row[idIdx].toString().trim();
+                        // Szigorú, fix index-alapú adatkinyerés a KAV standard struktúra alapján
+                        // B(1): Szül.idő, C(2): ID, G(6): Tárgy, H(7): Dátum, I(8): Helyszín, J(9): Eredmény
 
-                        // 2. Birth Date is always BEFORE the ID (idIdx)
-                        const birthDateRaw = row.slice(0, idIdx).find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
+                        // 1. Azonosító ellenőrzése szigorúan a C oszlopban (index 2)
+                        const studentIdRaw = row[2];
+                        if (!studentIdRaw) continue;
+                        const studentId = studentIdRaw.toString().trim();
 
-                        // 3. All data AFTER the ID
-                        const afterIdRaw = row.slice(idIdx + 1);
-                        const afterIdStrings = afterIdRaw.map(c => c ? c.toString().trim() : "");
+                        // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
+                        if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
 
-                        // 4. Exam Date: The first date found AFTER the ID
-                        const examDateRaw = afterIdRaw.find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
+                        // 2. Születési dátum mindig a B oszlopban (index 1)
+                        const birthDateRaw = row[1];
 
-                        // 5. Result
-                        const resultCell = afterIdStrings.find(c => /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c));
-                        const resultRaw = resultCell || "Kiírva"; // Rename to avoid conflict if 'result' is used later, or align
+                        // 3. Vizsgaadatok kinyerése (Ezek csak a vizsga lapokon lesznek használva)
+                        // A G oszlop (index 6) a vizsgatárgy
+                        const subjectRaw = row[6] ? row[6].toString().trim() : "Ismeretlen vizsgatárgy";
 
-                        // 6. Subject (Vizsgatárgy): Look for specific KAV exam keywords
-                        const subjectRegex = /(alapismeretek|forgalmi|járműkezelés|szerkezeti|biztonsági|rutin)/i;
-                        const subjectCell = afterIdStrings.find(c => subjectRegex.test(c));
-                        const subjectRaw = subjectCell || "Ismeretlen vizsgatárgy";
+                        // A H oszlop (index 7) a vizsga dátuma (Lehet JS Date vagy string)
+                        const examDateRaw = row[7];
 
-                        // 7. Location (Vizsgahely): A string that is not the subject, result, category, or a date
-                        const locationCell = afterIdStrings.find(c =>
-                            c.length > 3 &&
-                            c !== subjectCell &&
-                            c !== resultCell &&
-                            !/^[A-Z1-9]+(\s+kategória)?$/i.test(c) && // Exclude categories like "B", "AM", "B kategória"
-                            !/^\d{4}/.test(c) // Exclude dates
-                        );
-                        const locationRaw = locationCell || "";
+                        // Az I oszlop (index 8) a helyszín
+                        const locationRaw = row[8] ? row[8].toString().trim() : "";
+
+                        // A J oszlop (index 9) az eredmény (csak a 'Vizsgaeredmény rögzítve' fülön van kitöltve)
+                        let resultRaw = "Kiírva";
+                        if (row[9]) {
+                            const resultCell = row[9].toString().trim().toLowerCase();
+                            if (['m', 'megfelelt', 'sikeres'].includes(resultCell)) resultRaw = "Sikeres (M)";
+                            else if (['1', 'nem felelt meg', 'sikertelen'].includes(resultCell)) resultRaw = "Sikertelen (1)";
+                            else if (['3', 'nem jelent meg'].includes(resultCell)) resultRaw = "Nem jelent meg (3)";
+                            else if (resultCell === 'törölve') resultRaw = "Törölve";
+                        }
 
                         // Adatbázis lekérdezés mindkét kollekcióból (teszt és éles)
                         let q = query(collection(db, collectionName), where("studentId", "==", studentId));

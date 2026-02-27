@@ -181,23 +181,22 @@ const processIncomingEmails = async () => {
 
                                 let updateCount = 0;
 
-                                // Iterate through all rows to find student IDs with regex
+                                // Szigorú, fix index-alapú adatkinyerés a KAV standard struktúra alapján
+                                // B(1): Szül.idő, C(2): ID, G(6): Tárgy, H(7): Dátum, I(8): Helyszín, J(9): Eredmény
+
                                 for (const row of jsonData) {
                                     if (!Array.isArray(row)) continue;
 
-                                    // 1. Find Student ID regex match (e.g. 9342/25/1469/2560)
-                                    const idIndex = row.findIndex(cell => {
-                                        if (!cell) return false;
-                                        return /^\d+\/\d+\/\d+\/\d+$/.test(cell.toString().trim());
-                                    });
+                                    // 1. Azonosító ellenőrzése szigorúan a C oszlopban (index 2)
+                                    const studentIdRaw = row[2];
+                                    if (!studentIdRaw) continue;
+                                    const studentId = studentIdRaw.toString().trim();
 
-                                    // If no ID found in this row, skip
-                                    if (idIndex === -1) continue;
+                                    // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
+                                    if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
 
-                                    const studentId = row[idIndex].toString().trim();
-
-                                    // 2. Birth date is usually the column before ID (idIndex - 1)
-                                    const birthDateRaw = idIndex > 0 ? row[idIndex - 1] : null;
+                                    // 2. Születési dátum mindig a B oszlopban (index 1)
+                                    const birthDateRaw = row[1];
 
                                     // Database lookup (Try 'registrations' then 'registrations_test')
                                     let q = db.collection("registrations").where("studentId", "==", studentId);
@@ -253,8 +252,25 @@ const processIncomingEmails = async () => {
                                         const freshData = freshSnap.data();
                                         const existingResults = freshData.examResults || [];
 
-                                        // Extract Exam Data relative to ID index
-                                        const examDateRaw = row.find(c => c instanceof Date || (typeof c === "string" && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
+                                        // 3. Vizsgaadatok kinyerése (Ezek csak a vizsga lapokon lesznek használva)
+                                        // A G oszlop (index 6) a vizsgatárgy
+                                        const subject = row[6] ? row[6].toString().trim() : "Ismeretlen vizsgatárgy";
+
+                                        // A H oszlop (index 7) a vizsga dátuma (Lehet JS Date vagy string)
+                                        const examDateRaw = row[7];
+
+                                        // Az I oszlop (index 8) a helyszín
+                                        const location = row[8] ? row[8].toString().trim() : "";
+
+                                        // A J oszlop (index 9) az eredmény (csak a 'Vizsgaeredmény rögzítve' fülön van kitöltve)
+                                        let result = "Kiírva";
+                                        if (row[9]) {
+                                            const resultCell = row[9].toString().trim().toLowerCase();
+                                            if (["m", "megfelelt", "sikeres"].includes(resultCell)) result = "Sikeres (M)";
+                                            else if (["1", "nem felelt meg", "sikertelen"].includes(resultCell)) result = "Sikertelen (1)";
+                                            else if (["3", "nem jelent meg"].includes(resultCell)) result = "Nem jelent meg (3)";
+                                            else if (resultCell === "törölve") result = "Törölve";
+                                        }
 
                                         if (!examDateRaw) {
                                             logger.warn(`Missing exam date for ${studentId} in ${filename}. Skipping.`);
@@ -262,14 +278,6 @@ const processIncomingEmails = async () => {
                                         }
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
-
-                                        // Find result keyword
-                                        let result = "Kiírva";
-                                        const resultCell = row.find(c => typeof c === "string" && /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c.trim()));
-                                        if (resultCell) result = resultCell.toString().trim();
-
-                                        const subject = row[idIndex + 2] ? row[idIndex + 2].toString().trim() : "Ismeretlen tárgy";
-                                        const location = row[idIndex + 4] ? row[idIndex + 4].toString().trim() : "";
 
                                         // Find existing exam by Subject + Date
                                         const existingIndex = existingResults.findIndex(ex =>
