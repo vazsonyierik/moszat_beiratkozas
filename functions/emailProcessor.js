@@ -113,72 +113,44 @@ const processIncomingEmails = async () => {
                                 const worksheet = workbook.Sheets[sheetName];
                                 const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ""});
 
-                                // Find 'Tanuló azonosító' column
-                                let headerRowIndex = -1;
-                                let studentIdIdx = -1;
+                                let updateCount = 0;
 
-                                // Search only in the first 20 rows to be safe
-                                const searchLimit = Math.min(jsonData.length, 20);
+                                // Fejléc keresése helyett Regex-szel azonosítjuk a KAV tanuló azonosítókat a teljes fájlban
+                                for (const row of jsonData) {
+                                    if (!Array.isArray(row)) continue;
 
-                                // DEBUG LOGGING: Lássuk, hogyan olvassa be az XLSX csomag a sorokat
-                                logger.info(`--- DEBUG: ${filename} első 5 sora ---`);
-                                for (let d = 0; d < Math.min(jsonData.length, 5); d++) {
-                                    logger.info(`Sor ${d}: ${JSON.stringify(jsonData[d])}`);
-                                }
-                                logger.info("---------------------------------------");
-
-                                for (let i = 0; i < searchLimit; i++) {
-                                    const row = jsonData[i];
-
-                                    // Szuper-robusztus keresés: minden szóköz (még a láthatatlan non-breaking space-ek is) eltávolítása
-                                    const idx = row.findIndex(cell => {
+                                    // Keresünk egy cellát a sorban, ami illeszkedik a "szám/szám/szám/szám" mintára
+                                    const studentIdCell = row.find(cell => {
                                         if (!cell) return false;
-                                        const cleanCell = cell.toString().toLowerCase().replace(/[\s\uFEFF\xA0]+/g, "");
-                                        return cleanCell.includes("tanulóazonosító") || cleanCell.includes("tanuloazonosito");
+                                        const text = cell.toString().trim();
+                                        return /^\d+\/\d+\/\d+\/\d+$/.test(text);
                                     });
 
-                                    if (idx !== -1) {
-                                        headerRowIndex = i;
-                                        studentIdIdx = idx;
-                                        break;
-                                    }
-                                }
+                                    if (studentIdCell) {
+                                        const studentId = studentIdCell.toString().trim();
 
-                                if (headerRowIndex === -1) {
-                                    logger.warn(`Could not find 'Tanuló azonosító' column in the first 20 rows of sheet ${sheetName} in file ${filename}. Skipping.`);
-                                    continue;
-                                }
+                                        // Update Firestore
+                                        const q = db.collection("registrations").where("studentId", "==", studentId);
+                                        const snapshot = await q.get();
 
-                                if (headerRowIndex !== -1 && studentIdIdx !== -1) {
-                                    const rows = jsonData.slice(headerRowIndex + 1);
-                                    let updateCount = 0;
-
-                                    for (const row of rows) {
-                                        const studentIdRaw = row[studentIdIdx];
-                                        const studentId = studentIdRaw ? studentIdRaw.toString().trim() : "";
-
-                                        if (studentId) {
-                                            // Update Firestore
-                                            const q = db.collection("registrations").where("studentId", "==", studentId);
-                                            const snapshot = await q.get();
-
-                                            if (!snapshot.empty) {
-                                                const batch = db.batch();
-                                                snapshot.docs.forEach(doc => {
-                                                    if (!doc.data().isCaseFiled) {
-                                                        batch.update(doc.ref, {isCaseFiled: true});
-                                                        updateCount++;
-                                                    }
-                                                });
-                                                await batch.commit();
-                                                logger.info(`Marked student ${studentId} as case filed.`);
-                                            }
+                                        if (!snapshot.empty) {
+                                            const batch = db.batch();
+                                            snapshot.docs.forEach(doc => {
+                                                if (!doc.data().isCaseFiled) {
+                                                    batch.update(doc.ref, {isCaseFiled: true});
+                                                    updateCount++;
+                                                }
+                                            });
+                                            await batch.commit();
+                                            logger.info(`Marked student ${studentId} as case filed.`);
                                         }
                                     }
-                                    processedCount += updateCount;
-                                } else {
-                                    logger.warn(`Could not find 'Tanuló azonosító' column in sheet ${sheetName}`);
                                 }
+
+                                if (updateCount === 0) {
+                                    logger.info(`Nem volt új, frissítendő tanuló a ${filename} fájlban.`);
+                                }
+                                processedCount += updateCount;
                             } else {
                                 logger.info(`No 'Ügy iktatva' sheet found in ${filename}.`);
                             }
