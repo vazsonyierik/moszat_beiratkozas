@@ -17,7 +17,7 @@ const db = getFirestore();
 const auth = getAuth(); // Auth szolgáltatás inicializálása
 
 // Globális beállítások a funkcióknak
-setGlobalOptions({region: "europe-west1", memory: "256MiB"});
+setGlobalOptions({region: "europe-west1", memory: "512MiB"});
 
 // --- Segédfüggvények ---
 

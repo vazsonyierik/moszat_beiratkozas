@@ -52,8 +52,15 @@ const processIncomingEmails = async () => {
             logger.info("Successfully opened '[Gmail]/All Mail' mailbox.");
         }
 
-        // BROADER SEARCH: Fetch ALL unread emails to ensure we don't miss anything due to sender mismatch
-        const searchCriteria = ["UNSEEN"];
+        // NARROWER SEARCH: Only fetch unread emails from the last 7 days containing 'kav' in the sender
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+        const searchCriteria = [
+            "UNSEEN",
+            ["SINCE", sevenDaysAgo],
+            ["FROM", "kav"]
+        ];
 
         const fetchOptions = {
             bodies: [""], // Fetch the entire raw message body
