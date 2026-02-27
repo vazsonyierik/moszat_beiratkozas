@@ -339,7 +339,6 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
                         <div className="space-y-6">
                             <${Section} title="Adminisztráció és Státusz">
-                                <${DisplayField} label="Ügy iktatva" value=${localStudent.isCaseFiled ? 'Igen' : 'Nem'} />
                                 <${DisplayField} label="Tanuló azonosító" value=${localStudent.studentId} />
                                 <${DisplayField} label="Sorszám" value=${localStudent.registrationNumber} />
                                 <${DisplayField} label="Jelentkezés ideje" value=${formatSingleTimestamp(localStudent.createdAt)} />
@@ -372,6 +371,29 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
                     ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
                     <div className="mt-6">
+                        ${localStudent.isCaseFiled ? html`
+                            <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg mb-4 flex items-center gap-3 shadow-sm">
+                                <div className="p-2 bg-green-100 rounded-full"><${Icons.CheckIcon} size=${20} /></div>
+                                <div>
+                                    <div className="font-bold text-lg">Ügy iktatva</div>
+                                    <div className="text-sm opacity-90">
+                                        ${localStudent.caseFiledAt
+                                            ? new Date(localStudent.caseFiledAt).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+                                            : 'Korábbi rögzítés'
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        ` : html`
+                            <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-lg mb-4 flex items-center gap-3 shadow-sm">
+                                <div className="p-2 bg-orange-100 rounded-full"><${Icons.AlertCircleIcon} size=${20} /></div>
+                                <div>
+                                    <div className="font-bold text-lg">Ügy nincs iktatva</div>
+                                    <div className="text-sm opacity-90">A tanuló még nem szerepel a KAV rendszerében iktatottként.</div>
+                                </div>
+                            </div>
+                        `}
+
                         <${Section} title="Vizsgaeredmények (KAV Import)" className="border-indigo-100 ring-4 ring-indigo-50">
                             <${ExamResultsTable}
                                 results=${localStudent.examResults}

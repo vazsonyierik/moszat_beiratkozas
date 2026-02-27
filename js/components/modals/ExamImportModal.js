@@ -345,7 +345,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         if (isCaseFileMode) {
                             // "Ügy iktatva" lap
                             if (!studentData.isCaseFiled) {
-                                await updateDoc(docRef, { isCaseFiled: true });
+                                await updateDoc(docRef, { isCaseFiled: true, caseFiledAt: new Date().toISOString() });
                                 results.caseFiled.push({
                                     studentId: studentId,
                                     name: studentData.current_lastName + ' ' + studentData.current_firstName

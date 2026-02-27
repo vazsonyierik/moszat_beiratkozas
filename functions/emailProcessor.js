@@ -253,7 +253,11 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                     // 4. Update Logic
                                     if (isCaseFileMode) {
                                         if (!studentData.isCaseFiled) {
-                                            await docRef.update({isCaseFiled: true});
+                                            const emailDate = message.attributes.date ? new Date(message.attributes.date) : new Date();
+                                            await docRef.update({
+                                                isCaseFiled: true,
+                                                caseFiledAt: emailDate.toISOString()
+                                            });
                                             updateCount++;
 
                                             const fullName = [studentData.current_prefix, studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
