@@ -256,19 +256,39 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         const row = jsonData[i];
                         if (!Array.isArray(row)) continue;
 
-                        // 1. Tanuló azonosító keresése a sorban Regex-szel (pl. 9342/25/1469/2560)
-                        const idIndex = row.findIndex(cell => {
-                            if (!cell) return false;
-                            return /^\d+\/\d+\/\d+\/\d+$/.test(cell.toString().trim());
-                        });
+                        // 1. Find Student ID index
+                        const idIdx = row.findIndex(c => c && /^\d+\/\d+\/\d+\/\d+$/.test(c.toString().trim()));
+                        if (idIdx === -1) continue;
+                        const studentId = row[idIdx].toString().trim();
 
-                        // Ha nincs azonosító a sorban, megyünk a következő sorra
-                        if (idIndex === -1) continue;
+                        // 2. Birth Date is always BEFORE the ID (idIdx)
+                        const birthDateRaw = row.slice(0, idIdx).find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
 
-                        const studentId = row[idIndex].toString().trim();
+                        // 3. All data AFTER the ID
+                        const afterIdRaw = row.slice(idIdx + 1);
+                        const afterIdStrings = afterIdRaw.map(c => c ? c.toString().trim() : "");
 
-                        // 2. Születési idő általában az azonosító előtti oszlop (idIndex - 1)
-                        const birthDateRaw = idIndex > 0 ? row[idIndex - 1] : null;
+                        // 4. Exam Date: The first date found AFTER the ID
+                        const examDateRaw = afterIdRaw.find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
+
+                        // 5. Result
+                        const resultCell = afterIdStrings.find(c => /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c));
+                        const resultRaw = resultCell || "Kiírva"; // Rename to avoid conflict if 'result' is used later, or align
+
+                        // 6. Subject (Vizsgatárgy): Look for specific KAV exam keywords
+                        const subjectRegex = /(alapismeretek|forgalmi|járműkezelés|szerkezeti|biztonsági|rutin)/i;
+                        const subjectCell = afterIdStrings.find(c => subjectRegex.test(c));
+                        const subjectRaw = subjectCell || "Ismeretlen vizsgatárgy";
+
+                        // 7. Location (Vizsgahely): A string that is not the subject, result, category, or a date
+                        const locationCell = afterIdStrings.find(c =>
+                            c.length > 3 &&
+                            c !== subjectCell &&
+                            c !== resultCell &&
+                            !/^[A-Z1-9]+(\s+kategória)?$/i.test(c) && // Exclude categories like "B", "AM", "B kategória"
+                            !/^\d{4}/.test(c) // Exclude dates
+                        );
+                        const locationRaw = locationCell || "";
 
                         // Adatbázis lekérdezés mindkét kollekcióból (teszt és éles)
                         let q = query(collection(db, collectionName), where("studentId", "==", studentId));
@@ -291,12 +311,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
                              if (excelBirthDate && dbBirthDate && dbBirthDate !== excelBirthDate) {
                                  // Születési dátum eltérés esetén manuális felülbírálatra küldjük
-                                 // Hogy a felülbírálásnál meglegyenek az adatok, kinyerjük őket ideiglenesen
-                                 let tempExamDate = row.find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
-                                 let tempResult = row.find(c => typeof c === 'string' && /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c.trim())) || "Kiírva";
-
                                  const overrideObj = {
-                                     row: { studentId, subject: row[idIndex + 2], examDateRaw: tempExamDate, result: tempResult, location: row[idIndex + 4] },
+                                     row: { studentId, subject: subjectRaw, examDateRaw: examDateRaw, result: resultRaw, location: locationRaw },
                                      errorMsg: `Születési dátum eltérés (Rendszer: ${dbBirthDate}, Excel: ${excelBirthDate})`,
                                      docRef,
                                      studentData,
@@ -320,25 +336,13 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         } else {
                             // Vizsga lapok ("Vizsgaidőpont foglalva", "Vizsgaeredmény rögzítve", "Vizsgaidőpont törölve")
 
-                            // Dátum keresése a sorban (JS Date objektum vagy éééé.hh.nn formátum)
-                            const examDateRaw = row.find(c => c instanceof Date || (typeof c === 'string' && /^\d{4}[.-]\d{1,2}[.-]\d{1,2}/.test(c.trim())));
-
-                            // Eredmény keresése kulcsszavak alapján
-                            let result = "Kiírva";
-                            const resultCell = row.find(c => typeof c === 'string' && /^(megfelelt|nem felelt meg|sikeres|sikertelen|nem jelent meg|kiírva|törölve)$/i.test(c.trim()));
-                            if (resultCell) result = resultCell.toString().trim();
-
-                            // Vizsgatárgy és helyszín kinyerése (KAV fájlokban általában fixen ID + 2 és ID + 4 pozícióban vannak)
-                            const subject = row[idIndex + 2] ? row[idIndex + 2].toString().trim() : "Ismeretlen tárgy";
-                            const location = row[idIndex + 4] ? row[idIndex + 4].toString().trim() : "";
-
                             if (!examDateRaw) {
                                 results.errors.push({ id: studentId, msg: "Hiányzó vizsgaidőpont az adatsorban." });
                                 continue;
                             }
 
                             await importRow(
-                                { studentId, subject, examDateRaw, result, location },
+                                { studentId, subject: subjectRaw, examDateRaw, result: resultRaw, location: locationRaw },
                                 docRef,
                                 studentData,
                                 results,
