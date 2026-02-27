@@ -45,6 +45,11 @@ const EmailImportLog = () => {
     if (error) return html`<div className="p-4 text-center text-red-500">${error}</div>`;
     if (logs.length === 0) return html`<div className="p-4 text-center text-gray-500">Nincs megjeleníthető napló az elmúlt 30 napból.</div>`;
 
+    // Ensure Icons are defined before rendering
+    if (!Icons || !Icons.MailIcon || !Icons.ChevronUpIcon || !Icons.ChevronDownIcon) {
+        return html`<div className="p-4 text-red-500">Hiba: Ikonok nem tölthetők be.</div>`;
+    }
+
     return html`
         <div className="space-y-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Email Feldolgozási Napló (Utolsó 30 nap)</h3>
