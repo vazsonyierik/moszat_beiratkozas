@@ -1,7 +1,7 @@
 const imaps = require("imap-simple");
 const {simpleParser} = require("mailparser");
 const XLSX = require("xlsx");
-const {getFirestore} = require("firebase-admin/firestore");
+const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
 
 /**
@@ -36,6 +36,7 @@ const processIncomingEmails = async () => {
 
     let connection;
     let processedCount = 0;
+    const updatedStudentsList = [];
 
     try {
         logger.info("Connecting to IMAP...");
@@ -140,6 +141,15 @@ const processIncomingEmails = async () => {
                                                 if (!doc.data().isCaseFiled) {
                                                     batch.update(doc.ref, {isCaseFiled: true});
                                                     updateCount++;
+
+                                                    // Adatok kimentése a naplóhoz
+                                                    const d = doc.data();
+                                                    const fullName = [d.current_prefix, d.current_lastName, d.current_firstName, d.current_secondName].filter(Boolean).join(" ");
+                                                    updatedStudentsList.push({
+                                                        studentId: studentId,
+                                                        name: fullName,
+                                                        file: filename
+                                                    });
                                                 }
                                             });
                                             await batch.commit();
@@ -179,6 +189,19 @@ const processIncomingEmails = async () => {
             } catch (e) {
                 logger.error("Error closing IMAP connection:", e);
             }
+        }
+    }
+
+    if (updatedStudentsList.length > 0) {
+        try {
+            await getFirestore().collection("email_import_logs").add({
+                createdAt: FieldValue.serverTimestamp(),
+                processedCount: updatedStudentsList.length,
+                students: updatedStudentsList
+            });
+            logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
+        } catch (logErr) {
+            logger.error("Failed to save email import log", logErr);
         }
     }
 

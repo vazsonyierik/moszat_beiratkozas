@@ -20,6 +20,7 @@ import AdminAddStudentModal from './components/modals/AdminAddStudentModal.js';
 import ExamImportModal from './components/modals/ExamImportModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
+import EmailImportLog from './components/EmailImportLog.js'; // ÚJ
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import { generateTestStudents } from './utils/testDataGenerator.js';
@@ -1202,6 +1203,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <div className="flex space-x-8">
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
                                 <${TabButton} tabName="admin_logs" label="Admin Napló" />
+                                <${TabButton} tabName="email_logs" label="Email Feldolgozás Napló" />
                             </div>
                         </nav>
                     </div>
@@ -1281,6 +1283,11 @@ const AdminPanel = ({ user, handleLogout }) => {
                      ${activeTab === 'admin_logs' && html`
                         <div key="admin-logs-tab">
                             <${AdminLog} />
+                        </div>
+                    `}
+                    ${activeTab === 'email_logs' && html`
+                        <div key="email-logs-tab">
+                            <${EmailImportLog} />
                         </div>
                     `}
                 </${React.Fragment}>`}
