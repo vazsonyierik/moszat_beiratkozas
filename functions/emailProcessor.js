@@ -376,17 +376,15 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
         }
     }
 
-    if (updatedStudentsList.length > 0) {
-        try {
-            await getFirestore().collection("email_import_logs").add({
-                createdAt: FieldValue.serverTimestamp(),
-                processedCount: updatedStudentsList.length,
-                students: updatedStudentsList
-            });
-            logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
-        } catch (logErr) {
-            logger.error("Failed to save email import log", logErr);
-        }
+    try {
+        await getFirestore().collection("email_import_logs").add({
+            createdAt: FieldValue.serverTimestamp(),
+            processedCount: updatedStudentsList.length,
+            students: updatedStudentsList
+        });
+        logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
+    } catch (logErr) {
+        logger.error("Failed to save email import log", logErr);
     }
 
     return processedCount;
