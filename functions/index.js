@@ -553,10 +553,12 @@ exports.processEmailsManual = onCall({region: "europe-west1"}, async (request) =
 
     const daysBack = request.data.daysBack !== undefined ? request.data.daysBack : 2;
     const unseenOnly = request.data.unseenOnly !== undefined ? request.data.unseenOnly : false;
+    const startDate = request.data.startDate !== undefined ? request.data.startDate : null;
+    const endDate = request.data.endDate !== undefined ? request.data.endDate : null;
 
     try {
-        const processedCount = await processIncomingEmails({daysBack, unseenOnly});
-        logger.info(`Manual email processing triggered by ${userEmail}. Updates: ${processedCount} (Days: ${daysBack}, Unseen: ${unseenOnly})`);
+        const processedCount = await processIncomingEmails({daysBack, unseenOnly, startDate, endDate});
+        logger.info(`Manual email processing triggered by ${userEmail}. Updates: ${processedCount} (Days: ${daysBack}, Unseen: ${unseenOnly}, Start: ${startDate}, End: ${endDate})`);
         return {success: true, processedCount};
     } catch (error) {
         logger.error("Error manual email processing:", error);

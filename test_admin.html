@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <title>Test Admin UI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gray-100 font-['Poppins']">
+    <div id="root"></div>
+
+    <script type="module">
+        import { html } from './js/UI.js';
+        import AdminPanel from './js/AdminPanel.js';
+        import { AppProvider } from './js/context/AppContext.js';
+
+        const ReactDOM = window.ReactDOM;
+
+        const mockUser = {
+            email: 'admin@test.com'
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(html`
+            <${AppProvider}>
+                <${AdminPanel} user=${mockUser} handleLogout=${() => {}} />
+            <//>
+        `);
+    </script>
+</body>
+</html>

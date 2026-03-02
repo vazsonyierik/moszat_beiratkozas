@@ -63,7 +63,7 @@ const formatExamDate = (rawDate) => {
  * Looks for emails from 'noreply@kavk.hu' or with 'Adatközlés' subject with Excel attachments.
  * Parses the 'Ügy iktatva' sheet and updates 'isCaseFiled' for students.
  */
-const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) => {
+const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDate = null, endDate = null} = {}) => {
     const emailUser = process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASS;
     const emailHost = process.env.EMAIL_HOST || "imap.gmail.com";
@@ -111,14 +111,25 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
             logger.info("Successfully opened '[Gmail]/All Mail' mailbox.");
         }
 
-        // NARROWER SEARCH: Fetch emails (read or unread) from the last 2 days containing 'kav' in the sender
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        let searchCriteria = [];
 
-        const searchCriteria = [
-            ["SINCE", twoDaysAgo],
-            ["FROM", "kav"]
-        ];
+        if (startDate && endDate) {
+            logger.info(`Using absolute date range for IMAP search: ${startDate} to ${endDate}`);
+            searchCriteria = [
+                ["SINCE", new Date(startDate)],
+                ["BEFORE", new Date(endDate)],
+                ["FROM", "kav"]
+            ];
+        } else {
+            logger.info(`Using daysBack (${daysBack}) for IMAP search`);
+            const sinceDate = new Date();
+            sinceDate.setDate(sinceDate.getDate() - daysBack);
+
+            searchCriteria = [
+                ["SINCE", sinceDate],
+                ["FROM", "kav"]
+            ];
+        }
 
         const fetchOptions = {
             bodies: [""], // Fetch the entire raw message body

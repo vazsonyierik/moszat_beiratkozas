@@ -490,6 +490,8 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
     const [isGenerating, setIsGenerating] = useState(false);
     const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
+    const [historicalStart, setHistoricalStart] = useState('');
+    const [historicalEnd, setHistoricalEnd] = useState('');
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -756,13 +758,20 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [showToast]);
 
     // ÚJ: Külön gomb az email feldolgozáshoz (paraméterezhető)
-    const handleProcessEmails = useCallback(async ({ daysBack, unseenOnly }) => {
+    const handleProcessEmails = useCallback(async ({ daysBack, unseenOnly, startDate, endDate }) => {
+        if (startDate && endDate) {
+            if (new Date(startDate) > new Date(endDate)) {
+                showToast('A kezdődátum nem lehet nagyobb a végdátumnál!', 'error');
+                return;
+            }
+        }
+
         setIsProcessingEmails(true);
-        const typeLabel = unseenOnly ? 'Mély' : 'Gyors';
+        const typeLabel = (startDate && endDate) ? 'Történelmi' : unseenOnly ? 'Mély' : 'Gyors';
         showToast(`${typeLabel} email feldolgozás indítása...`, 'info');
         try {
             const processEmails = httpsCallable(functions, 'processEmailsManual');
-            const result = await processEmails({ daysBack, unseenOnly });
+            const result = await processEmails({ daysBack, unseenOnly, startDate, endDate });
             const count = result.data.processedCount || 0;
             showToast(`Sikeres! ${count} db tanuló adata frissítve.`, 'success');
         } catch (error) {
@@ -1037,6 +1046,28 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 Generálás
                             </button>
                         `}
+
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-gray-100 p-1.5 rounded-lg border border-gray-200">
+                                <span className="text-xs font-semibold text-gray-500 mr-2 hidden lg:inline">Történelmi Import:</span>
+                                <input type="date" value=${historicalStart} onChange=${e => setHistoricalStart(e.target.value)} className="text-sm p-1 border rounded mr-1" title="Kezdő dátum" />
+                                <span className="text-gray-400 mx-1">-</span>
+                                <input type="date" value=${historicalEnd} onChange=${e => setHistoricalEnd(e.target.value)} className="text-sm p-1 border rounded mr-2" title="Végdátum" />
+                                <button
+                                    onClick=${() => {
+                                        if(!historicalStart || !historicalEnd) {
+                                            showToast('Kérjük add meg a kezdő és végdátumot is!', 'warning');
+                                            return;
+                                        }
+                                        handleProcessEmails({ startDate: historicalStart, endDate: historicalEnd, unseenOnly: false });
+                                    }}
+                                    disabled=${isProcessingEmails}
+                                    className="bg-indigo-600 text-white text-sm font-semibold py-1.5 px-3 rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait"
+                                >
+                                    Feldolgozás
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="flex items-center gap-2">
                             <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
