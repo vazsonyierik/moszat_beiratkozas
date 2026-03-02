@@ -113,52 +113,67 @@ const EmailImportLog = ({ onStudentClick }) => {
                                 ${log.skipped && html`
                                     <div className="space-y-4">
                                         ${log.skipped.alreadyProcessed && log.skipped.alreadyProcessed.length > 0 && html`
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-gray-600 mb-2">Már feldolgozva (Nem történt változás):</h4>
-                                                <ul className="list-disc pl-5 text-sm text-gray-500">
-                                                    ${log.skipped.alreadyProcessed.map((s, idx) => html`
-                                                        <li key=${idx}>
-                                                            <span
-                                                                className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                                                                onClick=${() => onStudentClick && onStudentClick(s.id)}
-                                                            >
-                                                                ${s.name}
-                                                            </span>
-                                                            <span className="ml-1">(${s.id})</span>
-                                                        </li>
-                                                    `)}
-                                                </ul>
-                                            </div>
+                                            <details className="mb-2 group">
+                                                <summary className="cursor-pointer font-semibold text-sm text-gray-600 hover:text-gray-800 focus:outline-none list-none flex items-center">
+                                                    <span className="mr-2 transform transition-transform group-open:rotate-90">▶</span>
+                                                    Már feldolgozva (Nem történt változás): ${log.skipped.alreadyProcessed.length} tanuló
+                                                </summary>
+                                                <div className="max-h-48 overflow-y-auto pr-2 mt-2 bg-white rounded border p-2">
+                                                    <ul className="list-disc pl-5 text-sm text-gray-500 space-y-1">
+                                                        ${log.skipped.alreadyProcessed.map((s, idx) => html`
+                                                            <li key=${idx}>
+                                                                <span
+                                                                    className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                                    onClick=${() => onStudentClick && onStudentClick(s.id)}
+                                                                >
+                                                                    ${s.name}
+                                                                </span>
+                                                                <span className="ml-1">(${s.id})</span>
+                                                            </li>
+                                                        `)}
+                                                    </ul>
+                                                </div>
+                                            </details>
                                         `}
 
                                         ${log.skipped.notFound && log.skipped.notFound.length > 0 && html`
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-orange-600 mb-2">Nem található a rendszerben:</h4>
-                                                <ul className="list-disc pl-5 text-sm text-orange-500">
-                                                    ${log.skipped.notFound.map((s, idx) => html`
-                                                        <li key=${idx}>${s.name} - Azonosító: ${s.id} (Fájl: ${s.file})</li>
-                                                    `)}
-                                                </ul>
-                                            </div>
+                                            <details className="mb-2 group">
+                                                <summary className="cursor-pointer font-semibold text-sm text-orange-600 hover:text-orange-800 focus:outline-none list-none flex items-center">
+                                                    <span className="mr-2 transform transition-transform group-open:rotate-90">▶</span>
+                                                    Nem található a rendszerben: ${log.skipped.notFound.length} tanuló
+                                                </summary>
+                                                <div className="max-h-48 overflow-y-auto pr-2 mt-2 bg-white rounded border border-orange-100 p-2">
+                                                    <ul className="list-disc pl-5 text-sm text-orange-500 space-y-1">
+                                                        ${log.skipped.notFound.map((s, idx) => html`
+                                                            <li key=${idx}>${s.name} - Azonosító: ${s.id} <span className="text-orange-300 ml-1">(Fájl: ${s.file})</span></li>
+                                                        `)}
+                                                    </ul>
+                                                </div>
+                                            </details>
                                         `}
 
                                         ${log.skipped.mismatch && log.skipped.mismatch.length > 0 && html`
-                                            <div>
-                                                <h4 className="text-sm font-semibold text-red-600 mb-2">Adateltérés (Kihagyva):</h4>
-                                                <ul className="list-disc pl-5 text-sm text-red-500">
-                                                    ${log.skipped.mismatch.map((s, idx) => html`
-                                                        <li key=${idx}>
-                                                            <span
-                                                                className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
-                                                                onClick=${() => onStudentClick && onStudentClick(s.id)}
-                                                            >
-                                                                ${s.name}
-                                                            </span>
-                                                            <span className="ml-1">(${s.id}) - Születési dátum eltérés</span>
-                                                        </li>
-                                                    `)}
-                                                </ul>
-                                            </div>
+                                            <details className="mb-2 group">
+                                                <summary className="cursor-pointer font-semibold text-sm text-red-600 hover:text-red-800 focus:outline-none list-none flex items-center">
+                                                    <span className="mr-2 transform transition-transform group-open:rotate-90">▶</span>
+                                                    Adateltérés (Kihagyva): ${log.skipped.mismatch.length} tanuló
+                                                </summary>
+                                                <div className="max-h-48 overflow-y-auto pr-2 mt-2 bg-white rounded border border-red-100 p-2">
+                                                    <ul className="list-disc pl-5 text-sm text-red-500 space-y-1">
+                                                        ${log.skipped.mismatch.map((s, idx) => html`
+                                                            <li key=${idx}>
+                                                                <span
+                                                                    className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                                    onClick=${() => onStudentClick && onStudentClick(s.id)}
+                                                                >
+                                                                    ${s.name}
+                                                                </span>
+                                                                <span className="ml-1">(${s.id}) - Születési dátum eltérés</span>
+                                                            </li>
+                                                        `)}
+                                                    </ul>
+                                                </div>
+                                            </details>
                                         `}
                                     </div>
                                 `}
