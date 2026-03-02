@@ -246,7 +246,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
         if (!zipAndCity && !streetAndType) return 'N/A';
 
-        let address = `${zipAndCity}, ${streetAndType}`;
+        let address = [zipAndCity, streetAndType].filter(Boolean).join(', ');
         const houseNumber = formatWithPeriod(get('houseNumber'));
         if (houseNumber) {
             address += ` ${houseNumber}`;
@@ -272,7 +272,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         if (door) subParts.push(door);
 
         if (subParts.length > 0) {
-            address += `, ${subParts.join(' ')}`;
+            address += ` ${subParts.join(' ')}`;
         }
 
         return address;

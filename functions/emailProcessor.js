@@ -91,6 +91,10 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
     let connection;
     let processedCount = 0;
     const updatedStudentsList = [];
+    const alreadyProcessed = [];
+    const notFound = [];
+    const mismatch = [];
+    let processedAnyEmails = false;
 
     try {
         logger.info("Connecting to IMAP...");
@@ -123,6 +127,8 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
 
         const messages = await connection.search(searchCriteria, fetchOptions);
         logger.info(`Found ${messages.length} unread emails in total.`);
+
+        if (messages.length > 0) processedAnyEmails = true;
 
         for (const message of messages) {
             try {
@@ -233,11 +239,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                         if (!isCaseFileMode) {
                                             logger.warn(`Student not found: ${studentId} in file ${filename}`);
                                         }
+                                        notFound.push({
+                                            name: "Ismeretlen",
+                                            id: studentId,
+                                            file: filename
+                                        });
                                         continue;
                                     }
 
                                     const docRef = snapshot.docs[0].ref;
                                     const studentData = snapshot.docs[0].data();
+                                    const studentName = [studentData.current_prefix, studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
 
                                     // 3. Birth Date Validation
                                     if (birthDateRaw) {
@@ -246,6 +258,11 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
 
                                         if (excelBirthDate && dbBirthDate && dbBirthDate !== excelBirthDate) {
                                             logger.warn(`Birth date mismatch for ${studentId}. DB: ${dbBirthDate}, Excel: ${excelBirthDate}. Skipping.`);
+                                            mismatch.push({
+                                                name: studentName,
+                                                id: studentId,
+                                                file: filename
+                                            });
                                             continue;
                                         }
                                     }
@@ -256,12 +273,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                             await docRef.update({isCaseFiled: true});
                                             updateCount++;
 
-                                            const fullName = [studentData.current_prefix, studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
                                             updatedStudentsList.push({
                                                 studentId: studentId,
-                                                name: fullName,
+                                                name: studentName,
                                                 file: filename,
                                                 action: "Ügy iktatva"
+                                            });
+                                        } else {
+                                            alreadyProcessed.push({
+                                                name: studentName,
+                                                id: studentId,
+                                                file: filename
                                             });
                                         }
                                     } else {
@@ -338,12 +360,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                             await docRef.update({examResults: existingResults});
                                             updateCount++;
 
-                                            const fullName = [freshData.current_prefix, freshData.current_lastName, freshData.current_firstName, freshData.current_secondName].filter(Boolean).join(" ");
                                             updatedStudentsList.push({
                                                 studentId: studentId,
-                                                name: fullName,
+                                                name: studentName,
                                                 file: filename,
                                                 action: actionType
+                                            });
+                                        } else {
+                                            alreadyProcessed.push({
+                                                name: studentName,
+                                                id: studentId,
+                                                file: filename
                                             });
                                         }
                                     }
@@ -376,15 +403,22 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
         }
     }
 
-    try {
-        await getFirestore().collection("email_import_logs").add({
-            createdAt: FieldValue.serverTimestamp(),
-            processedCount: updatedStudentsList.length,
-            students: updatedStudentsList
-        });
-        logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
-    } catch (logErr) {
-        logger.error("Failed to save email import log", logErr);
+    if (processedAnyEmails) {
+        try {
+            await getFirestore().collection("email_import_logs").add({
+                createdAt: FieldValue.serverTimestamp(),
+                processedCount: updatedStudentsList.length,
+                students: updatedStudentsList,
+                skipped: {
+                    alreadyProcessed: alreadyProcessed,
+                    notFound: notFound,
+                    mismatch: mismatch
+                }
+            });
+            logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
+        } catch (logErr) {
+            logger.error("Failed to save email import log", logErr);
+        }
     }
 
     return processedCount;

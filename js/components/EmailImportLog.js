@@ -82,26 +82,57 @@ const EmailImportLog = () => {
 
                         ${isExpanded && html`
                             <div className="bg-gray-50 p-4 border-t border-gray-100">
-                                <div className="bg-white rounded border border-gray-200 overflow-hidden">
+                                <div className="bg-white rounded border border-gray-200 overflow-hidden mb-4">
                                     <table className="min-w-full text-sm">
                                         <thead className="bg-gray-100 text-gray-600 font-medium">
                                             <tr>
-                                                <th className="px-4 py-2 text-left">Tanuló Neve</th>
+                                                <th className="px-4 py-2 text-left">Frissített Tanuló Neve</th>
                                                 <th className="px-4 py-2 text-left">Azonosító</th>
                                                 <th className="px-4 py-2 text-left">Forrás Fájl</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-gray-100">
-                                            ${log.students && log.students.map((student, idx) => html`
+                                            ${log.students && log.students.length > 0 ? log.students.map((student, idx) => html`
                                                 <tr key=${idx} className="hover:bg-gray-50">
                                                     <td className="px-4 py-2 font-medium text-gray-800">${student.name}</td>
                                                     <td className="px-4 py-2 font-mono text-gray-600">${student.studentId}</td>
                                                     <td className="px-4 py-2 text-gray-500 italic truncate max-w-xs" title=${student.file}>${student.file}</td>
                                                 </tr>
-                                            `)}
+                                            `) : html`<tr><td colSpan="3" className="px-4 py-4 text-center text-gray-500 italic">Nem történt sikeres frissítés ebben a futásban.</td></tr>`}
                                         </tbody>
                                     </table>
                                 </div>
+
+                                ${log.skipped && html`
+                                    <div className="space-y-4">
+                                        ${log.skipped.alreadyProcessed && log.skipped.alreadyProcessed.length > 0 && html`
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-gray-600 mb-2">Már feldolgozva (Nem történt változás):</h4>
+                                                <ul className="list-disc pl-5 text-sm text-gray-500">
+                                                    ${log.skipped.alreadyProcessed.map((s, idx) => html`<li key=${idx}>${s.name} (${s.id})</li>`)}
+                                                </ul>
+                                            </div>
+                                        `}
+
+                                        ${log.skipped.notFound && log.skipped.notFound.length > 0 && html`
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-orange-600 mb-2">Nem található a rendszerben:</h4>
+                                                <ul className="list-disc pl-5 text-sm text-orange-500">
+                                                    ${log.skipped.notFound.map((s, idx) => html`<li key=${idx}>Azonosító: ${s.id} (Fájl: ${s.file})</li>`)}
+                                                </ul>
+                                            </div>
+                                        `}
+
+                                        ${log.skipped.mismatch && log.skipped.mismatch.length > 0 && html`
+                                            <div>
+                                                <h4 className="text-sm font-semibold text-red-600 mb-2">Adateltérés (Kihagyva):</h4>
+                                                <ul className="list-disc pl-5 text-sm text-red-500">
+                                                    ${log.skipped.mismatch.map((s, idx) => html`<li key=${idx}>${s.name} (${s.id}) - Születési dátum eltérés</li>`)}
+                                                </ul>
+                                            </div>
+                                        `}
+                                    </div>
+                                `}
                             </div>
                         `}
                     </div>
