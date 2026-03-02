@@ -352,7 +352,6 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
                         <div className="space-y-6">
                             <${Section} title="Adminisztráció és Státusz">
-                                <${DisplayField} label="Ügy iktatva" value=${localStudent.isCaseFiled ? 'Igen' : 'Nem'} />
                                 <${DisplayField} label="Tanuló azonosító" value=${localStudent.studentId} />
                                 <${DisplayField} label="Sorszám" value=${localStudent.registrationNumber} />
                                 <${DisplayField} label="Jelentkezés ideje" value=${formatSingleTimestamp(localStudent.createdAt)} />
@@ -383,8 +382,29 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                         </div>
                     </div>
 
-                    ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
+                    ${/* Ügy iktatva Banner */''}
                     <div className="mt-6">
+                        ${localStudent.isCaseFiled ? html`
+                            <div className="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                <div>
+                                    <p className="font-bold text-lg">Ügy iktatva</p>
+                                    <p className="text-sm opacity-90">${localStudent.caseFiledAt ? formatSingleTimestamp(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)'}</p>
+                                </div>
+                            </div>
+                        ` : html`
+                            <div className="bg-gray-100 border border-gray-200 text-gray-600 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                <div>
+                                    <p className="font-bold text-lg">Nincs ügy iktatva</p>
+                                    <p className="text-sm opacity-90">A tanulónak még nincs iktatott ügye a rendszerben.</p>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+
+                    ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
+                    <div className="mt-0">
                         <${Section} title="Vizsgaeredmények (KAV Import)" className="border-indigo-100 ring-4 ring-indigo-50">
                             <${ExamResultsTable}
                                 results=${localStudent.examResults}

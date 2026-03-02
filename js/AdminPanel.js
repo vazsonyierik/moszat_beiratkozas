@@ -770,7 +770,7 @@ const AdminPanel = ({ user, handleLogout }) => {
         const typeLabel = (startDate && endDate) ? 'Történelmi' : unseenOnly ? 'Mély' : 'Gyors';
         showToast(`${typeLabel} email feldolgozás indítása...`, 'info');
         try {
-            const processEmails = httpsCallable(functions, 'processEmailsManual');
+            const processEmails = httpsCallable(functions, 'processEmailsManual', { timeout: 540000 });
             const result = await processEmails({ daysBack, unseenOnly, startDate, endDate });
             const count = result.data.processedCount || 0;
             showToast(`Sikeres! ${count} db tanuló adata frissítve.`, 'success');
@@ -1250,7 +1250,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                         paginated=${true}
                     />
                 ` : html`
-                <${React.Fragment}>
+                <${Fragment}>
                     <div className="border-b border-gray-200 mb-8">
                         <nav className="-mb-px flex justify-between items-center" aria-label="Tabs">
                             <div className="flex space-x-8">
