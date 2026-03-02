@@ -268,7 +268,7 @@ const VersionHistory = ({ onClose, adminUser }) => {
                                         </button>
                                     </div>
                                 `
-                                : versions.map(version => html`<${React.Fragment} key=${version.id}><${VersionItem} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} /></${React.Fragment}>`)
+                                : versions.map(version => html`<${Fragment} key=${version.id}><${VersionItem} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} /><//>`)
                             }
                         </div>
                     `}

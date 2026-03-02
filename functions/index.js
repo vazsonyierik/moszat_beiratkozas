@@ -524,6 +524,8 @@ exports.scheduledEmailProcessor = onSchedule({
     schedule: "5 6-18 * * 1-5",
     timeZone: "Europe/Budapest",
     region: "europe-west1",
+    timeoutSeconds: 540,
+    memory: "1GiB",
 }, async () => {
     logger.info("Scheduled email processing started.");
     try {
@@ -545,7 +547,7 @@ exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => 
 });
 
 // Manuális email feldolgozás (KIZÁRÓLAG email)
-exports.processEmailsManual = onCall({region: "europe-west1"}, async (request) => {
+exports.processEmailsManual = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
