@@ -960,6 +960,15 @@ const AdminPanel = ({ user, handleLogout }) => {
        setIsFilterVisible(false);
    };
 
+    const handleLogStudentClick = (studentId) => {
+        const student = registrations.find(s => s.studentId === studentId);
+        if (student) {
+            setViewingStudent(student);
+        } else {
+            showToast('Tanuló nem található a jelenlegi adatbázisban.', 'warning');
+        }
+    };
+
     if (isLoading) return html`<${LoadingOverlay} text="Admin felület betöltése..." />`;
     if (error) return html`<div className="text-center p-8 text-red-500 bg-red-50 rounded-lg">${error}</div>`;
 
@@ -1307,7 +1316,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                     ${activeTab === 'email_logs' && html`
                         <div key="email-logs-tab">
-                            <${EmailImportLog} />
+                            <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
                         </div>
                     `}
                 </${React.Fragment}>`}

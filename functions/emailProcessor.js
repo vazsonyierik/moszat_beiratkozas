@@ -200,6 +200,9 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                     // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
                                     if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
 
+                                    // Név kinyerése az A oszlopból (index 0)
+                                    const excelStudentName = row[0] ? row[0].toString().trim() : "Ismeretlen név";
+
                                     // --- VÉDŐHÁLÓ (FAIL-SAFE VALIDATION) ---
                                     // Születési dátum (Index 1) validálása
                                     const birthDateRaw = row[1];
@@ -240,7 +243,7 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                             logger.warn(`Student not found: ${studentId} in file ${filename}`);
                                         }
                                         notFound.push({
-                                            name: "Ismeretlen",
+                                            name: excelStudentName,
                                             id: studentId,
                                             file: filename
                                         });

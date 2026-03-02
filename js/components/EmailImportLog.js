@@ -4,7 +4,7 @@ import * as Icons from '../Icons.js';
 
 const { useState, useEffect, Fragment } = window.React;
 
-const EmailImportLog = () => {
+const EmailImportLog = ({ onStudentClick }) => {
     const [logs, setLogs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -94,7 +94,14 @@ const EmailImportLog = () => {
                                         <tbody className="divide-y divide-gray-100">
                                             ${log.students && log.students.length > 0 ? log.students.map((student, idx) => html`
                                                 <tr key=${idx} className="hover:bg-gray-50">
-                                                    <td className="px-4 py-2 font-medium text-gray-800">${student.name}</td>
+                                                    <td className="px-4 py-2 font-medium">
+                                                        <span
+                                                            className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                            onClick=${() => onStudentClick && onStudentClick(student.studentId)}
+                                                        >
+                                                            ${student.name}
+                                                        </span>
+                                                    </td>
                                                     <td className="px-4 py-2 font-mono text-gray-600">${student.studentId}</td>
                                                     <td className="px-4 py-2 text-gray-500 italic truncate max-w-xs" title=${student.file}>${student.file}</td>
                                                 </tr>
@@ -109,7 +116,17 @@ const EmailImportLog = () => {
                                             <div>
                                                 <h4 className="text-sm font-semibold text-gray-600 mb-2">Már feldolgozva (Nem történt változás):</h4>
                                                 <ul className="list-disc pl-5 text-sm text-gray-500">
-                                                    ${log.skipped.alreadyProcessed.map((s, idx) => html`<li key=${idx}>${s.name} (${s.id})</li>`)}
+                                                    ${log.skipped.alreadyProcessed.map((s, idx) => html`
+                                                        <li key=${idx}>
+                                                            <span
+                                                                className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                                onClick=${() => onStudentClick && onStudentClick(s.id)}
+                                                            >
+                                                                ${s.name}
+                                                            </span>
+                                                            <span className="ml-1">(${s.id})</span>
+                                                        </li>
+                                                    `)}
                                                 </ul>
                                             </div>
                                         `}
@@ -118,7 +135,9 @@ const EmailImportLog = () => {
                                             <div>
                                                 <h4 className="text-sm font-semibold text-orange-600 mb-2">Nem található a rendszerben:</h4>
                                                 <ul className="list-disc pl-5 text-sm text-orange-500">
-                                                    ${log.skipped.notFound.map((s, idx) => html`<li key=${idx}>Azonosító: ${s.id} (Fájl: ${s.file})</li>`)}
+                                                    ${log.skipped.notFound.map((s, idx) => html`
+                                                        <li key=${idx}>${s.name} - Azonosító: ${s.id} (Fájl: ${s.file})</li>
+                                                    `)}
                                                 </ul>
                                             </div>
                                         `}
@@ -127,7 +146,17 @@ const EmailImportLog = () => {
                                             <div>
                                                 <h4 className="text-sm font-semibold text-red-600 mb-2">Adateltérés (Kihagyva):</h4>
                                                 <ul className="list-disc pl-5 text-sm text-red-500">
-                                                    ${log.skipped.mismatch.map((s, idx) => html`<li key=${idx}>${s.name} (${s.id}) - Születési dátum eltérés</li>`)}
+                                                    ${log.skipped.mismatch.map((s, idx) => html`
+                                                        <li key=${idx}>
+                                                            <span
+                                                                className="cursor-pointer text-blue-600 hover:text-blue-800 hover:underline transition-colors"
+                                                                onClick=${() => onStudentClick && onStudentClick(s.id)}
+                                                            >
+                                                                ${s.name}
+                                                            </span>
+                                                            <span className="ml-1">(${s.id}) - Születési dátum eltérés</span>
+                                                        </li>
+                                                    `)}
                                                 </ul>
                                             </div>
                                         `}
