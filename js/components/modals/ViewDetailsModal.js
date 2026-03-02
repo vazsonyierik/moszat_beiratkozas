@@ -232,7 +232,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         });
     };
 
-    // Címformázó függvény (megtartva a meglévő logikát)
+    // Címformázó függvény
     const formatAddress = (prefix) => {
         const get = (field) => localStudent[`${prefix}_${field}`];
         const formatWithPeriod = (value) => {
@@ -240,29 +240,42 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             const trimmed = value.trim();
             return trimmed.endsWith('.') ? trimmed : `${trimmed}.`;
         };
-        const mainParts = [];
-        if (get('country')) mainParts.push(get('country'));
-        const cityPart = [get('zip'), get('city')].filter(Boolean).join(' ');
-        if (cityPart) mainParts.push(cityPart);
-        let streetDetails = '';
-        const streetNameAndType = [get('street'), get('streetType')].filter(Boolean).join(' ');
-        if (streetNameAndType) {
-            let fullStreetPart = streetNameAndType;
-            const houseNumber = formatWithPeriod(get('houseNumber'));
-            if (houseNumber) fullStreetPart += ` ${houseNumber}`;
-            streetDetails += fullStreetPart;
-        }
-        const building = formatWithPeriod(get('building'));
-        if (building) streetDetails += (streetDetails ? ', ' : '') + `ép. ${building}`;
-        const staircase = formatWithPeriod(get('staircase'));
-        if (staircase) streetDetails += (streetDetails ? ', ' : '') + `lph. ${staircase}`;
-        const floor = formatWithPeriod(get('floor'));
-        if (floor) streetDetails += (streetDetails ? ', ' : '') + `${floor} em.`;
-        const door = formatWithPeriod(get('door'));
-        if (door) streetDetails += (streetDetails ? ', ' : '') + `${door} ajtó`;
 
-        if (streetDetails) mainParts.push(streetDetails);
-        return mainParts.length > 0 ? mainParts.join(', ') : 'N/A';
+        const zipAndCity = [get('zip'), get('city')].filter(Boolean).join(' ');
+        const streetAndType = [get('street'), get('streetType')].filter(Boolean).join(' ');
+
+        if (!zipAndCity && !streetAndType) return 'N/A';
+
+        let address = `${zipAndCity}, ${streetAndType}`;
+        const houseNumber = formatWithPeriod(get('houseNumber'));
+        if (houseNumber) {
+            address += ` ${houseNumber}`;
+        } else {
+            // If there's no house number, we'll append a dot to the street type just to be safe if there are sub parts, or we can just leave it. The requirement implies house number is present.
+        }
+
+        const subParts = [];
+        const building = formatWithPeriod(get('building'));
+        if (building) {
+            // The requirement says "building -> building + " ép." (or "ép." depending on existing data, just ensure it reads like "B. ép.")"
+            // Wait, building might just be "B." or "B" so formatWithPeriod gives "B." then we add " ép." -> "B. ép."
+            subParts.push(`${building} ép.`);
+        }
+
+        const staircase = formatWithPeriod(get('staircase'));
+        if (staircase) subParts.push(`${staircase} lph.`);
+
+        const floor = formatWithPeriod(get('floor'));
+        if (floor) subParts.push(`${floor} em.`);
+
+        const door = formatWithPeriod(get('door'));
+        if (door) subParts.push(door);
+
+        if (subParts.length > 0) {
+            address += `, ${subParts.join(' ')}`;
+        }
+
+        return address;
     };
 
     const formatStudyHistory = (key, value) => {
