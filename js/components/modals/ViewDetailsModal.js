@@ -143,17 +143,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         return html`
                         <tr key=${res.isSynthetic ? 'synthetic' : res.originalIndex} className="hover:bg-gray-50 group">
                             <td className="px-3 py-2 whitespace-nowrap text-gray-900">${res.date}</td>
-                            <td className="px-3 py-2 text-gray-700">
-                                ${res.isSynthetic ? html`
-                                    <span className="font-bold flex items-center gap-1">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
-                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
-                                        </svg>
-                                        ${res.subject}
-                                    </span>
-                                ` : res.subject}
-                            </td>
+                            <td className="px-3 py-2 text-gray-700">${res.subject}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
                                 <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeClass}`}>
                                     ${displayResult}
@@ -192,6 +182,33 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     useEffect(() => {
         setLocalStudent(student);
     }, [student]);
+
+    // Format synthetic date precisely to match KAV import format (YYYY.MM.DD. HH:mm) without spaces
+    const formatCaseFiledDate = (timestamp) => {
+        if (!timestamp) return 'Igen (Korábbi rögzítés)';
+        let d;
+        if (typeof timestamp.toDate === 'function') {
+            d = timestamp.toDate();
+        } else if (timestamp instanceof Date) {
+            d = timestamp;
+        } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+            d = new Date(timestamp);
+        } else if (timestamp.seconds) {
+            d = new Date(timestamp.seconds * 1000);
+        } else {
+            return 'Igen (Korábbi rögzítés)';
+        }
+
+        if (isNaN(d.getTime())) return 'Igen (Korábbi rögzítés)';
+
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const h = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+
+        return `${y}.${m}.${day}. ${h}:${min}`;
+    };
 
     // Exam handling functions
     const handleEditExam = (index, data) => {
@@ -413,7 +430,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                             <${ExamResultsTable}
                                 results=${localStudent.isCaseFiled ? [
                                     {
-                                        date: localStudent.caseFiledAt ? formatSingleTimestamp(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)',
+                                        date: localStudent.caseFiledAt ? formatCaseFiledDate(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)',
                                         subject: 'Ügy iktatva',
                                         result: 'Rögzítve',
                                         location: '-',
