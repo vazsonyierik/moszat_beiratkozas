@@ -1,7 +1,7 @@
 const imaps = require("imap-simple");
 const {simpleParser} = require("mailparser");
 const XLSX = require("xlsx");
-const {getFirestore, FieldValue} = require("firebase-admin/firestore");
+const {getFirestore, FieldValue, Timestamp} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
 
 const normalizeDate = (input) => {
@@ -283,11 +283,12 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                     // 4. Update Logic
                                     if (isCaseFileMode) {
-                                        if (!studentData.isCaseFiled || !studentData.caseFiledAt) {
+                                        if (!studentData.isCaseFiled || (studentData.isCaseFiled && !studentData.caseFiledAt)) {
                                             const updateData = { isCaseFiled: true };
 
                                             // Extract the date from the parsed email object, fallback to now.
-                                            updateData.caseFiledAt = parsed.date ? new Date(parsed.date).toISOString() : new Date().toISOString();
+                                            const fileDate = parsed.date ? new Date(parsed.date) : new Date();
+                                            updateData.caseFiledAt = Timestamp.fromDate(fileDate);
 
                                             await docRef.update(updateData);
                                             updateCount++;
