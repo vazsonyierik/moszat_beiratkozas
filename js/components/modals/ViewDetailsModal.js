@@ -232,7 +232,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         });
     };
 
-    // Címformázó függvény (megtartva a meglévő logikát)
+    // Címformázó függvény
     const formatAddress = (prefix) => {
         const get = (field) => localStudent[`${prefix}_${field}`];
         const formatWithPeriod = (value) => {
@@ -240,29 +240,42 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             const trimmed = value.trim();
             return trimmed.endsWith('.') ? trimmed : `${trimmed}.`;
         };
-        const mainParts = [];
-        if (get('country')) mainParts.push(get('country'));
-        const cityPart = [get('zip'), get('city')].filter(Boolean).join(' ');
-        if (cityPart) mainParts.push(cityPart);
-        let streetDetails = '';
-        const streetNameAndType = [get('street'), get('streetType')].filter(Boolean).join(' ');
-        if (streetNameAndType) {
-            let fullStreetPart = streetNameAndType;
-            const houseNumber = formatWithPeriod(get('houseNumber'));
-            if (houseNumber) fullStreetPart += ` ${houseNumber}`;
-            streetDetails += fullStreetPart;
+        
+        const zipAndCity = [get('zip'), get('city')].filter(Boolean).join(' ');
+        const streetAndType = [get('street'), get('streetType')].filter(Boolean).join(' ');
+        
+        if (!zipAndCity && !streetAndType) return 'N/A';
+        
+        let address = [zipAndCity, streetAndType].filter(Boolean).join(', ');
+        const houseNumber = formatWithPeriod(get('houseNumber'));
+        if (houseNumber) {
+            address += ` ${houseNumber}`;
+        } else {
+            // If there's no house number, we'll append a dot to the street type just to be safe if there are sub parts, or we can just leave it. The requirement implies house number is present.
         }
+        
+        const subParts = [];
         const building = formatWithPeriod(get('building'));
-        if (building) streetDetails += (streetDetails ? ', ' : '') + `ép. ${building}`;
+        if (building) {
+            // The requirement says "building -> building + " ép." (or "ép." depending on existing data, just ensure it reads like "B. ép.")"
+            // Wait, building might just be "B." or "B" so formatWithPeriod gives "B." then we add " ép." -> "B. ép."
+            subParts.push(`${building} ép.`);
+        }
+        
         const staircase = formatWithPeriod(get('staircase'));
-        if (staircase) streetDetails += (streetDetails ? ', ' : '') + `lph. ${staircase}`;
+        if (staircase) subParts.push(`${staircase} lph.`);
+        
         const floor = formatWithPeriod(get('floor'));
-        if (floor) streetDetails += (streetDetails ? ', ' : '') + `${floor} em.`;
+        if (floor) subParts.push(`${floor} em.`);
+        
         const door = formatWithPeriod(get('door'));
-        if (door) streetDetails += (streetDetails ? ', ' : '') + `${door} ajtó`;
-
-        if (streetDetails) mainParts.push(streetDetails);
-        return mainParts.length > 0 ? mainParts.join(', ') : 'N/A';
+        if (door) subParts.push(door);
+        
+        if (subParts.length > 0) {
+            address += ` ${subParts.join(' ')}`;
+        }
+        
+        return address;
     };
 
     const formatStudyHistory = (key, value) => {
@@ -369,31 +382,29 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                         </div>
                     </div>
 
-                    ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
+                    ${/* Ügy iktatva Banner */''}
                     <div className="mt-6">
                         ${localStudent.isCaseFiled ? html`
-                            <div className="bg-green-50 border border-green-200 text-green-800 p-4 rounded-lg mb-4 flex items-center gap-3 shadow-sm">
-                                <div className="p-2 bg-green-100 rounded-full"><${Icons.CheckIcon} size=${20} /></div>
+                            <div className="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
                                 <div>
-                                    <div className="font-bold text-lg">Ügy iktatva</div>
-                                    <div className="text-sm opacity-90">
-                                        ${localStudent.caseFiledAt 
-                                            ? new Date(localStudent.caseFiledAt).toLocaleString('hu-HU', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-                                            : 'Korábbi rögzítés'
-                                        }
-                                    </div>
+                                    <p className="font-bold text-lg">Ügy iktatva</p>
+                                    <p className="text-sm opacity-90">${localStudent.caseFiledAt ? formatSingleTimestamp(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)'}</p>
                                 </div>
                             </div>
                         ` : html`
-                            <div className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-lg mb-4 flex items-center gap-3 shadow-sm">
-                                <div className="p-2 bg-orange-100 rounded-full"><${Icons.AlertCircleIcon} size=${20} /></div>
+                            <div className="bg-gray-100 border border-gray-200 text-gray-600 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                                 <div>
-                                    <div className="font-bold text-lg">Ügy nincs iktatva</div>
-                                    <div className="text-sm opacity-90">A tanuló még nem szerepel a KAV rendszerében iktatottként.</div>
+                                    <p className="font-bold text-lg">Nincs ügy iktatva</p>
+                                    <p className="text-sm opacity-90">A tanulónak még nincs iktatott ügye a rendszerben.</p>
                                 </div>
                             </div>
                         `}
+                    </div>
 
+                    ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
+                    <div className="mt-0">
                         <${Section} title="Vizsgaeredmények (KAV Import)" className="border-indigo-100 ring-4 ring-indigo-50">
                             <${ExamResultsTable}
                                 results=${localStudent.examResults}

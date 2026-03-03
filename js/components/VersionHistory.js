@@ -9,11 +9,11 @@ import { XIcon, TrashIcon, EditIcon, CheckIcon } from '../Icons.js';
 import * as utils from '../utils.js';
 
 const React = window.React;
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, Fragment } = React;
 
 const VersionItem = ({ version, adminUser, onDelete }) => {
     const formattedDate = utils.formatTimestampForTable(version.createdAt);
-    
+
     return html`
         <div className="relative pl-8 sm:pl-32 py-6 group">
             <div className="flex flex-col sm:flex-row items-start mb-1 group-last:before:hidden before:absolute before:left-2 sm:before:left-0 before:h-full before:px-px before:bg-slate-200 sm:before:ml-[6.5rem] before:self-start before:-translate-x-1/2 before:translate-y-3 after:absolute after:left-2 sm:after:left-0 after:w-2 after:h-2 after:bg-indigo-600 after:border-4 after:box-content after:border-slate-50 after:rounded-full sm:after:ml-[6.5rem] after:-translate-x-1/2 after:translate-y-1.5">
@@ -28,9 +28,9 @@ const VersionItem = ({ version, adminUser, onDelete }) => {
             <div className="text-slate-700 prose prose-sm max-w-none">
                 <p className="whitespace-pre-wrap">${version.description}</p>
             </div>
-            
+
             ${adminUser && html`
-                <button 
+                <button
                     onClick=${() => onDelete(version.id)}
                     className="absolute top-6 right-0 p-2 text-gray-400 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
                     title="Bejegyzés törlése"
@@ -61,9 +61,9 @@ const AddVersionForm = ({ onCancel, onSave }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Verziószám (pl. v1.2.0)</label>
-                    <input 
-                        type="text" 
-                        required 
+                    <input
+                        type="text"
+                        required
                         value=${versionNumber}
                         onChange=${(e) => setVersionNumber(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
@@ -72,9 +72,9 @@ const AddVersionForm = ({ onCancel, onSave }) => {
                 </div>
                 <div>
                     <label className="block text-sm font-medium text-slate-700 mb-1">Cím / Rövid összefoglaló</label>
-                    <input 
-                        type="text" 
-                        required 
+                    <input
+                        type="text"
+                        required
                         value=${title}
                         onChange=${(e) => setTitle(e.target.value)}
                         className="w-full px-3 py-2 border border-slate-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
@@ -84,8 +84,8 @@ const AddVersionForm = ({ onCancel, onSave }) => {
             </div>
             <div className="mb-4">
                 <label className="block text-sm font-medium text-slate-700 mb-1">Részletes leírás (Changelog)</label>
-                <textarea 
-                    required 
+                <textarea
+                    required
                     value=${description}
                     onChange=${(e) => setDescription(e.target.value)}
                     rows="4"
@@ -221,7 +221,7 @@ const VersionHistory = ({ onClose, adminUser }) => {
                     </div>
                     <button onClick=${onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-full hover:bg-white/50 transition-colors"><${XIcon} size=${24} /></button>
                 </header>
-                
+
                 <div className="flex-1 overflow-y-auto p-6 bg-white">
                     ${permissionError && html`
                         <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6">
@@ -256,11 +256,11 @@ const VersionHistory = ({ onClose, adminUser }) => {
                         ${showAddForm && html`<${AddVersionForm} onCancel=${() => setShowAddForm(false)} onSave=${handleAddVersion} />`}
 
                         <div className="relative">
-                            ${versions.length === 0 
+                            ${versions.length === 0
                                 ? html`
                                     <div className="text-center py-12">
                                         <p className="text-slate-400 mb-4">Még nincsenek rögzített verziók.</p>
-                                        <button 
+                                        <button
                                             onClick=${handleSeedData}
                                             className="px-4 py-2 bg-indigo-100 text-indigo-700 font-medium rounded-lg hover:bg-indigo-200 transition-colors"
                                         >
@@ -268,7 +268,7 @@ const VersionHistory = ({ onClose, adminUser }) => {
                                         </button>
                                     </div>
                                 `
-                                : versions.map(version => html`<${VersionItem} key=${version.id} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} />`)
+                                : versions.map(version => html`<${Fragment} key=${version.id}><${VersionItem} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} /><//>`)
                             }
                         </div>
                     `}

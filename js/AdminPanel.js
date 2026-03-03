@@ -490,6 +490,8 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
     const [isGenerating, setIsGenerating] = useState(false);
     const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
+    const [historicalStart, setHistoricalStart] = useState('');
+    const [historicalEnd, setHistoricalEnd] = useState('');
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -756,13 +758,20 @@ const AdminPanel = ({ user, handleLogout }) => {
     }, [showToast]);
 
     // ÚJ: Külön gomb az email feldolgozáshoz (paraméterezhető)
-    const handleProcessEmails = useCallback(async ({ daysBack, unseenOnly }) => {
+    const handleProcessEmails = useCallback(async ({ daysBack, unseenOnly, startDate, endDate }) => {
+        if (startDate && endDate) {
+            if (new Date(startDate) > new Date(endDate)) {
+                showToast('A kezdődátum nem lehet nagyobb a végdátumnál!', 'error');
+                return;
+            }
+        }
+        
         setIsProcessingEmails(true);
-        const typeLabel = unseenOnly ? 'Mély' : 'Gyors';
+        const typeLabel = (startDate && endDate) ? 'Történelmi' : unseenOnly ? 'Mély' : 'Gyors';
         showToast(`${typeLabel} email feldolgozás indítása...`, 'info');
         try {
-            const processEmails = httpsCallable(functions, 'processEmailsManual');
-            const result = await processEmails({ daysBack, unseenOnly });
+            const processEmails = httpsCallable(functions, 'processEmailsManual', { timeout: 540000 });
+            const result = await processEmails({ daysBack, unseenOnly, startDate, endDate });
             const count = result.data.processedCount || 0;
             showToast(`Sikeres! ${count} db tanuló adata frissítve.`, 'success');
         } catch (error) {
@@ -959,6 +968,15 @@ const AdminPanel = ({ user, handleLogout }) => {
        setEndDate('');
        setIsFilterVisible(false);
    };
+   
+    const handleLogStudentClick = (studentId) => {
+        const student = registrations.find(s => s.studentId === studentId);
+        if (student) {
+            setViewingStudent(student);
+        } else {
+            showToast('Tanuló nem található a jelenlegi adatbázisban.', 'warning');
+        }
+    };
 
     if (isLoading) return html`<${LoadingOverlay} text="Admin felület betöltése..." />`;
     if (error) return html`<div className="text-center p-8 text-red-500 bg-red-50 rounded-lg">${error}</div>`;
@@ -990,7 +1008,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${Icons.LogoutIcon} size=${16} />
                             Kijelentkezés
                         </button>
-                        
+
                         <div className="flex gap-2">
                             <button
                                 onClick=${() => handleProcessEmails({ daysBack: 2, unseenOnly: false })}
@@ -1001,7 +1019,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
                                 Gyors Email
                             </button>
-                            
+
                             <button
                                 onClick=${() => handleProcessEmails({ daysBack: 7, unseenOnly: true })}
                                 disabled=${isProcessingEmails}
@@ -1028,6 +1046,28 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 Generálás
                             </button>
                         `}
+
+                        <div className="flex items-center gap-2">
+                            <div className="flex items-center bg-gray-100 p-1.5 rounded-lg border border-gray-200">
+                                <span className="text-xs font-semibold text-gray-500 mr-2 hidden lg:inline">Történelmi Import:</span>
+                                <input type="date" value=${historicalStart} onChange=${e => setHistoricalStart(e.target.value)} className="text-sm p-1 border rounded mr-1" title="Kezdő dátum" />
+                                <span className="text-gray-400 mx-1">-</span>
+                                <input type="date" value=${historicalEnd} onChange=${e => setHistoricalEnd(e.target.value)} className="text-sm p-1 border rounded mr-2" title="Végdátum" />
+                                <button
+                                    onClick=${() => {
+                                        if(!historicalStart || !historicalEnd) {
+                                            showToast('Kérjük add meg a kezdő és végdátumot is!', 'warning');
+                                            return;
+                                        }
+                                        handleProcessEmails({ startDate: historicalStart, endDate: historicalEnd, unseenOnly: false });
+                                    }}
+                                    disabled=${isProcessingEmails}
+                                    className="bg-indigo-600 text-white text-sm font-semibold py-1.5 px-3 rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait"
+                                >
+                                    Feldolgozás
+                                </button>
+                            </div>
+                        </div>
 
                         <div className="flex items-center gap-2">
                             <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
@@ -1159,15 +1199,17 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                        <div key=${key}>
-                                            <button
-                                                onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
-                                                title=${title}
-                                                className=${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color} border-transparent` : 'border-gray-300 bg-white'}`}
-                                            >
-                                                <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
-                                            </button>
-                                        </div>
+                                        <${Fragment} key=${key}>
+                                            <div>
+                                                <button
+                                                    onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
+                                                    title=${title}
+                                                    className=${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color} border-transparent` : 'border-gray-300 bg-white'}`}
+                                                >
+                                                    <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
+                                                </button>
+                                            </div>
+                                        </${Fragment}>
                                     `})}
                                  </div>
                             </div>
@@ -1208,7 +1250,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                         paginated=${true}
                     />
                 ` : html`
-                <${React.Fragment}>
+                <${Fragment}>
                     <div className="border-b border-gray-200 mb-8">
                         <nav className="-mb-px flex justify-between items-center" aria-label="Tabs">
                             <div className="flex space-x-8">
@@ -1225,9 +1267,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                             </div>
                         </nav>
                     </div>
-                    ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} key="paid_students" title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} key="pending_students" title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
-                    ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} key="enrolled_students" title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
-                    ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} key="completed_students" title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
+                    ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
+                    ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
+                    ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
                     
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">
@@ -1305,7 +1347,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                     ${activeTab === 'email_logs' && html`
                         <div key="email-logs-tab">
-                            <${EmailImportLog} />
+                            <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
                         </div>
                     `}
                 </${React.Fragment}>`}
