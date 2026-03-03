@@ -42,7 +42,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
     // So originalIndex should correspond to the index in localStudent.examResults.
     const resultsWithIndex = realResults.map((res, index) => ({ ...res, originalIndex: index }));
 
-    // Sort by date descending (newest first)
+    // Sort by date ascending (oldest first)
     const sortedRealResults = [...resultsWithIndex].sort((a, b) => {
         // Handle YYYY.MM.DD. HH:MM format or simple string.
         // We strip trailing dots and replace separators to make it standard ISO-like (YYYY-MM-DD)
@@ -50,11 +50,11 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
         const dateA = new Date(normalize(a.date));
         const dateB = new Date(normalize(b.date));
 
-        if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
-        return b.date.localeCompare(a.date);
+        if (!isNaN(dateA) && !isNaN(dateB)) return dateA - dateB;
+        return a.date.localeCompare(b.date);
     });
 
-    // Combine back: synthetic row (if any) always goes first
+    // Combine back: synthetic row (if any) always goes first (at the very top)
     const sortedResults = syntheticRow ? [syntheticRow, ...sortedRealResults] : sortedRealResults;
 
     return html`
