@@ -283,15 +283,20 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                     // 4. Update Logic
                                     if (isCaseFileMode) {
-                                        if (!studentData.isCaseFiled) {
-                                            await docRef.update({isCaseFiled: true});
+                                        if (!studentData.isCaseFiled || !studentData.caseFiledAt) {
+                                            const updateData = { isCaseFiled: true };
+
+                                            // Extract the date from the parsed email object, fallback to now.
+                                            updateData.caseFiledAt = parsed.date ? new Date(parsed.date).toISOString() : new Date().toISOString();
+
+                                            await docRef.update(updateData);
                                             updateCount++;
 
                                             updatedStudentsList.push({
                                                 studentId: studentId,
                                                 name: studentName,
                                                 file: filename,
-                                                action: "Ügy iktatva"
+                                                action: !studentData.isCaseFiled ? "Ügy iktatva" : "Ügy iktatva (Dátum pótolva)"
                                             });
                                         } else {
                                             alreadyProcessed.push({
