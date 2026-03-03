@@ -9,7 +9,7 @@ import { XIcon, TrashIcon, EditIcon, CheckIcon } from '../Icons.js';
 import * as utils from '../utils.js';
 
 const React = window.React;
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, Fragment } = React;
 
 const VersionItem = ({ version, adminUser, onDelete }) => {
     const formattedDate = utils.formatTimestampForTable(version.createdAt);
@@ -268,7 +268,7 @@ const VersionHistory = ({ onClose, adminUser }) => {
                                         </button>
                                     </div>
                                 `
-                                : versions.map(version => html`<${React.Fragment} key=${version.id}><${VersionItem} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} /></${React.Fragment}>`)
+                                : versions.map(version => html`<${Fragment} key=${version.id}><${VersionItem} version=${version} adminUser=${adminUser} onDelete=${handleDeleteVersion} /><//>`)
                             }
                         </div>
                     `}

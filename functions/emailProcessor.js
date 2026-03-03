@@ -63,7 +63,7 @@ const formatExamDate = (rawDate) => {
  * Looks for emails from 'noreply@kavk.hu' or with 'Adatközlés' subject with Excel attachments.
  * Parses the 'Ügy iktatva' sheet and updates 'isCaseFiled' for students.
  */
-const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) => {
+const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDate = null, endDate = null} = {}) => {
     const emailUser = process.env.EMAIL_USER;
     const emailPass = process.env.EMAIL_PASS;
     const emailHost = process.env.EMAIL_HOST || "imap.gmail.com";
@@ -91,6 +91,10 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
     let connection;
     let processedCount = 0;
     const updatedStudentsList = [];
+    const alreadyProcessed = [];
+    const notFound = [];
+    const mismatch = [];
+    let processedAnyEmails = false;
 
     try {
         logger.info("Connecting to IMAP...");
@@ -107,14 +111,25 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
             logger.info("Successfully opened '[Gmail]/All Mail' mailbox.");
         }
 
-        // NARROWER SEARCH: Fetch emails (read or unread) from the last 2 days containing 'kav' in the sender
-        const twoDaysAgo = new Date();
-        twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+        let searchCriteria = [];
 
-        const searchCriteria = [
-            ["SINCE", twoDaysAgo],
-            ["FROM", "kav"]
-        ];
+        if (startDate && endDate) {
+            logger.info(`Using absolute date range for IMAP search: ${startDate} to ${endDate}`);
+            searchCriteria = [
+                ["SINCE", new Date(startDate)],
+                ["BEFORE", new Date(endDate)],
+                ["FROM", "kav"]
+            ];
+        } else {
+            logger.info(`Using daysBack (${daysBack}) for IMAP search`);
+            const sinceDate = new Date();
+            sinceDate.setDate(sinceDate.getDate() - daysBack);
+
+            searchCriteria = [
+                ["SINCE", sinceDate],
+                ["FROM", "kav"]
+            ];
+        }
 
         const fetchOptions = {
             bodies: [""], // Fetch the entire raw message body
@@ -123,6 +138,8 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
 
         const messages = await connection.search(searchCriteria, fetchOptions);
         logger.info(`Found ${messages.length} unread emails in total.`);
+
+        if (messages.length > 0) processedAnyEmails = true;
 
         for (const message of messages) {
             try {
@@ -194,6 +211,9 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                     // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
                                     if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
 
+                                    // Név kinyerése az A oszlopból (index 0)
+                                    const excelStudentName = row[0] ? row[0].toString().trim() : "Ismeretlen név";
+
                                     // --- VÉDŐHÁLÓ (FAIL-SAFE VALIDATION) ---
                                     // Születési dátum (Index 1) validálása
                                     const birthDateRaw = row[1];
@@ -233,11 +253,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                         if (!isCaseFileMode) {
                                             logger.warn(`Student not found: ${studentId} in file ${filename}`);
                                         }
+                                        notFound.push({
+                                            name: excelStudentName,
+                                            id: studentId,
+                                            file: filename
+                                        });
                                         continue;
                                     }
 
                                     const docRef = snapshot.docs[0].ref;
                                     const studentData = snapshot.docs[0].data();
+                                    const studentName = [studentData.current_prefix, studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
 
                                     // 3. Birth Date Validation
                                     if (birthDateRaw) {
@@ -246,6 +272,11 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
 
                                         if (excelBirthDate && dbBirthDate && dbBirthDate !== excelBirthDate) {
                                             logger.warn(`Birth date mismatch for ${studentId}. DB: ${dbBirthDate}, Excel: ${excelBirthDate}. Skipping.`);
+                                            mismatch.push({
+                                                name: studentName,
+                                                id: studentId,
+                                                file: filename
+                                            });
                                             continue;
                                         }
                                     }
@@ -256,12 +287,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                             await docRef.update({isCaseFiled: true});
                                             updateCount++;
 
-                                            const fullName = [studentData.current_prefix, studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
                                             updatedStudentsList.push({
                                                 studentId: studentId,
-                                                name: fullName,
+                                                name: studentName,
                                                 file: filename,
                                                 action: "Ügy iktatva"
+                                            });
+                                        } else {
+                                            alreadyProcessed.push({
+                                                name: studentName,
+                                                id: studentId,
+                                                file: filename
                                             });
                                         }
                                     } else {
@@ -338,12 +374,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
                                             await docRef.update({examResults: existingResults});
                                             updateCount++;
 
-                                            const fullName = [freshData.current_prefix, freshData.current_lastName, freshData.current_firstName, freshData.current_secondName].filter(Boolean).join(" ");
                                             updatedStudentsList.push({
                                                 studentId: studentId,
-                                                name: fullName,
+                                                name: studentName,
                                                 file: filename,
                                                 action: actionType
+                                            });
+                                        } else {
+                                            alreadyProcessed.push({
+                                                name: studentName,
+                                                id: studentId,
+                                                file: filename
                                             });
                                         }
                                     }
@@ -376,15 +417,22 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false} = {}) =>
         }
     }
 
-    try {
-        await getFirestore().collection("email_import_logs").add({
-            createdAt: FieldValue.serverTimestamp(),
-            processedCount: updatedStudentsList.length,
-            students: updatedStudentsList
-        });
-        logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
-    } catch (logErr) {
-        logger.error("Failed to save email import log", logErr);
+    if (processedAnyEmails) {
+        try {
+            await getFirestore().collection("email_import_logs").add({
+                createdAt: FieldValue.serverTimestamp(),
+                processedCount: updatedStudentsList.length,
+                students: updatedStudentsList,
+                skipped: {
+                    alreadyProcessed: alreadyProcessed,
+                    notFound: notFound,
+                    mismatch: mismatch
+                }
+            });
+            logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
+        } catch (logErr) {
+            logger.error("Failed to save email import log", logErr);
+        }
     }
 
     return processedCount;
