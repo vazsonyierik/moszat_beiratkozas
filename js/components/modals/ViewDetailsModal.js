@@ -31,12 +31,19 @@ const DisplayField = ({ label, value }) => html`
 const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editingIndex, tempExamData, setTempExamData }) => {
     if (!results || results.length === 0) return html`<p className="text-sm text-gray-500 italic">Nincsenek rögzített vizsgaeredmények.</p>`;
 
+    // Extract synthetic row if present to keep it at the top
+    const syntheticRow = results.find(res => res.isSynthetic);
+    const realResults = results.filter(res => !res.isSynthetic);
+
     // We need to keep track of the original index because sorting changes order.
-    // So map to include original index first.
-    const resultsWithIndex = results.map((res, index) => ({ ...res, originalIndex: index }));
+    // So map to include original index first. Note: index must match the original array structure for editing/deleting.
+    // However, since the synthetic row was added at index 0, the real exams start at index 1 in the parent's logic if it was passed.
+    // Wait, the parent uses localStudent.examResults[editingExamIndex] which does NOT include the synthetic row!
+    // So originalIndex should correspond to the index in localStudent.examResults.
+    const resultsWithIndex = realResults.map((res, index) => ({ ...res, originalIndex: index }));
 
     // Sort by date descending (newest first)
-    const sortedResults = [...resultsWithIndex].sort((a, b) => {
+    const sortedRealResults = [...resultsWithIndex].sort((a, b) => {
         // Handle YYYY.MM.DD. HH:MM format or simple string.
         // We strip trailing dots and replace separators to make it standard ISO-like (YYYY-MM-DD)
         const normalize = (d) => d.split(' ')[0].replace(/\.$/, '').replace(/\./g, '-');
@@ -46,6 +53,9 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
         if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
         return b.date.localeCompare(a.date);
     });
+
+    // Combine back: synthetic row (if any) always goes first
+    const sortedResults = syntheticRow ? [syntheticRow, ...sortedRealResults] : sortedRealResults;
 
     return html`
         <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
@@ -75,6 +85,9 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         } else if (resultLower === 'nem jelent meg') {
                             badgeClass = 'bg-yellow-100 text-yellow-800';
                             displayResult = '3';
+                        } else if (resultLower === 'rögzítve') {
+                            badgeClass = 'bg-green-100 text-green-800';
+                            displayResult = 'Rögzítve';
                         }
 
                         if (isEditing) {
@@ -128,9 +141,19 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         }
 
                         return html`
-                        <tr key=${res.originalIndex} className="hover:bg-gray-50 group">
+                        <tr key=${res.isSynthetic ? 'synthetic' : res.originalIndex} className="hover:bg-gray-50 group">
                             <td className="px-3 py-2 whitespace-nowrap text-gray-900">${res.date}</td>
-                            <td className="px-3 py-2 text-gray-700">${res.subject}</td>
+                            <td className="px-3 py-2 text-gray-700">
+                                ${res.isSynthetic ? html`
+                                    <span className="font-bold flex items-center gap-1">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-green-600">
+                                            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                            <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                        </svg>
+                                        ${res.subject}
+                                    </span>
+                                ` : res.subject}
+                            </td>
                             <td className="px-3 py-2 whitespace-nowrap">
                                 <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${badgeClass}`}>
                                     ${displayResult}
@@ -138,14 +161,16 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                             </td>
                             <td className="px-3 py-2 text-gray-500 text-xs">${res.location}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-right">
-                                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick=${() => onEdit(res.originalIndex, res)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Szerkesztés">
-                                        <${Icons.EditIcon} size=${16} />
-                                    </button>
-                                    <button onClick=${() => onDelete(res.originalIndex)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Törlés">
-                                        <${Icons.TrashIcon} size=${16} />
-                                    </button>
-                                </div>
+                                ${!res.isSynthetic ? html`
+                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick=${() => onEdit(res.originalIndex, res)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Szerkesztés">
+                                            <${Icons.EditIcon} size=${16} />
+                                        </button>
+                                        <button onClick=${() => onDelete(res.originalIndex)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Törlés">
+                                            <${Icons.TrashIcon} size=${16} />
+                                        </button>
+                                    </div>
+                                ` : null}
                             </td>
                         </tr>
                     `})}
@@ -382,32 +407,20 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                         </div>
                     </div>
 
-                    ${/* Ügy iktatva Banner */''}
-                    <div className="mt-6">
-                        ${localStudent.isCaseFiled ? html`
-                            <div className="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <div>
-                                    <p className="font-bold text-lg">Ügy iktatva</p>
-                                    <p className="text-sm opacity-90">${localStudent.caseFiledAt ? formatSingleTimestamp(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)'}</p>
-                                </div>
-                            </div>
-                        ` : html`
-                            <div className="bg-gray-100 border border-gray-200 text-gray-600 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                <div>
-                                    <p className="font-bold text-lg">Nincs ügy iktatva</p>
-                                    <p className="text-sm opacity-90">A tanulónak még nincs iktatott ügye a rendszerben.</p>
-                                </div>
-                            </div>
-                        `}
-                    </div>
-
                     ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
-                    <div className="mt-0">
+                    <div className="mt-6">
                         <${Section} title="Vizsgaeredmények (KAV Import)" className="border-indigo-100 ring-4 ring-indigo-50">
                             <${ExamResultsTable}
-                                results=${localStudent.examResults}
+                                results=${localStudent.isCaseFiled ? [
+                                    {
+                                        date: localStudent.caseFiledAt ? formatSingleTimestamp(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)',
+                                        subject: 'Ügy iktatva',
+                                        result: 'Rögzítve',
+                                        location: '-',
+                                        isSynthetic: true
+                                    },
+                                    ...(localStudent.examResults || [])
+                                ] : localStudent.examResults}
                                 onEdit=${handleEditExam}
                                 onDelete=${handleDeleteExam}
                                 onSave=${handleSaveExam}
