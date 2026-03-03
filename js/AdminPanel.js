@@ -587,7 +587,10 @@ const AdminPanel = ({ user, handleLogout }) => {
         const regRef = doc(db, collectionName, id);
         const updateData = { [field]: value };
         if (field === 'status_enrolled' && value === true) {
-            updateData.enrolledAt = serverTimestamp();
+            // Force enrolledAt to 23:59:59 local time of today to avoid timezone shifting backwards
+            const today = new Date();
+            today.setHours(23, 59, 59, 999);
+            updateData.enrolledAt = Timestamp.fromDate(today);
         }
         try { 
             await updateDoc(regRef, updateData);
@@ -611,7 +614,16 @@ const AdminPanel = ({ user, handleLogout }) => {
         try {
             const updatePayload = { studentId: studentId };
             if (studentId && studentId.trim() !== "") {
-                const timestamp = utils.dateStringToTimestamp(customDateStr) || serverTimestamp();
+                let timestamp;
+                if (customDateStr) {
+                    const date = new Date(customDateStr);
+                    date.setHours(23, 59, 59, 999);
+                    timestamp = Timestamp.fromDate(date);
+                } else {
+                    const today = new Date();
+                    today.setHours(23, 59, 59, 999);
+                    timestamp = Timestamp.fromDate(today);
+                }
                 updatePayload.studentIdAssignedAt = timestamp;
             }
             await updateDoc(regRef, updatePayload);
@@ -640,7 +652,16 @@ const AdminPanel = ({ user, handleLogout }) => {
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
         const regRef = doc(db, collectionName, id);
         try {
-            const timestamp = utils.dateStringToTimestamp(customDateStr) || serverTimestamp();
+            let timestamp;
+            if (customDateStr) {
+                const date = new Date(customDateStr);
+                date.setHours(23, 59, 59, 999);
+                timestamp = Timestamp.fromDate(date);
+            } else {
+                const today = new Date();
+                today.setHours(23, 59, 59, 999);
+                timestamp = Timestamp.fromDate(today);
+            }
             await updateDoc(regRef, { courseCompletedAt: timestamp });
             await logAdminAction(user.email, `Tanfolyam befejezettnek jelölése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Tanuló befejezte a tanfolyamot!', 'success');

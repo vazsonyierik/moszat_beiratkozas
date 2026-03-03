@@ -10,6 +10,7 @@ const {google} = require("googleapis");
 const templates = require("./emailTemplates");
 const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
+const {calculateDeadline} = require("./deadlineCalculator");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
@@ -592,6 +593,11 @@ exports.onRegistrationCreated = onDocumentCreated(
             await studentRef.update({sendInitialEmail: FieldValue.delete()});
         }
 
+        const deadlineInfo = calculateDeadline(studentData);
+        if (deadlineInfo) {
+            await studentRef.update({deadlineInfo});
+        }
+
         logger.info(`Registration created for ${studentRef.id}. Sheet writing will be handled by onUpdated trigger.`);
     }
 );
@@ -618,6 +624,11 @@ exports.onRegistrationTestCreated = onDocumentCreated(
 
         if (studentData.sendInitialEmail !== undefined) {
             await studentRef.update({sendInitialEmail: FieldValue.delete()});
+        }
+
+        const deadlineInfo = calculateDeadline(studentData);
+        if (deadlineInfo) {
+            await studentRef.update({deadlineInfo});
         }
 
         // MÓDOSÍTÁS: A teszt adatbázis NEM ír a sheet-be
@@ -681,6 +692,27 @@ exports.onRegistrationUpdated = onDocumentUpdated(
         if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
             await sendEmail(after, templates.medicalCertificateReceived(after));
         }
+
+        // CRITICAL OPTIMIZATION: Deadline Calculation
+        // Only run if specific deadline-related fields changed
+        const fieldsToWatch = ['examResults', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt'];
+        let needsDeadlineRecalc = false;
+
+        for (const field of fieldsToWatch) {
+            if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+                needsDeadlineRecalc = true;
+                break;
+            }
+        }
+
+        if (needsDeadlineRecalc) {
+            const newDeadlineInfo = calculateDeadline(after) || null;
+            // Only update if the result actually changed
+            if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                logger.info(`Updating deadlineInfo for ${after.registrationNumber}`);
+                await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
+            }
+        }
     }
 );
 
@@ -709,6 +741,25 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
 
         if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
             await sendEmail(after, templates.medicalCertificateReceived(after), true);
+        }
+
+        // CRITICAL OPTIMIZATION: Deadline Calculation
+        const fieldsToWatch = ['examResults', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt'];
+        let needsDeadlineRecalc = false;
+
+        for (const field of fieldsToWatch) {
+            if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+                needsDeadlineRecalc = true;
+                break;
+            }
+        }
+
+        if (needsDeadlineRecalc) {
+            const newDeadlineInfo = calculateDeadline(after) || null;
+            if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                logger.info(`Updating deadlineInfo for TEST ${after.registrationNumber}`);
+                await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
+            }
         }
 
         logger.info(`TEST Registration updated for ${after.registrationNumber}. Emails sent if triggered. Sheet update SKIPPED.`);
