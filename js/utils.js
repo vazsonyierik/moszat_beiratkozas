@@ -58,10 +58,24 @@ export const formatTimestampForTable = (timestamp) => {
 // Ha a timestamp érvénytelen (null, undefined, stb.), üres stringet ad vissza,
 // így elkerülve, hogy hibásan az aktuális időpont jelenjen meg.
 export const formatSingleTimestamp = (timestamp) => {
-    if (!timestamp || typeof timestamp.toDate !== 'function') {
+    if (!timestamp) {
         return '';
     }
-    const d = timestamp.toDate();
+    let d;
+    if (typeof timestamp.toDate === 'function') {
+        d = timestamp.toDate();
+    } else if (timestamp instanceof Date) {
+        d = timestamp;
+    } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+        d = new Date(timestamp);
+    } else if (timestamp.seconds) {
+        d = new Date(timestamp.seconds * 1000);
+    } else {
+        return '';
+    }
+
+    if (isNaN(d.getTime())) return '';
+
     return d.toLocaleString('hu-HU', {
         year: 'numeric',
         month: '2-digit',
