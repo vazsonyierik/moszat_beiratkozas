@@ -210,6 +210,63 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         return `${y}.${m}.${day}. ${h}:${min}`;
     };
 
+    // Helper functions for Deadline rendering
+    const formatJustDate = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        let d;
+        if (typeof timestamp.toDate === 'function') {
+            d = timestamp.toDate();
+        } else if (timestamp instanceof Date) {
+            d = timestamp;
+        } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+            d = new Date(timestamp);
+        } else if (timestamp.seconds) {
+            d = new Date(timestamp.seconds * 1000);
+        } else {
+            return 'N/A';
+        }
+        if (isNaN(d.getTime())) return 'N/A';
+
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}.${m}.${day}.`;
+    };
+
+    const getDaysRemaining = (targetTimestamp) => {
+        if (!targetTimestamp) return null;
+        let d;
+        if (typeof targetTimestamp.toDate === 'function') {
+            d = targetTimestamp.toDate();
+        } else if (targetTimestamp instanceof Date) {
+            d = targetTimestamp;
+        } else if (typeof targetTimestamp === 'string' || typeof targetTimestamp === 'number') {
+            d = new Date(targetTimestamp);
+        } else if (targetTimestamp.seconds) {
+            d = new Date(targetTimestamp.seconds * 1000);
+        } else {
+            return null;
+        }
+        if (isNaN(d.getTime())) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(d);
+        target.setHours(0, 0, 0, 0);
+
+        const diffTime = target.getTime() - today.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    const getPhaseLabel = (activePhase) => {
+        if (!activePhase) return 'N/A';
+        if (activePhase.includes('Phase 1')) return 'Megkezdhetőségi határidő (90 nap)';
+        if (activePhase.includes('Phase 2')) return 'Első elméleti vizsga határideje (9 hónap)';
+        if (activePhase.includes('Phase 3')) return 'Sikeres elméleti vizsga határideje (12 hónap)';
+        if (activePhase.includes('Phase 4')) return 'Sikeres forgalmi vizsga határideje (2 év)';
+        return activePhase;
+    };
+
     // Exam handling functions
     const handleEditExam = (index, data) => {
         setEditingExamIndex(index);
@@ -355,6 +412,53 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         </div>
     `;
 
+    const renderDeadlineStatus = () => {
+        if (!localStudent.deadlineInfo || !localStudent.deadlineInfo.shiftedDate) {
+            return html`
+                <p className="text-sm text-gray-500 italic mt-2">A határidő kalkuláció folyamatban van, vagy nincs elegendő adat.</p>
+            `;
+        }
+
+        const info = localStudent.deadlineInfo;
+        const mappedPhase = getPhaseLabel(info.activePhase);
+        const daysRemaining = getDaysRemaining(info.shiftedDate);
+
+        let statusElement;
+        if (daysRemaining === null) {
+            statusElement = html`<span className="text-gray-500 italic">Ismeretlen státusz</span>`;
+        } else if (daysRemaining < 0) {
+            statusElement = html`<span className="font-bold text-red-600 bg-red-100 px-2 py-1 rounded">Letelt</span>`;
+        } else if (daysRemaining <= 30) {
+            statusElement = html`<span className="font-bold text-orange-600">${daysRemaining} nap van hátra</span>`;
+        } else {
+            statusElement = html`<span className="font-bold text-green-600">${daysRemaining} nap van hátra</span>`;
+        }
+
+        return html`
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-2">
+                <div className="flex flex-col border-b border-gray-100 pb-2">
+                    <strong className="text-gray-500 mb-1">Aktuális Cél / Fázis</strong>
+                    <span className="text-gray-900 font-medium">${mappedPhase}</span>
+                </div>
+                <div className="flex flex-col border-b border-gray-100 pb-2">
+                    <strong className="text-gray-500 mb-1">Állapot</strong>
+                    <div>${statusElement}</div>
+                </div>
+                <div className="flex flex-col col-span-1 md:col-span-2 pt-1">
+                    <strong className="text-gray-500 mb-1">Határidő napja</strong>
+                    <div className="flex flex-col">
+                        <span className="text-gray-900 font-medium">${formatJustDate(info.shiftedDate)}</span>
+                        ${info.isShifted ? html`
+                            <span className="text-xs text-gray-400 italic mt-1">
+                                *(Eredeti határidő: ${formatJustDate(info.originalDate)}, hétvége/ünnepnap miatt csúsztatva)*
+                            </span>
+                        ` : null}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
+
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
@@ -422,6 +526,13 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                                 <${DisplayField} label="Email" value=${localStudent.guardian_email} />
                             <//>
                         </div>
+                    </div>
+
+                    ${/* Határidők szekció - Teljes szélességben */''}
+                    <div className="mt-6">
+                        <${Section} title="Határidők és Képzési Állapot" className="border-blue-100 ring-4 ring-blue-50">
+                            ${renderDeadlineStatus()}
+                        <//>
                     </div>
 
                     ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
