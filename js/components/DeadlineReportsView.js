@@ -195,28 +195,26 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                             const studentIdStr = student.studentId || '-';
 
                             return html`
-                                <${Fragment} key=${student.id}>
-                                    <tr className="hover:bg-gray-50 transition-colors">
-                                        <td className=${tdNameClass} onClick=${() => onStudentClick(student)}>
-                                            ${fullName}
-                                        </td>
-                                        <td className=${tdBaseClass}>
-                                            ${studentIdStr}
-                                        </td>
-                                        <td className=${tdBaseClass}>
-                                            ${phaseName}
-                                        </td>
-                                        <td className=${tdDateClass}>
-                                            ${deadlineDateStr}
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <span className=${spanClass}>
-                                                <span className="mr-1">${emoji}</span>
-                                                ${statusText} (${daysRemaining} nap)
-                                            </span>
-                                        </td>
-                                    </tr>
-                                </${Fragment}>
+                                <tr key=${student.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className=${tdNameClass} onClick=${() => onStudentClick(student)}>
+                                        ${fullName}
+                                    </td>
+                                    <td className=${tdBaseClass}>
+                                        ${studentIdStr}
+                                    </td>
+                                    <td className=${tdBaseClass}>
+                                        ${phaseName}
+                                    </td>
+                                    <td className=${tdDateClass}>
+                                        ${deadlineDateStr}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                        <span className=${spanClass}>
+                                            <span className="mr-1">${emoji}</span>
+                                            ${statusText} (${daysRemaining} nap)
+                                        </span>
+                                    </td>
+                                </tr>
                             `;
                         })}
                     </tbody>
