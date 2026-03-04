@@ -18,6 +18,7 @@ import { html } from '../../UI.js';
 import { formatFullName, formatSingleTimestamp } from '../../utils.js';
 import * as Icons from '../../Icons.js';
 import { useConfirmation, useToast } from '../../context/AppContext.js';
+import { functions, httpsCallable, isTestMode, db, doc, getDoc } from '../../firebase.js';
 
 const { useState, useEffect } = window.React;
 
@@ -31,21 +32,31 @@ const DisplayField = ({ label, value }) => html`
 const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editingIndex, tempExamData, setTempExamData }) => {
     if (!results || results.length === 0) return html`<p className="text-sm text-gray-500 italic">Nincsenek rögzített vizsgaeredmények.</p>`;
 
-    // We need to keep track of the original index because sorting changes order.
-    // So map to include original index first.
-    const resultsWithIndex = results.map((res, index) => ({ ...res, originalIndex: index }));
+    // Extract synthetic row if present to keep it at the top
+    const syntheticRow = results.find(res => res.isSynthetic);
+    const realResults = results.filter(res => !res.isSynthetic);
 
-    // Sort by date descending (newest first)
-    const sortedResults = [...resultsWithIndex].sort((a, b) => {
+    // We need to keep track of the original index because sorting changes order.
+    // So map to include original index first. Note: index must match the original array structure for editing/deleting.
+    // However, since the synthetic row was added at index 0, the real exams start at index 1 in the parent's logic if it was passed.
+    // Wait, the parent uses localStudent.examResults[editingExamIndex] which does NOT include the synthetic row!
+    // So originalIndex should correspond to the index in localStudent.examResults.
+    const resultsWithIndex = realResults.map((res, index) => ({ ...res, originalIndex: index }));
+
+    // Sort by date ascending (oldest first)
+    const sortedRealResults = [...resultsWithIndex].sort((a, b) => {
         // Handle YYYY.MM.DD. HH:MM format or simple string.
         // We strip trailing dots and replace separators to make it standard ISO-like (YYYY-MM-DD)
         const normalize = (d) => d.split(' ')[0].replace(/\.$/, '').replace(/\./g, '-');
         const dateA = new Date(normalize(a.date));
         const dateB = new Date(normalize(b.date));
 
-        if (!isNaN(dateA) && !isNaN(dateB)) return dateB - dateA;
-        return b.date.localeCompare(a.date);
+        if (!isNaN(dateA) && !isNaN(dateB)) return dateA - dateB;
+        return a.date.localeCompare(b.date);
     });
+
+    // Combine back: synthetic row (if any) always goes first (at the very top)
+    const sortedResults = syntheticRow ? [syntheticRow, ...sortedRealResults] : sortedRealResults;
 
     return html`
         <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
@@ -75,6 +86,9 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         } else if (resultLower === 'nem jelent meg') {
                             badgeClass = 'bg-yellow-100 text-yellow-800';
                             displayResult = '3';
+                        } else if (resultLower === 'rögzítve') {
+                            badgeClass = 'bg-green-100 text-green-800';
+                            displayResult = 'Rögzítve';
                         }
 
                         if (isEditing) {
@@ -128,7 +142,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         }
 
                         return html`
-                        <tr key=${res.originalIndex} className="hover:bg-gray-50 group">
+                        <tr key=${res.isSynthetic ? 'synthetic' : res.originalIndex} className="hover:bg-gray-50 group">
                             <td className="px-3 py-2 whitespace-nowrap text-gray-900">${res.date}</td>
                             <td className="px-3 py-2 text-gray-700">${res.subject}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
@@ -138,14 +152,16 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                             </td>
                             <td className="px-3 py-2 text-gray-500 text-xs">${res.location}</td>
                             <td className="px-3 py-2 whitespace-nowrap text-right">
-                                <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick=${() => onEdit(res.originalIndex, res)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Szerkesztés">
-                                        <${Icons.EditIcon} size=${16} />
-                                    </button>
-                                    <button onClick=${() => onDelete(res.originalIndex)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Törlés">
-                                        <${Icons.TrashIcon} size=${16} />
-                                    </button>
-                                </div>
+                                ${!res.isSynthetic ? html`
+                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <button onClick=${() => onEdit(res.originalIndex, res)} className="p-1 text-blue-600 hover:bg-blue-100 rounded" title="Szerkesztés">
+                                            <${Icons.EditIcon} size=${16} />
+                                        </button>
+                                        <button onClick=${() => onDelete(res.originalIndex)} className="p-1 text-red-600 hover:bg-red-100 rounded" title="Törlés">
+                                            <${Icons.TrashIcon} size=${16} />
+                                        </button>
+                                    </div>
+                                ` : null}
                             </td>
                         </tr>
                     `})}
@@ -159,6 +175,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     const [localStudent, setLocalStudent] = useState(student);
     const [editingExamIndex, setEditingExamIndex] = useState(null);
     const [tempExamData, setTempExamData] = useState({});
+    const [isRecalculating, setIsRecalculating] = useState(false);
 
     const showConfirmation = useConfirmation();
     const showToast = useToast();
@@ -167,6 +184,120 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     useEffect(() => {
         setLocalStudent(student);
     }, [student]);
+
+    const handleRecalculateDeadline = async () => {
+        setIsRecalculating(true);
+        try {
+            const recalculateFn = httpsCallable(functions, 'recalculateStudentDeadline');
+            const result = await recalculateFn({
+                documentId: localStudent.id,
+                isTest: isTestMode()
+            });
+
+            if (result.data.success) {
+                // Re-fetch the entire student document to ensure perfect reactivity with backend formats
+                const collectionName = isTestMode() ? 'registrations_test' : 'registrations';
+                const docRef = doc(db, collectionName, localStudent.id);
+                const docSnap = await getDoc(docRef);
+                
+                if (docSnap.exists()) {
+                    setLocalStudent({ id: docSnap.id, ...docSnap.data() });
+                    showToast("Határidők sikeresen frissítve!", "success");
+                } else {
+                    showToast("Hiba: A tanuló nem található.", "error");
+                }
+            }
+        } catch (error) {
+            console.error("Hiba a határidő újraszámításakor:", error);
+            showToast("Hiba történt a határidő frissítése során.", "error");
+        } finally {
+            setIsRecalculating(false);
+        }
+    };
+
+    // Format synthetic date precisely to match KAV import format (YYYY.MM.DD. HH:mm) without spaces
+    const formatCaseFiledDate = (timestamp) => {
+        if (!timestamp) return 'Igen (Korábbi rögzítés)';
+        let d;
+        if (typeof timestamp.toDate === 'function') {
+            d = timestamp.toDate();
+        } else if (timestamp instanceof Date) {
+            d = timestamp;
+        } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+            d = new Date(timestamp);
+        } else if (timestamp.seconds) {
+            d = new Date(timestamp.seconds * 1000);
+        } else {
+            return 'Igen (Korábbi rögzítés)';
+        }
+        
+        if (isNaN(d.getTime())) return 'Igen (Korábbi rögzítés)';
+
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const h = String(d.getHours()).padStart(2, '0');
+        const min = String(d.getMinutes()).padStart(2, '0');
+
+        return `${y}.${m}.${day}. ${h}:${min}`;
+    };
+
+    // Helper functions for Deadline rendering
+    const formatJustDate = (timestamp) => {
+        if (!timestamp) return 'N/A';
+        let d;
+        if (typeof timestamp.toDate === 'function') {
+            d = timestamp.toDate();
+        } else if (timestamp instanceof Date) {
+            d = timestamp;
+        } else if (typeof timestamp === 'string' || typeof timestamp === 'number') {
+            d = new Date(timestamp);
+        } else if (timestamp.seconds) {
+            d = new Date(timestamp.seconds * 1000);
+        } else {
+            return 'N/A';
+        }
+        if (isNaN(d.getTime())) return 'N/A';
+
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}.${m}.${day}.`;
+    };
+
+    const getDaysRemaining = (targetTimestamp) => {
+        if (!targetTimestamp) return null;
+        let d;
+        if (typeof targetTimestamp.toDate === 'function') {
+            d = targetTimestamp.toDate();
+        } else if (targetTimestamp instanceof Date) {
+            d = targetTimestamp;
+        } else if (typeof targetTimestamp === 'string' || typeof targetTimestamp === 'number') {
+            d = new Date(targetTimestamp);
+        } else if (targetTimestamp.seconds) {
+            d = new Date(targetTimestamp.seconds * 1000);
+        } else {
+            return null;
+        }
+        if (isNaN(d.getTime())) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(d);
+        target.setHours(0, 0, 0, 0);
+        
+        const diffTime = target.getTime() - today.getTime();
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    };
+
+    const getPhaseLabel = (activePhase) => {
+        if (!activePhase) return 'N/A';
+        if (activePhase.includes('Phase 1')) return 'Megkezdhetőségi határidő (90 nap)';
+        if (activePhase.includes('Phase 2')) return 'Első elméleti vizsga határideje (9 hónap)';
+        if (activePhase.includes('Phase 3')) return 'Sikeres elméleti vizsga határideje (12 hónap)';
+        if (activePhase.includes('Phase 4')) return 'Sikeres forgalmi vizsga határideje (2 év)';
+        return activePhase;
+    };
 
     // Exam handling functions
     const handleEditExam = (index, data) => {
@@ -240,12 +371,12 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             const trimmed = value.trim();
             return trimmed.endsWith('.') ? trimmed : `${trimmed}.`;
         };
-        
+
         const zipAndCity = [get('zip'), get('city')].filter(Boolean).join(' ');
         const streetAndType = [get('street'), get('streetType')].filter(Boolean).join(' ');
-        
+
         if (!zipAndCity && !streetAndType) return 'N/A';
-        
+
         let address = [zipAndCity, streetAndType].filter(Boolean).join(', ');
         const houseNumber = formatWithPeriod(get('houseNumber'));
         if (houseNumber) {
@@ -253,7 +384,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         } else {
             // If there's no house number, we'll append a dot to the street type just to be safe if there are sub parts, or we can just leave it. The requirement implies house number is present.
         }
-        
+
         const subParts = [];
         const building = formatWithPeriod(get('building'));
         if (building) {
@@ -261,20 +392,20 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             // Wait, building might just be "B." or "B" so formatWithPeriod gives "B." then we add " ép." -> "B. ép."
             subParts.push(`${building} ép.`);
         }
-        
+
         const staircase = formatWithPeriod(get('staircase'));
         if (staircase) subParts.push(`${staircase} lph.`);
-        
+
         const floor = formatWithPeriod(get('floor'));
         if (floor) subParts.push(`${floor} em.`);
-        
+
         const door = formatWithPeriod(get('door'));
         if (door) subParts.push(door);
-        
+
         if (subParts.length > 0) {
             address += ` ${subParts.join(' ')}`;
         }
-        
+
         return address;
     };
 
@@ -304,14 +435,64 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     };
     const birthPlace = getBirthPlace();
 
-    const Section = ({ title, children, className = "" }) => html`
+    const Section = ({ title, children, className = "", headerRight = null }) => html`
         <div className=${`bg-white p-5 rounded-lg shadow-sm border border-gray-200 ${className}`}>
-            <h4 className="text-lg font-bold text-indigo-800 border-b border-gray-100 pb-3 mb-4 flex items-center gap-2">
-                ${title}
-            </h4>
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
+                <h4 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
+                    ${title}
+                </h4>
+                ${headerRight && html`<div>${headerRight}</div>`}
+            </div>
             <div className="space-y-1">${children}</div>
         </div>
     `;
+
+    const renderDeadlineStatus = () => {
+        if (!localStudent.deadlineInfo || !localStudent.deadlineInfo.shiftedDate) {
+            return html`
+                <p className="text-sm text-gray-500 italic mt-2">A határidő kalkuláció folyamatban van, vagy nincs elegendő adat.</p>
+            `;
+        }
+
+        const info = localStudent.deadlineInfo;
+        const mappedPhase = getPhaseLabel(info.activePhase);
+        const daysRemaining = getDaysRemaining(info.shiftedDate);
+
+        let statusElement;
+        if (daysRemaining === null) {
+            statusElement = html`<span className="text-gray-500 italic">Ismeretlen státusz</span>`;
+        } else if (daysRemaining < 0) {
+            statusElement = html`<span className="font-bold text-red-600 bg-red-100 px-2 py-1 rounded">Letelt</span>`;
+        } else if (daysRemaining <= 30) {
+            statusElement = html`<span className="font-bold text-orange-600">${daysRemaining} nap van hátra</span>`;
+        } else {
+            statusElement = html`<span className="font-bold text-green-600">${daysRemaining} nap van hátra</span>`;
+        }
+
+        return html`
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-2">
+                <div className="flex flex-col border-b border-gray-100 pb-2">
+                    <strong className="text-gray-500 mb-1">Aktuális Cél / Fázis</strong>
+                    <span className="text-gray-900 font-medium">${mappedPhase}</span>
+                </div>
+                <div className="flex flex-col border-b border-gray-100 pb-2">
+                    <strong className="text-gray-500 mb-1">Állapot</strong>
+                    <div>${statusElement}</div>
+                </div>
+                <div className="flex flex-col col-span-1 md:col-span-2 pt-1">
+                    <strong className="text-gray-500 mb-1">Határidő napja</strong>
+                    <div className="flex flex-col">
+                        <span className="text-gray-900 font-medium">${formatJustDate(info.shiftedDate)}</span>
+                        ${info.isShifted ? html`
+                            <span className="text-xs text-gray-400 italic mt-1">
+                                *(Eredeti határidő: ${formatJustDate(info.originalDate)}, hétvége/ünnepnap miatt csúsztatva)*
+                            </span>
+                        ` : null}
+                    </div>
+                </div>
+            </div>
+        `;
+    };
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -382,32 +563,40 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                         </div>
                     </div>
 
-                    ${/* Ügy iktatva Banner */''}
+                    ${/* Határidők szekció - Teljes szélességben */''}
                     <div className="mt-6">
-                        ${localStudent.isCaseFiled ? html`
-                            <div className="bg-green-50 border border-green-200 text-green-800 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                <div>
-                                    <p className="font-bold text-lg">Ügy iktatva</p>
-                                    <p className="text-sm opacity-90">${localStudent.caseFiledAt ? formatSingleTimestamp(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)'}</p>
-                                </div>
-                            </div>
-                        ` : html`
-                            <div className="bg-gray-100 border border-gray-200 text-gray-600 px-6 py-4 rounded-lg flex items-center gap-3 shadow-sm mb-6">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                                <div>
-                                    <p className="font-bold text-lg">Nincs ügy iktatva</p>
-                                    <p className="text-sm opacity-90">A tanulónak még nincs iktatott ügye a rendszerben.</p>
-                                </div>
-                            </div>
-                        `}
+                        <${Section} 
+                            title="Határidők és Képzési Állapot" 
+                            className="border-blue-100 ring-4 ring-blue-50"
+                            headerRight=${html`
+                                <button 
+                                    onClick=${handleRecalculateDeadline} 
+                                    disabled=${isRecalculating}
+                                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors"
+                                >
+                                    <${Icons.RefreshIcon} size=${16} className=${isRecalculating ? "animate-spin" : ""} />
+                                    ${isRecalculating ? "Frissítés..." : "Frissítés"}
+                                </button>
+                            `}
+                        >
+                            ${renderDeadlineStatus()}
+                        <//>
                     </div>
 
                     ${/* Vizsgaeredmények szekció - Teljes szélességben */''}
-                    <div className="mt-0">
+                    <div className="mt-6">
                         <${Section} title="Vizsgaeredmények (KAV Import)" className="border-indigo-100 ring-4 ring-indigo-50">
                             <${ExamResultsTable}
-                                results=${localStudent.examResults}
+                                results=${localStudent.isCaseFiled ? [
+                                    {
+                                        date: localStudent.caseFiledAt ? formatCaseFiledDate(localStudent.caseFiledAt) : 'Igen (Korábbi rögzítés)',
+                                        subject: 'Ügy iktatva',
+                                        result: 'Rögzítve',
+                                        location: '-',
+                                        isSynthetic: true
+                                    },
+                                    ...(localStudent.examResults || [])
+                                ] : localStudent.examResults}
                                 onEdit=${handleEditExam}
                                 onDelete=${handleDeleteExam}
                                 onSave=${handleSaveExam}

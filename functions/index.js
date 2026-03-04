@@ -10,6 +10,7 @@ const {google} = require("googleapis");
 const templates = require("./emailTemplates");
 const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
+const {calculateDeadline} = require("./deadlineCalculator");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
@@ -546,6 +547,95 @@ exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => 
     return {success: true, logCount};
 });
 
+// ÚJ FUNKCIÓ: Tömeges határidő újraszámítás minden tanulóra
+exports.bulkRecalculateDeadlines = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { isTest } = request.data || {};
+    const collectionName = isTest ? "registrations_test" : "registrations";
+    
+    try {
+        const snapshot = await db.collection(collectionName).get();
+        if (snapshot.empty) {
+            return { success: true, updatedCount: 0, message: "Nincs frissítendő tanuló." };
+        }
+
+        let updatedCount = 0;
+        let batches = [];
+        let currentBatch = db.batch();
+        let operationCounter = 0;
+
+        snapshot.forEach((doc) => {
+            const studentData = doc.data();
+            const newDeadlineInfo = calculateDeadline(studentData) || null;
+
+            // Only update if it actually changed
+            if (JSON.stringify(studentData.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                currentBatch.update(doc.ref, { deadlineInfo: newDeadlineInfo });
+                updatedCount++;
+                operationCounter++;
+
+                // Firestore batches max out at 500 operations
+                if (operationCounter === 490) {
+                    batches.push(currentBatch.commit());
+                    currentBatch = db.batch();
+                    operationCounter = 0;
+                }
+            }
+        });
+
+        // Commit any remaining operations in the last batch
+        if (operationCounter > 0) {
+            batches.push(currentBatch.commit());
+        }
+
+        await Promise.all(batches);
+
+        logger.info(`Bulk deadline recalculation completed for ${collectionName}. Updated ${updatedCount} records.`);
+        return { success: true, updatedCount };
+    } catch (error) {
+        logger.error(`Error in bulk recalculation for ${collectionName}:`, error);
+        throw new HttpsError("internal", "Hiba történt a tömeges frissítés során.");
+    }
+});
+
+// ÚJ FUNKCIÓ: Manuális határidő újraszámítás egy adott tanulóra
+exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { documentId, isTest } = request.data;
+    if (!documentId) {
+        throw new HttpsError("invalid-argument", "Hiányzó dokumentum azonosító.");
+    }
+
+    const collectionName = isTest ? "registrations_test" : "registrations";
+    const docRef = db.collection(collectionName).doc(documentId);
+
+    try {
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) {
+            throw new HttpsError("not-found", "Tanuló nem található.");
+        }
+
+        const studentData = docSnap.data();
+        const newDeadlineInfo = calculateDeadline(studentData) || null;
+
+        await docRef.update({ deadlineInfo: newDeadlineInfo });
+        logger.info(`Manual deadline recalculation triggered for ${documentId} in ${collectionName} by ${userEmail}.`);
+
+        return { success: true, deadlineInfo: newDeadlineInfo };
+    } catch (error) {
+        logger.error(`Error recalculating deadline for ${documentId}:`, error);
+        throw new HttpsError("internal", "Hiba történt a határidő újraszámításakor.");
+    }
+});
+
 // Manuális email feldolgozás (KIZÁRÓLAG email)
 exports.processEmailsManual = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
     const userEmail = request.auth?.token?.email;
@@ -592,6 +682,11 @@ exports.onRegistrationCreated = onDocumentCreated(
             await studentRef.update({sendInitialEmail: FieldValue.delete()});
         }
 
+        const deadlineInfo = calculateDeadline(studentData);
+        if (deadlineInfo) {
+            await studentRef.update({deadlineInfo});
+        }
+
         logger.info(`Registration created for ${studentRef.id}. Sheet writing will be handled by onUpdated trigger.`);
     }
 );
@@ -618,6 +713,11 @@ exports.onRegistrationTestCreated = onDocumentCreated(
 
         if (studentData.sendInitialEmail !== undefined) {
             await studentRef.update({sendInitialEmail: FieldValue.delete()});
+        }
+
+        const deadlineInfo = calculateDeadline(studentData);
+        if (deadlineInfo) {
+            await studentRef.update({deadlineInfo});
         }
 
         // MÓDOSÍTÁS: A teszt adatbázis NEM ír a sheet-be
@@ -681,6 +781,27 @@ exports.onRegistrationUpdated = onDocumentUpdated(
         if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
             await sendEmail(after, templates.medicalCertificateReceived(after));
         }
+
+        // CRITICAL OPTIMIZATION: Deadline Calculation
+        // Only run if specific deadline-related fields changed
+        const fieldsToWatch = ['examResults', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt', 'studentId'];
+        let needsDeadlineRecalc = false;
+
+        for (const field of fieldsToWatch) {
+            if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+                needsDeadlineRecalc = true;
+                break;
+            }
+        }
+
+        if (needsDeadlineRecalc) {
+            const newDeadlineInfo = calculateDeadline(after) || null;
+            // Only update if the result actually changed
+            if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                logger.info(`Updating deadlineInfo for ${after.registrationNumber}`);
+                await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
+            }
+        }
     }
 );
 
@@ -709,6 +830,25 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
 
         if (!before.hasMedicalCertificate && after.hasMedicalCertificate) {
             await sendEmail(after, templates.medicalCertificateReceived(after), true);
+        }
+
+        // CRITICAL OPTIMIZATION: Deadline Calculation
+        const fieldsToWatch = ['examResults', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt', 'studentId'];
+        let needsDeadlineRecalc = false;
+
+        for (const field of fieldsToWatch) {
+            if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+                needsDeadlineRecalc = true;
+                break;
+            }
+        }
+
+        if (needsDeadlineRecalc) {
+            const newDeadlineInfo = calculateDeadline(after) || null;
+            if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                logger.info(`Updating deadlineInfo for TEST ${after.registrationNumber}`);
+                await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
+            }
         }
 
         logger.info(`TEST Registration updated for ${after.registrationNumber}. Emails sent if triggered. Sheet update SKIPPED.`);

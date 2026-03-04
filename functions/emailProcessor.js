@@ -1,7 +1,7 @@
 const imaps = require("imap-simple");
 const {simpleParser} = require("mailparser");
 const XLSX = require("xlsx");
-const {getFirestore, FieldValue} = require("firebase-admin/firestore");
+const {getFirestore, FieldValue, Timestamp} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
 
 const normalizeDate = (input) => {
@@ -112,7 +112,7 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
         }
 
         let searchCriteria = [];
-        
+
         if (startDate && endDate) {
             logger.info(`Using absolute date range for IMAP search: ${startDate} to ${endDate}`);
             searchCriteria = [
@@ -124,7 +124,7 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
             logger.info(`Using daysBack (${daysBack}) for IMAP search`);
             const sinceDate = new Date();
             sinceDate.setDate(sinceDate.getDate() - daysBack);
-            
+
             searchCriteria = [
                 ["SINCE", sinceDate],
                 ["FROM", "kav"]
@@ -138,13 +138,22 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
         const messages = await connection.search(searchCriteria, fetchOptions);
         logger.info(`Found ${messages.length} unread emails in total.`);
-        
+
         if (messages.length > 0) processedAnyEmails = true;
 
         for (const message of messages) {
             try {
-                const all = message.parts.find(part => part.which === "");
                 const id = message.attributes.uid;
+                
+                // --- SCALABLE UID MEMORY CHECK ---
+                const uidDocRef = db.collection("processed_email_uids").doc(id.toString());
+                const uidDoc = await uidDocRef.get();
+                if (uidDoc.exists) {
+                    logger.info(`Skipping already processed email UID: ${id}`);
+                    continue;
+                }
+
+                const all = message.parts.find(part => part.which === "");
                 const idHeader = "Imap-Id: " + id + "\r\n";
 
                 // Parse the email
@@ -210,7 +219,7 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                     // Ha nem azonosító formátum, akkor ez fejléc vagy üres sor, ugrunk
                                     if (!/^\d+\/\d+\/\d+\/\d+$/.test(studentId)) continue;
-                                    
+
                                     // Név kinyerése az A oszlopból (index 0)
                                     const excelStudentName = row[0] ? row[0].toString().trim() : "Ismeretlen név";
 
@@ -283,12 +292,13 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                     // 4. Update Logic
                                     if (isCaseFileMode) {
-                                        if (!studentData.isCaseFiled || !studentData.caseFiledAt) {
+                                        if (!studentData.isCaseFiled || (studentData.isCaseFiled && !studentData.caseFiledAt)) {
                                             const updateData = { isCaseFiled: true };
-                                            
+
                                             // Extract the date from the parsed email object, fallback to now.
-                                            updateData.caseFiledAt = parsed.date ? new Date(parsed.date).toISOString() : new Date().toISOString();
-                                            
+                                            const fileDate = parsed.date ? new Date(parsed.date) : new Date();
+                                            updateData.caseFiledAt = Timestamp.fromDate(fileDate);
+
                                             await docRef.update(updateData);
                                             updateCount++;
 
@@ -405,7 +415,11 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                 // Mark email as seen ONLY if it was identified as relevant (KAV email)
                 await connection.addFlags(id, "\\Seen");
-                logger.info(`Marked email ${id} as seen.`);
+                
+                // Record UID in Firestore to prevent future reprocessing
+                await uidDocRef.set({ processedAt: FieldValue.serverTimestamp() });
+                
+                logger.info(`Marked email ${id} as seen and recorded in processed_email_uids.`);
             } catch (err) {
                 logger.error(`Error processing individual email (UID: ${message.attributes.uid}):`, err);
             }
@@ -423,20 +437,27 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
     }
 
     if (processedAnyEmails) {
-        try {
-            await getFirestore().collection("email_import_logs").add({
-                createdAt: FieldValue.serverTimestamp(),
-                processedCount: updatedStudentsList.length,
-                students: updatedStudentsList,
-                skipped: {
-                    alreadyProcessed: alreadyProcessed,
-                    notFound: notFound,
-                    mismatch: mismatch
-                }
-            });
-            logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
-        } catch (logErr) {
-            logger.error("Failed to save email import log", logErr);
+        // "Silent Ignore" for legacy students: if an email was processed but literally zero updates were made,
+        // and there were no fatal script crashes, do not create a database log to avoid spamming the UI 
+        // with empty "Not found" legacy logs.
+        if (updatedStudentsList.length === 0) {
+            logger.info("Email(s) processed but NO students were updated. Skipping email_import_logs creation to prevent log spam.");
+        } else {
+            try {
+                await getFirestore().collection("email_import_logs").add({
+                    createdAt: FieldValue.serverTimestamp(),
+                    processedCount: updatedStudentsList.length,
+                    students: updatedStudentsList,
+                    skipped: {
+                        alreadyProcessed: alreadyProcessed,
+                        notFound: notFound,
+                        mismatch: mismatch
+                    }
+                });
+                logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
+            } catch (logErr) {
+                logger.error("Failed to save email import log", logErr);
+            }
         }
     }
 
