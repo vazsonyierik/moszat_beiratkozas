@@ -18,7 +18,7 @@ import { html } from '../../UI.js';
 import { formatFullName, formatSingleTimestamp } from '../../utils.js';
 import * as Icons from '../../Icons.js';
 import { useConfirmation, useToast } from '../../context/AppContext.js';
-import { functions, httpsCallable, isTestMode } from '../../firebase.js';
+import { functions, httpsCallable, isTestMode, db, doc, getDoc } from '../../firebase.js';
 
 const { useState, useEffect } = window.React;
 
@@ -195,13 +195,17 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             });
 
             if (result.data.success) {
-                const newDeadlineInfo = result.data.deadlineInfo;
-                // Update local state so UI reflects it immediately
-                setLocalStudent(prev => ({
-                    ...prev,
-                    deadlineInfo: newDeadlineInfo
-                }));
-                showToast("Határidők sikeresen frissítve!", "success");
+                // Re-fetch the entire student document to ensure perfect reactivity with backend formats
+                const collectionName = isTestMode() ? 'registrations_test' : 'registrations';
+                const docRef = doc(db, collectionName, localStudent.id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    setLocalStudent({ id: docSnap.id, ...docSnap.data() });
+                    showToast("Határidők sikeresen frissítve!", "success");
+                } else {
+                    showToast("Hiba: A tanuló nem található.", "error");
+                }
             }
         } catch (error) {
             console.error("Hiba a határidő újraszámításakor:", error);
