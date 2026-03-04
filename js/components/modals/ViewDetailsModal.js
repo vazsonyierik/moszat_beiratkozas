@@ -18,6 +18,7 @@ import { html } from '../../UI.js';
 import { formatFullName, formatSingleTimestamp } from '../../utils.js';
 import * as Icons from '../../Icons.js';
 import { useConfirmation, useToast } from '../../context/AppContext.js';
+import { functions, httpsCallable, isTestMode, db, doc, getDoc } from '../../firebase.js';
 
 const { useState, useEffect } = window.React;
 
@@ -174,6 +175,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     const [localStudent, setLocalStudent] = useState(student);
     const [editingExamIndex, setEditingExamIndex] = useState(null);
     const [tempExamData, setTempExamData] = useState({});
+    const [isRecalculating, setIsRecalculating] = useState(false);
 
     const showConfirmation = useConfirmation();
     const showToast = useToast();
@@ -182,6 +184,36 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     useEffect(() => {
         setLocalStudent(student);
     }, [student]);
+
+    const handleRecalculateDeadline = async () => {
+        setIsRecalculating(true);
+        try {
+            const recalculateFn = httpsCallable(functions, 'recalculateStudentDeadline');
+            const result = await recalculateFn({
+                documentId: localStudent.id,
+                isTest: isTestMode()
+            });
+
+            if (result.data.success) {
+                // Re-fetch the entire student document to ensure perfect reactivity with backend formats
+                const collectionName = isTestMode() ? 'registrations_test' : 'registrations';
+                const docRef = doc(db, collectionName, localStudent.id);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    setLocalStudent({ id: docSnap.id, ...docSnap.data() });
+                    showToast("Határidők sikeresen frissítve!", "success");
+                } else {
+                    showToast("Hiba: A tanuló nem található.", "error");
+                }
+            }
+        } catch (error) {
+            console.error("Hiba a határidő újraszámításakor:", error);
+            showToast("Hiba történt a határidő frissítése során.", "error");
+        } finally {
+            setIsRecalculating(false);
+        }
+    };
 
     // Format synthetic date precisely to match KAV import format (YYYY.MM.DD. HH:mm) without spaces
     const formatCaseFiledDate = (timestamp) => {
@@ -403,11 +435,14 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     };
     const birthPlace = getBirthPlace();
 
-    const Section = ({ title, children, className = "" }) => html`
+    const Section = ({ title, children, className = "", headerRight = null }) => html`
         <div className=${`bg-white p-5 rounded-lg shadow-sm border border-gray-200 ${className}`}>
-            <h4 className="text-lg font-bold text-indigo-800 border-b border-gray-100 pb-3 mb-4 flex items-center gap-2">
-                ${title}
-            </h4>
+            <div className="flex justify-between items-center border-b border-gray-100 pb-3 mb-4">
+                <h4 className="text-lg font-bold text-indigo-800 flex items-center gap-2">
+                    ${title}
+                </h4>
+                ${headerRight && html`<div>${headerRight}</div>`}
+            </div>
             <div className="space-y-1">${children}</div>
         </div>
     `;
@@ -530,7 +565,20 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
 
                     ${/* Határidők szekció - Teljes szélességben */''}
                     <div className="mt-6">
-                        <${Section} title="Határidők és Képzési Állapot" className="border-blue-100 ring-4 ring-blue-50">
+                        <${Section}
+                            title="Határidők és Képzési Állapot"
+                            className="border-blue-100 ring-4 ring-blue-50"
+                            headerRight=${html`
+                                <button
+                                    onClick=${handleRecalculateDeadline}
+                                    disabled=${isRecalculating}
+                                    className="flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 disabled:opacity-50 transition-colors"
+                                >
+                                    <${Icons.RefreshIcon} size=${16} className=${isRecalculating ? "animate-spin" : ""} />
+                                    ${isRecalculating ? "Frissítés..." : "Frissítés"}
+                                </button>
+                            `}
+                        >
                             ${renderDeadlineStatus()}
                         <//>
                     </div>

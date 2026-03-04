@@ -130,13 +130,31 @@ function calculateDeadline(studentData) {
         ex.result && (ex.result.toLowerCase().includes("sikertelen") || ex.result === "1")
     );
 
+    // KAV "Minus 1 Day" Rule helper
+    // 1. Normalize to noon to avoid midnight rollover bugs.
+    // 2. Add requested time.
+    // 3. Subtract 1 day.
+    // 4. Set to 23:59:59.999.
+    const calculateKAVDate = (baseDate, { days = 0, months = 0, years = 0 }) => {
+        let d = new Date(baseDate);
+        d.setHours(12, 0, 0, 0);
+
+        if (years) d.setFullYear(d.getFullYear() + years);
+        if (months) d.setMonth(d.getMonth() + months);
+        if (days) d.setDate(d.getDate() + days);
+
+        // KAV Rule: Minus 1 day
+        d.setDate(d.getDate() - 1);
+
+        d.setHours(23, 59, 59, 999);
+        return d;
+    };
+
     // Phase 4: Successful theory -> 2 years from successful theory exam date. (Shift to working day).
     if (successfulTheory) {
         const examDate = parseExamDate(successfulTheory.date);
         if (examDate && !isNaN(examDate.getTime())) {
-            let deadlineDate = new Date(examDate);
-            deadlineDate.setFullYear(deadlineDate.getFullYear() + 2);
-            deadlineDate.setHours(23, 59, 59, 999);
+            let deadlineDate = calculateKAVDate(examDate, { years: 2 });
 
             const { date: finalDate, shifted } = getNextWorkingDay(deadlineDate);
             finalDate.setHours(23, 59, 59, 999);
@@ -155,16 +173,19 @@ function calculateDeadline(studentData) {
         // Find if there is a failed theory within 9 months of azonositoMegadasa
         let hasFailedWithin9Months = false;
 
+        // Use standard exactly 9 months ahead for the failure window check
         let nineMonthsFromAssigned = new Date(studentIdAssignedAt);
+        nineMonthsFromAssigned.setHours(12, 0, 0, 0);
         nineMonthsFromAssigned.setMonth(nineMonthsFromAssigned.getMonth() + 9);
+        nineMonthsFromAssigned.setHours(23, 59, 59, 999);
 
         for (const failed of failedTheories) {
-        // Check if the failure is within 9 months AFTER the studentIdAssignedAt date.
-        // The rule says "within 9 months of azonositoMegadasa".
+            // Check if the failure is within 9 months AFTER the studentIdAssignedAt date.
+            // The rule says "within 9 months of azonositoMegadasa".
             const failedDate = parseExamDate(failed.date);
             if (failedDate && !isNaN(failedDate.getTime())) {
-            if (failedDate.getTime() >= studentIdAssignedAt.getTime() &&
-                failedDate.getTime() <= nineMonthsFromAssigned.getTime()) {
+                if (failedDate.getTime() >= studentIdAssignedAt.getTime() &&
+                    failedDate.getTime() <= nineMonthsFromAssigned.getTime()) {
                     hasFailedWithin9Months = true;
                     break;
                 }
@@ -173,9 +194,7 @@ function calculateDeadline(studentData) {
 
         if (hasFailedWithin9Months) {
             // Phase 3: NO successful theory, but has failed theory within 9 months -> 12 months from azonositoMegadasa.
-            let deadlineDate = new Date(studentIdAssignedAt);
-            deadlineDate.setFullYear(deadlineDate.getFullYear() + 1); // 12 months
-            deadlineDate.setHours(23, 59, 59, 999);
+            let deadlineDate = calculateKAVDate(studentIdAssignedAt, { months: 12 });
 
             const { date: finalDate, shifted } = getNextWorkingDay(deadlineDate);
             finalDate.setHours(23, 59, 59, 999);
@@ -188,9 +207,7 @@ function calculateDeadline(studentData) {
             };
         } else {
             // Phase 2: Has azonositoMegadasa but no successful or valid failed theory -> 9 months from azonositoMegadasa.
-            let deadlineDate = new Date(studentIdAssignedAt);
-            deadlineDate.setMonth(deadlineDate.getMonth() + 9);
-            deadlineDate.setHours(23, 59, 59, 999);
+            let deadlineDate = calculateKAVDate(studentIdAssignedAt, { months: 9 });
 
             const { date: finalDate, shifted } = getNextWorkingDay(deadlineDate);
             finalDate.setHours(23, 59, 59, 999);
@@ -206,9 +223,7 @@ function calculateDeadline(studentData) {
 
     // Phase 1: Has beiratkozasIdeje but NO azonositoMegadasa -> exactly 90 calendar days from enrolledAt.
     if (enrolledAt && !studentIdAssignedAt) {
-        let deadlineDate = new Date(enrolledAt);
-        deadlineDate.setDate(deadlineDate.getDate() + 90);
-        deadlineDate.setHours(23, 59, 59, 999);
+        let deadlineDate = calculateKAVDate(enrolledAt, { days: 90 });
 
         // NO working day shift for Phase 1
         return {

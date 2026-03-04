@@ -547,6 +547,40 @@ exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => 
     return {success: true, logCount};
 });
 
+// ÚJ FUNKCIÓ: Manuális határidő újraszámítás egy adott tanulóra
+exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { documentId, isTest } = request.data;
+    if (!documentId) {
+        throw new HttpsError("invalid-argument", "Hiányzó dokumentum azonosító.");
+    }
+
+    const collectionName = isTest ? "registrations_test" : "registrations";
+    const docRef = db.collection(collectionName).doc(documentId);
+
+    try {
+        const docSnap = await docRef.get();
+        if (!docSnap.exists) {
+            throw new HttpsError("not-found", "Tanuló nem található.");
+        }
+
+        const studentData = docSnap.data();
+        const newDeadlineInfo = calculateDeadline(studentData) || null;
+
+        await docRef.update({ deadlineInfo: newDeadlineInfo });
+        logger.info(`Manual deadline recalculation triggered for ${documentId} in ${collectionName} by ${userEmail}.`);
+
+        return { success: true, deadlineInfo: newDeadlineInfo };
+    } catch (error) {
+        logger.error(`Error recalculating deadline for ${documentId}:`, error);
+        throw new HttpsError("internal", "Hiba történt a határidő újraszámításakor.");
+    }
+});
+
 // Manuális email feldolgozás (KIZÁRÓLAG email)
 exports.processEmailsManual = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
     const userEmail = request.auth?.token?.email;
