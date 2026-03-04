@@ -547,6 +547,61 @@ exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => 
     return {success: true, logCount};
 });
 
+// ÚJ FUNKCIÓ: Tömeges határidő újraszámítás minden tanulóra
+exports.bulkRecalculateDeadlines = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { isTest } = request.data || {};
+    const collectionName = isTest ? "registrations_test" : "registrations";
+
+    try {
+        const snapshot = await db.collection(collectionName).get();
+        if (snapshot.empty) {
+            return { success: true, updatedCount: 0, message: "Nincs frissítendő tanuló." };
+        }
+
+        let updatedCount = 0;
+        let batches = [];
+        let currentBatch = db.batch();
+        let operationCounter = 0;
+
+        snapshot.forEach((doc) => {
+            const studentData = doc.data();
+            const newDeadlineInfo = calculateDeadline(studentData) || null;
+
+            // Only update if it actually changed
+            if (JSON.stringify(studentData.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                currentBatch.update(doc.ref, { deadlineInfo: newDeadlineInfo });
+                updatedCount++;
+                operationCounter++;
+
+                // Firestore batches max out at 500 operations
+                if (operationCounter === 490) {
+                    batches.push(currentBatch.commit());
+                    currentBatch = db.batch();
+                    operationCounter = 0;
+                }
+            }
+        });
+
+        // Commit any remaining operations in the last batch
+        if (operationCounter > 0) {
+            batches.push(currentBatch.commit());
+        }
+
+        await Promise.all(batches);
+
+        logger.info(`Bulk deadline recalculation completed for ${collectionName}. Updated ${updatedCount} records.`);
+        return { success: true, updatedCount };
+    } catch (error) {
+        logger.error(`Error in bulk recalculation for ${collectionName}:`, error);
+        throw new HttpsError("internal", "Hiba történt a tömeges frissítés során.");
+    }
+});
+
 // ÚJ FUNKCIÓ: Manuális határidő újraszámítás egy adott tanulóra
 exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (request) => {
     const userEmail = request.auth?.token?.email;

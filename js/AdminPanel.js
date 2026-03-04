@@ -1220,8 +1220,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                        <${Fragment} key=${key}>
-                                            <div>
+                                            <div key=${key}>
                                                 <button
                                                     onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
                                                     title=${title}
@@ -1230,8 +1229,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                     <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
                                                 </button>
                                             </div>
-                                        </${Fragment}>
-                                    `})}
+                                        `;
+                                    })}
                                  </div>
                             </div>
                         </div>
