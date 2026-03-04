@@ -188,27 +188,35 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                                 emoji = '✅';
                             }
 
+                            const tdBaseClass = "px-6 py-4 whitespace-nowrap text-sm text-gray-700";
+                            const tdNameClass = "px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 hover:text-indigo-900 cursor-pointer";
+                            const tdDateClass = "px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium";
+                            const spanClass = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium " + statusColorClass;
+                            const studentIdStr = student.studentId || '-';
+
                             return html`
-                                <tr key=${student.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 hover:text-indigo-900 cursor-pointer" onClick=${() => onStudentClick(student)}>
-                                        ${fullName}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        ${student.studentId || '-'}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                                        ${phaseName}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                                        ${deadlineDateStr}
-                                    </td>
-                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className=${`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColorClass}`}>
-                                            <span className="mr-1">${emoji}</span>
-                                            ${statusText} (${daysRemaining} nap)
-                                        </span>
-                                    </td>
-                                </tr>
+                                <${Fragment} key=${student.id}>
+                                    <tr className="hover:bg-gray-50 transition-colors">
+                                        <td className=${tdNameClass} onClick=${() => onStudentClick(student)}>
+                                            ${fullName}
+                                        </td>
+                                        <td className=${tdBaseClass}>
+                                            ${studentIdStr}
+                                        </td>
+                                        <td className=${tdBaseClass}>
+                                            ${phaseName}
+                                        </td>
+                                        <td className=${tdDateClass}>
+                                            ${deadlineDateStr}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                            <span className=${spanClass}>
+                                                <span className="mr-1">${emoji}</span>
+                                                ${statusText} (${daysRemaining} nap)
+                                            </span>
+                                        </td>
+                                    </tr>
+                                </${Fragment}>
                             `;
                         })}
                     </tbody>
