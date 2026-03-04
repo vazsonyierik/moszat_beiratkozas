@@ -203,7 +203,7 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                                         ${deadlineDateStr}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className=${`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium \${statusColorClass}`}>
+                                        <span className=${`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColorClass}`}>
                                             <span className="mr-1">${emoji}</span>
                                             ${statusText} (${daysRemaining} nap)
                                         </span>
