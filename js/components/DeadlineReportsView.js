@@ -105,7 +105,7 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                     <label htmlFor="phaseFilter" className="block text-sm font-medium text-gray-700 mb-1">Fázis Szűrő</label>
                     <select
                         id="phaseFilter"
-                        value=${phaseFilter}
+                        value="${phaseFilter}"
                         onChange=${e => setPhaseFilter(e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -120,7 +120,7 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                     <label htmlFor="statusFilter" className="block text-sm font-medium text-gray-700 mb-1">Állapot Szűrő</label>
                     <select
                         id="statusFilter"
-                        value=${statusFilter}
+                        value="${statusFilter}"
                         onChange=${e => setStatusFilter(e.target.value)}
                         className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
                     >
@@ -188,28 +188,24 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                                 emoji = '✅';
                             }
 
-                            const tdBaseClass = "px-6 py-4 whitespace-nowrap text-sm text-gray-700";
-                            const tdNameClass = "px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 hover:text-indigo-900 cursor-pointer";
-                            const tdDateClass = "px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium";
-                            const spanClass = "inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium " + statusColorClass;
                             const studentIdStr = student.studentId || '-';
 
                             return html`
-                                <tr key=${student.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className=${tdNameClass} onClick=${() => onStudentClick(student)}>
+                                <tr key="${student.id}" className="hover:bg-gray-50 transition-colors">
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 hover:text-indigo-900 cursor-pointer" onClick=${() => onStudentClick(student)}>
                                         ${fullName}
                                     </td>
-                                    <td className=${tdBaseClass}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         ${studentIdStr}
                                     </td>
-                                    <td className=${tdBaseClass}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         ${phaseName}
                                     </td>
-                                    <td className=${tdDateClass}>
+                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
                                         ${deadlineDateStr}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className=${spanClass}>
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColorClass}">
                                             <span className="mr-1">${emoji}</span>
                                             ${statusText} (${daysRemaining} nap)
                                         </span>
