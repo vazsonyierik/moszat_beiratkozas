@@ -486,7 +486,6 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isProcessingEmails, setIsProcessingEmails] = useState(false); // ÚJ állapot
     const [showIconLegend, setShowIconLegend] = useState(false);
     const [viewTestDataType, setViewTestDataType] = useState(false);
-    const [isBulkRecalculating, setIsBulkRecalculating] = useState(false);
     const [isModeMenuOpen, setIsModeMenuOpen] = useState(false);
     const [showVersionHistory, setShowVersionHistory] = useState(false); // ÚJ: Verziókövetés modal állapota
     const [isGenerating, setIsGenerating] = useState(false);
@@ -840,22 +839,6 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     };
 
-    const handleBulkRecalculate = async () => {
-        setIsBulkRecalculating(true);
-        try {
-            const bulkFn = httpsCallable(functions, 'bulkRecalculateDeadlines');
-            const result = await bulkFn({ isTest: viewTestDataType });
-            if (result.data.success) {
-                showToast(`Sikeres újraszámítás! Frissítve: ${result.data.updatedCount} tanuló.`, 'success');
-            }
-        } catch (error) {
-            console.error("Hiba a tömeges újraszámításkor:", error);
-            showToast("Hiba történt az összes határidő újraszámításakor.", "error");
-        } finally {
-            setIsBulkRecalculating(false);
-        }
-    };
-
     const handleGenerateTestData = async () => {
         if (!viewTestDataType) return;
 
@@ -1073,10 +1056,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                             ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
                         </button>
 
-                        <button onClick=${handleBulkRecalculate} disabled=${isBulkRecalculating} className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait">
-                            ${isBulkRecalculating ? 'Újraszámítás...' : 'Összes határidő újraszámítása'}
-                        </button>
-
                         ${viewTestDataType && html`
                             <button
                                 onClick=${handleGenerateTestData}
@@ -1241,8 +1220,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                        <${Fragment} key=${key}>
-                                            <div>
+                                            <div key=${key}>
                                                 <button
                                                     onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
                                                     title=${title}
@@ -1251,8 +1229,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                     <${Icon} size=${18} className=${isSelected ? 'text-white' : 'text-gray-600'} />
                                                 </button>
                                             </div>
-                                        </${Fragment}>
-                                    `})}
+                                        `;
+                                    })}
                                  </div>
                             </div>
                         </div>
