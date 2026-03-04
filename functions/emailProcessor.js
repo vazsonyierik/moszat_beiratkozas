@@ -143,8 +143,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
         for (const message of messages) {
             try {
-                const all = message.parts.find(part => part.which === "");
                 const id = message.attributes.uid;
+
+                // --- SCALABLE UID MEMORY CHECK ---
+                const uidDocRef = db.collection("processed_email_uids").doc(id.toString());
+                const uidDoc = await uidDocRef.get();
+                if (uidDoc.exists) {
+                    logger.info(`Skipping already processed email UID: ${id}`);
+                    continue;
+                }
+
+                const all = message.parts.find(part => part.which === "");
                 const idHeader = "Imap-Id: " + id + "\r\n";
 
                 // Parse the email
@@ -406,7 +415,11 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                 // Mark email as seen ONLY if it was identified as relevant (KAV email)
                 await connection.addFlags(id, "\\Seen");
-                logger.info(`Marked email ${id} as seen.`);
+
+                // Record UID in Firestore to prevent future reprocessing
+                await uidDocRef.set({ processedAt: FieldValue.serverTimestamp() });
+
+                logger.info(`Marked email ${id} as seen and recorded in processed_email_uids.`);
             } catch (err) {
                 logger.error(`Error processing individual email (UID: ${message.attributes.uid}):`, err);
             }
@@ -424,20 +437,27 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
     }
 
     if (processedAnyEmails) {
-        try {
-            await getFirestore().collection("email_import_logs").add({
-                createdAt: FieldValue.serverTimestamp(),
-                processedCount: updatedStudentsList.length,
-                students: updatedStudentsList,
-                skipped: {
-                    alreadyProcessed: alreadyProcessed,
-                    notFound: notFound,
-                    mismatch: mismatch
-                }
-            });
-            logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
-        } catch (logErr) {
-            logger.error("Failed to save email import log", logErr);
+        // "Silent Ignore" for legacy students: if an email was processed but literally zero updates were made,
+        // and there were no fatal script crashes, do not create a database log to avoid spamming the UI
+        // with empty "Not found" legacy logs.
+        if (updatedStudentsList.length === 0) {
+            logger.info("Email(s) processed but NO students were updated. Skipping email_import_logs creation to prevent log spam.");
+        } else {
+            try {
+                await getFirestore().collection("email_import_logs").add({
+                    createdAt: FieldValue.serverTimestamp(),
+                    processedCount: updatedStudentsList.length,
+                    students: updatedStudentsList,
+                    skipped: {
+                        alreadyProcessed: alreadyProcessed,
+                        notFound: notFound,
+                        mismatch: mismatch
+                    }
+                });
+                logger.info(`Logged ${updatedStudentsList.length} updates to email_import_logs.`);
+            } catch (logErr) {
+                logger.error("Failed to save email import log", logErr);
+            }
         }
     }
 
