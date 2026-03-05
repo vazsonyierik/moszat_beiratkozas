@@ -65,7 +65,7 @@ const IconLegendModal = ({ onClose }) => {
                 </header>
                 <main className="p-4 sm:p-6 space-y-4">
                     ${iconFilterOptions.map(opt => html`
-                        <div key=${opt.key} className="flex items-center gap-4">
+                        <div key="${opt.key}" className="flex items-center gap-4">
                             <div className="flex-shrink-0">
                                 <div className="w-8 h-8 rounded-full flex items-center justify-center ${opt.color} text-white shadow-md">
                                     <${opt.Icon} size=${18} />
@@ -117,9 +117,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                 <div className="hidden sm:flex sm:items-center sm:ml-4">
                     ${pageNumbers.map((number, index) => {
                         if (number === '...') {
-                            return html`<span key=${`ellipsis-${index}`} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>`;
+                            return html`<span key="ellipsis-${index}" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>`;
                         }
-                        return html`<button key=${number} onClick=${() => onPageChange(number)} className=${`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}>${number}</button>`;
+                        return html`<button key="${number}" onClick=${() => onPageChange(number)} className=${`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}>${number}</button>`;
                     })}
                 </div>
                 <button onClick=${() => onPageChange(currentPage + 1)} disabled=${currentPage === totalPages} className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Következő</button>
@@ -271,7 +271,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const allowDelete = !reg.status_enrolled && !reg.courseCompletedAt;
 
                             return html`
-                            <${Fragment} key=${reg.id}>
+                            <${Fragment} key="${reg.id}">
                                 <tr className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
@@ -354,12 +354,12 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         <div className="flex flex-col justify-center space-y-1">
                                             ${adminIcons.length > 0 && html`
                                                 <div className="flex items-center space-x-1.5">
-                                                    ${adminIcons.map(icon => html`<${StatusIcon} key=${icon.key} ...${icon} />`)}
+                                                    ${adminIcons.map(icon => html`<${StatusIcon} key="${icon.key}" ...${icon} />`)}
                                                 </div>
                                             `}
                                             ${studentIcons.length > 0 && html`
                                                 <div className="flex items-center space-x-1.5">
-                                                    ${studentIcons.map(icon => html`<${StatusIcon} key=${icon.key} ...${icon} />`)}
+                                                    ${studentIcons.map(icon => html`<${StatusIcon} key="${icon.key}" ...${icon} />`)}
                                                 </div>
                                             `}
                                         </div>
@@ -453,7 +453,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         `}
                                     </td>
                                 </tr>
-                                <tr key=${reg.id + '-comment'}>
+                                <tr key="${reg.id + '-comment'}">
                                     <td colSpan="7" className="p-0 border-none">
                                         <div className=${`transition-all duration-300 ease-in-out grid ${openCommentId === reg.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                             <div className="overflow-hidden">
@@ -1287,7 +1287,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                            <div key=${key}>
+                                            <div key="${key}">
                                                 <button
                                                     onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
                                                     title=${title}
