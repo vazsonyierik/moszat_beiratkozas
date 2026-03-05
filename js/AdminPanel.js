@@ -119,7 +119,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                         if (number === '...') {
                             return html`<span key=${`ellipsis-${index}`} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>`;
                         }
-                        return html`<button key=${number} onClick=${() => onPageChange(number)} className="${`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}"`}>${number}</button>`;
+                        return html`<button key=${number} onClick=${() => onPageChange(number)} className="relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}">${number}</button>`;
                     })}
                 </div>
                 <button onClick=${() => onPageChange(currentPage + 1)} disabled=${currentPage === totalPages} className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Következő</button>
@@ -301,7 +301,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
 
                                                         const daysLabel = daysRemaining < 0 ? `Letelt (${Math.abs(daysRemaining)} napja)` : `${daysRemaining} nap van hátra`;
 
-                                                        return html`<span className="${'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + bgColor}">${phaseName}: ${daysLabel}</span>`;
+                                                        return html`<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${bgColor}">${phaseName}: ${daysLabel}</span>`;
                                                     }
                                                 }
 
@@ -328,7 +328,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                     
                                                 // JAVÍTÁS: A hiányzó visszatérési érték (a span elem) pótlása
                                                 if (days !== null && days >= 0) {
-                                                    return html`<span className="${'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + bgColor}">${days} ${daysLabel}</span>`;
+                                                    return html`<span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${bgColor}">${days} ${daysLabel}</span>`;
                                                 }
                                                 return null;
                                             })()}
@@ -386,7 +386,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                                     disabled=${!reg.status_paid}
                                                     className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                                                 /> 
-                                                <span className="${`ml-2 ${!reg.status_paid ? 'text-gray-400' : ''}"`}>Beírva</span>
+                                                <span className="ml-2 ${!reg.status_paid ? 'text-gray-400' : ''}">Beírva</span>
                                             </label>
                                         </div>
                                     </td>
@@ -455,7 +455,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                 </tr>
                                 <tr key=${reg.id + '-comment'}>
                                     <td colSpan="7" className="p-0 border-none">
-                                        <div className="${`transition-all duration-300 ease-in-out grid ${openCommentId === reg.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}"`}>
+                                        <div className="transition-all duration-300 ease-in-out grid ${openCommentId === reg.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}">
                                             <div className="overflow-hidden">
                                                 <div className="p-3 bg-slate-50">
                                                     <div className="p-2 bg-white rounded-md border">
@@ -1083,8 +1083,8 @@ const AdminPanel = ({ user, handleLogout }) => {
     const containerBgClass = viewTestDataType ? 'bg-red-50' : 'bg-gray-50';
 
     return html`
-        <div className="${`container mx-auto px-4 sm:px-6 lg:px-8 py-8 ${containerBgClass}"`}>
-            <div className="${`p-4 sm:p-6 lg:p-8 rounded-xl ${viewTestDataType ? 'bg-red-100/50' : 'bg-gray-50'}"`}>
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 ${containerBgClass}">
+            <div className="p-4 sm:p-6 lg:p-8 rounded-xl ${viewTestDataType ? 'bg-red-100/50' : 'bg-gray-50'}">
                 <header className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
                         Admin Felület
@@ -1191,8 +1191,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                     onClick=${handleToggleTestEmails}
                                                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100"
                                                 >
-                                                    <div className="${`w-8 h-4 rounded-full p-0.5 transition-colors ${testEmailsEnabled ? 'bg-green-500' : 'bg-gray-300'}"`}>
-                                                        <div className="${`w-3 h-3 bg-white rounded-full shadow transform transition-transform ${testEmailsEnabled ? 'translate-x-4' : 'translate-x-0'}"`}></div>
+                                                    <div className="w-8 h-4 rounded-full p-0.5 transition-colors ${testEmailsEnabled ? 'bg-green-500' : 'bg-gray-300'}">
+                                                        <div className="w-3 h-3 bg-white rounded-full shadow transform transition-transform ${testEmailsEnabled ? 'translate-x-4' : 'translate-x-0'}"></div>
                                                     </div>
                                                     <span>Teszt emailek ${testEmailsEnabled ? 'BE' : 'KI'}</span>
                                                 </button>
@@ -1226,9 +1226,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
-                        <${Icons.ChevronDownIcon} className="${`w-5 h-5 transform transition-transform ${isFilterVisible ? 'rotate-180' : ''}"`} />
+                        <${Icons.ChevronDownIcon} className="w-5 h-5 transform transition-transform ${isFilterVisible ? 'rotate-180' : ''}/" />
                     </button>
-                    <div className="${`transition-all duration-500 ease-in-out overflow-hidden ${isFilterVisible ? 'max-h-96' : 'max-h-0'}"`}>
+                    <div className="transition-all duration-500 ease-in-out overflow-hidden ${isFilterVisible ? 'max-h-96' : 'max-h-0'}">
                         <div className="p-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
                             <div className="md:col-span-1">
                                 <label htmlFor="search" className="block text-sm font-medium text-gray-700">Keresés (Enterrel)</label>
@@ -1291,7 +1291,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 <button
                                                     onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
                                                     title=${title}
-                                                    className="${`p-2 rounded-full border-2 transition-colors ${isSelected ? `${color}" border-transparent` : 'border-gray-300 bg-white'}`}
+                                                    className="p-2 rounded-full border-2 transition-colors ${isSelected ? color + ' border-transparent' : 'border-gray-300 bg-white'}"
                                                 >
                                                     <${Icon} size=${18} className="${isSelected ? 'text-white' : 'text-gray-600'}" />
                                                 </button>
