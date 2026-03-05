@@ -41,7 +41,7 @@ const iconFilterOptions = [
     { key: 'caseFiled', Icon: Icons.FolderIcon, title: 'Ügy iktatva', check: (reg) => reg.isCaseFiled, color: "bg-teal-500" }, // ÚJ
     { key: 'prevLicense', Icon: Icons.CarIcon, title: 'Van már jogosítványa', check: (reg) => reg.has_previous_license === 'igen', color: "bg-green-500" },
     { key: 'under18', Icon: Icons.AlertIcon, title: '18 év alatti', check: (reg) => utils.isStudentUnder18(reg.birthDate), color: "bg-red-500" },
-    { key: 'studiedElsewhere', Icon: Icons.HelpIcon, title: 'Tanult már máshol/nálunk', check: (reg) => reg.studied_elsewhere_radio !== 'nem', color: "bg-yellow-500" },
+    { key: 'studiedElsewhere', Icon: Icons.HelpIcon, title: 'Tanult már máshol/nálunk', check: (reg) => utils.hasStudentStudiedBefore(reg.studied_elsewhere_radio), color: "bg-yellow-500" },
     { key: 'hasComment', Icon: Icons.InfoIcon, title: 'Van megjegyzése', check: (reg) => utils.hasComment(reg.megjegyzes), color: "bg-blue-500" },
     { key: 'adminRegistered', Icon: Icons.AdminUserIcon, title: 'Admin által rögzített', check: (reg) => reg.registeredBy === 'admin', color: "bg-slate-500" }
 ];
@@ -978,8 +978,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                selectedIconFilters.length > 0 ||
                examResultFilter !== 'all' ||
                startDate !== '' ||
-               endDate !== '';
-   }, [searchTerm, selectedIconFilters, examResultFilter, startDate, endDate]);
+               endDate !== '' ||
+               searchInArchive;
+   }, [searchTerm, selectedIconFilters, examResultFilter, startDate, endDate, searchInArchive]);
 
    const clearFilters = () => {
        setSearchTerm('');
