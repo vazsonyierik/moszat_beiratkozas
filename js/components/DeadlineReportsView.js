@@ -189,7 +189,7 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                             }
 
                             return html`
-                                <tr key=${student.id} className="hover:bg-gray-50 transition-colors">
+                                <tr key="${student.id}" className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-indigo-600 hover:text-indigo-900 cursor-pointer" onClick=${() => onStudentClick(student)}>
                                         ${fullName}
                                     </td>
@@ -203,7 +203,7 @@ const DeadlineReportsView = ({ students, onStudentClick }) => {
                                         ${deadlineDateStr}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <span className=${`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColorClass}`}>
+                                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColorClass}">
                                             <span className="mr-1">${emoji}</span>
                                             ${statusText} (${daysRemaining} nap)
                                         </span>
