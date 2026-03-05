@@ -21,7 +21,7 @@ import ExamImportModal from './components/modals/ExamImportModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import EmailImportLog from './components/EmailImportLog.js'; // ÚJ
-import DeadlineReportsView from './components/DeadlineReportsView.js'; // ÚJ: Határidő Riportok tab
+import DeadlineReportsModal from './components/modals/DeadlineReportsModal.js';
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import { generateTestStudents } from './utils/testDataGenerator.js';
@@ -493,6 +493,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
     const [historicalStart, setHistoricalStart] = useState('');
     const [historicalEnd, setHistoricalEnd] = useState('');
+    const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
     const modeMenuRef = useRef(null);
 
     const showToast = useToast();
@@ -1032,6 +1033,11 @@ const AdminPanel = ({ user, handleLogout }) => {
                             Kijelentkezés
                         </button>
 
+                        <button onClick=${() => setIsDeadlineModalOpen(true)} className="bg-fuchsia-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-fuchsia-700 flex items-center gap-2" title="Határidő Riportok">
+                            <${Icons.CalendarIcon} size=${20} />
+                            Határidők
+                        </button>
+
                         <div className="flex gap-2">
                             <button
                                 onClick=${() => handleProcessEmails({ daysBack: 2, unseenOnly: false })}
@@ -1286,7 +1292,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
                                 <${TabButton} tabName="admin_logs" label="Admin Napló" />
                                 <${TabButton} tabName="email_logs" label="Email Feldolgozás Napló" />
-                                <${TabButton} tabName="deadline_reports" label="Határidő Riportok (BÉTA)" />
                             </div>
                         </nav>
                     </div>
@@ -1373,11 +1378,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
                         </div>
                     `}
-                    ${activeTab === 'deadline_reports' && html`
-                        <div key="deadline-reports-tab">
-                            <${DeadlineReportsView} students=${filteredRegistrations} onStudentClick=${setViewingStudent} />
-                        </div>
-                    `}
                 </${React.Fragment}>`}
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
@@ -1386,6 +1386,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
                 ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
+                ${isDeadlineModalOpen && html`<${DeadlineReportsModal} students=${filteredRegistrations} onClose=${() => setIsDeadlineModalOpen(false)} onStudentClick=${setViewingStudent} />`}
             </div>
         </div>
     `;
