@@ -25,6 +25,16 @@ import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import { generateTestStudents } from './utils/testDataGenerator.js';
 
+
+const calculateDaysRemaining = (targetTimestamp) => {
+    if (!targetTimestamp) return null;
+    const targetDate = targetTimestamp.toDate ? targetTimestamp.toDate() : new Date(targetTimestamp.seconds * 1000);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+    return Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
+};
+
 const React = window.React;
 const { useState, useEffect, useMemo, useCallback, Fragment, useRef } = React;
 
@@ -118,7 +128,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     `;
 };
 
-const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false }) => {
+const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false, showDeadlineBadge = false }) => {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [editingRowId, setEditingRowId] = React.useState(null);
@@ -277,7 +287,25 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-bold text-gray-900">${fullName}</span>
                                                 ${(() => {
-                                                    if (!showDayCounter) return null;
+                                                if (showDeadlineBadge && reg.deadlineInfo && reg.deadlineInfo.shiftedDate && reg.deadlineInfo.activePhase) {
+                                                    const daysRemaining = calculateDaysRemaining(reg.deadlineInfo.shiftedDate);
+                                                    if (daysRemaining !== null) {
+                                                        let bgColor = 'bg-gray-100 text-gray-800';
+                                                        if (daysRemaining < 0) bgColor = 'bg-red-100 text-red-800';
+                                                        else if (daysRemaining <= 30) bgColor = 'bg-orange-100 text-orange-800';
+                                                        else bgColor = 'bg-green-100 text-green-800';
+
+                                                        const phaseMatch = reg.deadlineInfo.activePhase.match(/Phase (\d+)/);
+                                                        const phaseNumber = phaseMatch ? phaseMatch[1] : '';
+                                                        const phaseName = phaseNumber ? `${phaseNumber}. Fázis` : 'Határidő';
+
+                                                        const daysLabel = daysRemaining < 0 ? `Letelt (${Math.abs(daysRemaining)} napja)` : `${daysRemaining} nap van hátra`;
+
+                                                        return html`<span className="${'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + bgColor}">${phaseName}: ${daysLabel}</span>`;
+                                                    }
+                                                }
+
+                                                if (!showDayCounter) return null;
                                                 
                                                 // JAVÍTÁS: Hiányzó 'let' kulcsszavak pótlása
                                                 let days = null;
@@ -480,6 +508,8 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [selectedIconFilters, setSelectedIconFilters] = useState([]);
     const [isAddingStudent, setIsAddingStudent] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [deadlinePhaseFilter, setDeadlinePhaseFilter] = useState('all');
+    const [deadlineStatusFilter, setDeadlineStatusFilter] = useState('all');
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [examResultFilter, setExamResultFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
@@ -972,6 +1002,42 @@ const AdminPanel = ({ user, handleLogout }) => {
         return [];
     }, [allExpiredRegistrations, expiredFilter]);
 
+    const filteredDeadlineStudents = useMemo(() => {
+        let students = registrations.filter(reg => reg.deadlineInfo && reg.deadlineInfo.shiftedDate);
+
+        if (deadlinePhaseFilter !== 'all') {
+            students = students.filter(reg =>
+                reg.deadlineInfo.activePhase &&
+                reg.deadlineInfo.activePhase.includes('Phase ' + deadlinePhaseFilter)
+            );
+        }
+
+        if (deadlineStatusFilter !== 'all') {
+            students = students.filter(reg => {
+                const daysRemaining = calculateDaysRemaining(reg.deadlineInfo.shiftedDate);
+                if (daysRemaining === null) return false;
+
+                if (deadlineStatusFilter === 'ok') {
+                    return daysRemaining > 30;
+                } else if (deadlineStatusFilter === 'warning') {
+                    return daysRemaining <= 30 && daysRemaining >= 0;
+                } else if (deadlineStatusFilter === 'expired') {
+                    return daysRemaining < 0;
+                }
+                return true;
+            });
+        }
+
+        return students.sort((a, b) => {
+            const daysA = calculateDaysRemaining(a.deadlineInfo.shiftedDate);
+            const daysB = calculateDaysRemaining(b.deadlineInfo.shiftedDate);
+            if (daysA === null && daysB === null) return 0;
+            if (daysA === null) return 1;
+            if (daysB === null) return -1;
+            return daysA - daysB;
+        });
+    }, [registrations, deadlinePhaseFilter, deadlineStatusFilter]);
+
     const isSearchActive = useMemo(() => {
         return searchTerm.trim() !== '' ||
                selectedIconFilters.length > 0 ||
@@ -1280,6 +1346,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${TabButton} tabName="completed" label="E-learninget befejezte" />
                                 <${TabButton} tabName="expired" label="Lejárt tanulók" />
                                 <${TabButton} tabName="archived" label="Archivált" />
+                                <${TabButton} tabName="deadlines" label="Határidők" />
                             </div>
                             <div className="flex space-x-8">
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
@@ -1292,6 +1359,77 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
                     
+                    ${activeTab === 'deadlines' && html`
+                        <div key="deadlines-tab">
+                            <div className="mb-6 p-4 bg-white rounded-lg border shadow-sm flex flex-col gap-4">
+                                <div className="flex items-center gap-6">
+                                    <span className="font-medium text-sm text-gray-700 min-w-[150px]">Fázis szűrés:</span>
+                                    <div className="flex items-center gap-5 flex-wrap">
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlinePhaseFilter" value="all" checked=${deadlinePhaseFilter === 'all'} onChange=${(e) => setDeadlinePhaseFilter(e.target.value)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="ml-2 text-sm">Összes</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlinePhaseFilter" value="1" checked=${deadlinePhaseFilter === '1'} onChange=${(e) => setDeadlinePhaseFilter(e.target.value)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="ml-2 text-sm">1. Fázis</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlinePhaseFilter" value="2" checked=${deadlinePhaseFilter === '2'} onChange=${(e) => setDeadlinePhaseFilter(e.target.value)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="ml-2 text-sm">2. Fázis</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlinePhaseFilter" value="3" checked=${deadlinePhaseFilter === '3'} onChange=${(e) => setDeadlinePhaseFilter(e.target.value)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="ml-2 text-sm">3. Fázis</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlinePhaseFilter" value="4" checked=${deadlinePhaseFilter === '4'} onChange=${(e) => setDeadlinePhaseFilter(e.target.value)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="ml-2 text-sm">4. Fázis</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-6">
+                                    <span className="font-medium text-sm text-gray-700 min-w-[150px]">Státusz szűrés:</span>
+                                    <div className="flex items-center gap-5 flex-wrap">
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlineStatusFilter" value="all" checked=${deadlineStatusFilter === 'all'} onChange=${(e) => setDeadlineStatusFilter(e.target.value)} className="h-4 w-4 text-indigo-600 focus:ring-indigo-500" />
+                                            <span className="ml-2 text-sm">Összes</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlineStatusFilter" value="ok" checked=${deadlineStatusFilter === 'ok'} onChange=${(e) => setDeadlineStatusFilter(e.target.value)} className="h-4 w-4 text-green-600 focus:ring-green-500" />
+                                            <span className="ml-2 text-sm">Rendben (>30 nap)</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlineStatusFilter" value="warning" checked=${deadlineStatusFilter === 'warning'} onChange=${(e) => setDeadlineStatusFilter(e.target.value)} className="h-4 w-4 text-orange-600 focus:ring-orange-500" />
+                                            <span className="ml-2 text-sm">Veszélyeztetett (<=30 nap)</span>
+                                        </label>
+                                        <label className="flex items-center cursor-pointer">
+                                            <input type="radio" name="deadlineStatusFilter" value="expired" checked=${deadlineStatusFilter === 'expired'} onChange=${(e) => setDeadlineStatusFilter(e.target.value)} className="h-4 w-4 text-red-600 focus:ring-red-500" />
+                                            <span className="ml-2 text-sm">Letelt</span>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <${StudentTable}
+                                adminUser=${user}
+                                key="deadline_students"
+                                title="Határidők"
+                                students=${filteredDeadlineStudents}
+                                onStatusChange=${handleStatusChangeRequest}
+                                onShowDetails=${setViewingStudent}
+                                onEditDetails=${setEditingStudent}
+                                onDelete=${handleDeleteRequest}
+                                onRestore=${handleRestoreRequest}
+                                onArchive=${handleArchiveRequest}
+                                allowArchive=${true}
+                                onCommentSave=${handleCommentSave}
+                                allowRestore=${true}
+                                allowIdEditing=${true}
+                                paginated=${true}
+                                showDayCounter=${false}
+                                showDeadlineBadge=${true}
+                            />
+                        </div>
+                    `}
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">
                             <div className="mb-6 p-4 bg-white rounded-lg border shadow-sm flex justify-between items-center">
