@@ -8,6 +8,7 @@ def verify_console():
 
         errors = []
         page.on("pageerror", lambda err: errors.append(err))
+        page.on("console", lambda msg: errors.append(msg.text) if msg.type == "error" else None)
 
         page.goto("http://localhost:8081/index.html")
         page.wait_for_timeout(3000)

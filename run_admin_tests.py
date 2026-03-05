@@ -2,12 +2,8 @@ import subprocess
 import time
 
 def run_tests():
-    # Start the server on a known port
     server_process = subprocess.Popen(["python3", "-m", "http.server", "8081"])
     time.sleep(2)
-
-    # Mivel itt nincsenek unit tesztek definiálva a JS kódhoz, legalább azt meg tudjuk nézni, hogy a syntax hibás-e
-    # vagy a böngésző futtatása során dob-e hibát a konzolban
 
     script = """
 from playwright.sync_api import sync_playwright
@@ -19,6 +15,7 @@ def verify_console():
 
         errors = []
         page.on("pageerror", lambda err: errors.append(err))
+        page.on("console", lambda msg: errors.append(msg.text) if msg.type == "error" else None)
 
         page.goto("http://localhost:8081/index.html")
         page.wait_for_timeout(3000)
