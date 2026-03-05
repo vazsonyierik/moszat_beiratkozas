@@ -21,6 +21,7 @@ import ExamImportModal from './components/modals/ExamImportModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import EmailImportLog from './components/EmailImportLog.js'; // ÚJ
+import DeadlineReportsView from './components/DeadlineReportsView.js'; // ÚJ: Határidő Riportok tab
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import { generateTestStudents } from './utils/testDataGenerator.js';
@@ -1284,6 +1285,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
                                 <${TabButton} tabName="admin_logs" label="Admin Napló" />
                                 <${TabButton} tabName="email_logs" label="Email Feldolgozás Napló" />
+                                <${TabButton} tabName="deadline_reports" label="Határidő Riportok (BÉTA)" />
                             </div>
                         </nav>
                     </div>
@@ -1368,6 +1370,11 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'email_logs' && html`
                         <div key="email-logs-tab">
                             <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
+                        </div>
+                    `}
+                    ${activeTab === 'deadline_reports' && html`
+                        <div key="deadline-reports-tab">
+                            <${DeadlineReportsView} students=${filteredRegistrations} onStudentClick=${setViewingStudent} />
                         </div>
                     `}
                 </${React.Fragment}>`}
