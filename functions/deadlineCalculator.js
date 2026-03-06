@@ -146,7 +146,7 @@ function calculateDeadline(studentData) {
         // KAV Rule: Minus 1 day
         d.setDate(d.getDate() - 1);
         
-        d.setHours(23, 59, 59, 999);
+        d.setHours(12, 0, 0, 0);
         return d;
     };
 
@@ -157,7 +157,7 @@ function calculateDeadline(studentData) {
             let deadlineDate = calculateKAVDate(examDate, { years: 2 });
             
             const { date: finalDate, shifted } = getNextWorkingDay(deadlineDate);
-            finalDate.setHours(23, 59, 59, 999);
+            finalDate.setHours(12, 0, 0, 0);
             
             return {
                 activePhase: "Phase 4: Sikeres KRESZ vizsga (2 év)",
@@ -197,7 +197,7 @@ function calculateDeadline(studentData) {
             let deadlineDate = calculateKAVDate(studentIdAssignedAt, { months: 12 });
             
             const { date: finalDate, shifted } = getNextWorkingDay(deadlineDate);
-            finalDate.setHours(23, 59, 59, 999);
+            finalDate.setHours(12, 0, 0, 0);
             
             return {
                 activePhase: "Phase 3: Sikertelen elmélet (12 hónap azonosítótól)",
@@ -210,7 +210,7 @@ function calculateDeadline(studentData) {
             let deadlineDate = calculateKAVDate(studentIdAssignedAt, { months: 9 });
             
             const { date: finalDate, shifted } = getNextWorkingDay(deadlineDate);
-            finalDate.setHours(23, 59, 59, 999);
+            finalDate.setHours(12, 0, 0, 0);
             
             return {
                 activePhase: "Phase 2: Azonosító kiadva (9 hónap)",
