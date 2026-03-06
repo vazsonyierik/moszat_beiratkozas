@@ -1,5 +1,6 @@
 import { html } from '../UI.js';
 import * as Icons from '../Icons.js';
+import * as utils from '../utils.js';
 
 const React = window.React;
 const { useState, useMemo, Fragment } = React;
@@ -86,7 +87,12 @@ export default function DeadlineReports({ students, onShowDetails }) {
             // 2. Filter by search term
             if (searchTerm) {
                 const term = searchTerm.toLowerCase();
-                const name = `${student.vezeteknev || ''} ${student.keresztnev || ''}`.toLowerCase();
+                const name = utils.formatFullName(
+                    student.current_prefix,
+                    student.current_firstName,
+                    student.current_lastName,
+                    student.current_secondName
+                ).toLowerCase();
                 const email = (student.email || '').toLowerCase();
                 if (!name.includes(term) && !email.includes(term)) {
                     return false;
@@ -234,22 +240,42 @@ export default function DeadlineReports({ students, onShowDetails }) {
                             const daysRemaining = getDaysRemaining(info.shiftedDate);
                             const statusStyle = getStatusColorAndText(daysRemaining);
 
+                            const fullName = utils.formatFullName(
+                                student.current_prefix,
+                                student.current_firstName,
+                                student.current_lastName,
+                                student.current_secondName
+                            );
+
+                            const getStatusLabel = (s) => {
+                                if (student.courseCompletedAt) return 'E-learning kész';
+                                if (student.status_enrolled) return 'Beiratkozva';
+                                if (student.status_paid) return 'Fizetve';
+                                if (s === 'archived') return 'Archivált';
+                                if (s && s.startsWith('expired')) return 'Lejárt';
+                                if (s === 'active') return 'Folyamatban';
+                                return s || 'Jelentkező';
+                            };
+
+                            const lastNameInitial = (student.current_lastName || '').charAt(0).toUpperCase();
+                            const firstNameInitial = (student.current_firstName || '').charAt(0).toUpperCase();
+
                             return html`
                                 <tr key="${student.id}" className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">
-                                                ${(student.vezeteknev || '').charAt(0)}${(student.keresztnev || '').charAt(0)}
+                                                ${lastNameInitial}${firstNameInitial}
                                             </div>
                                             <div>
-                                                <div className="text-sm font-medium text-gray-900">${student.vezeteknev} ${student.keresztnev}</div>
-                                                <div className="text-xs text-gray-500">${student.status || 'Ismeretlen'}</div>
+                                                <div className="text-sm font-medium text-gray-900">${fullName}</div>
+                                                <div className="text-xs text-gray-500">${getStatusLabel(student.status)}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm text-gray-900">${student.email}</div>
-                                        <div className="text-sm text-gray-500">${student.telefon}</div>
+                                        <div className="text-sm text-gray-500">${student.phone_number || student.telefon || ''}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900 truncate max-w-[200px]" title="${getPhaseLabel(info.activePhase)}">
