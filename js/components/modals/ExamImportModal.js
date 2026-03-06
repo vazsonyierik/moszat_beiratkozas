@@ -148,12 +148,15 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
             // Found match. Check if we should update.
             const existingExam = existingResults[existingIndex];
 
-            const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-            const isNewConcrete = row.result && row.result !== "Kiírva";
-
-            if (isExistingPlaceholder && isNewConcrete) {
+            // Evaluate Differences
+            if (existingExam.location !== row.location || existingExam.result !== row.result) {
                 // Update logic
-                const updatedExam = { ...existingExam, result: row.result, importedAt: new Date().toISOString() };
+                const updatedExam = {
+                    ...existingExam,
+                    result: row.result,
+                    location: row.location || existingExam.location,
+                    importedAt: new Date().toISOString()
+                };
                 const newResults = [...existingResults];
                 newResults[existingIndex] = updatedExam;
 
@@ -163,7 +166,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     subject: row.subject,
                     date: formattedExamDate,
                     result: row.result,
-                    prevResult: existingExam.result
+                    prevResult: existingExam.result,
+                    location: row.location
                 });
             } else {
                 // Duplicate or no update needed
@@ -171,7 +175,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     studentId: studentData.studentId,
                     subject: row.subject,
                     date: formattedExamDate,
-                    reason: "Már létező eredmény",
+                    reason: "Már létező, egyező eredmény és helyszín",
                     existingResult: existingExam.result
                 });
             }
