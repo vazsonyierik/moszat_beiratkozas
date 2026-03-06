@@ -354,13 +354,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                             // Normal mode (Upsert)
                                             if (existingIndex !== -1) {
                                                 const existingExam = existingResults[existingIndex];
-                                                const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-                                                const isNewConcrete = result && result !== "Kiírva";
 
-                                                if (isExistingPlaceholder && isNewConcrete) {
-                                                    existingResults[existingIndex] = {...existingExam, result: result, importedAt: new Date().toISOString()};
+                                                // Evaluate Differences
+                                                if (existingExam.location !== location || existingExam.result !== result) {
+                                                    existingResults[existingIndex] = {
+                                                        ...existingExam,
+                                                        result: result,
+                                                        location: location,
+                                                        importedAt: new Date().toISOString()
+                                                    };
                                                     examUpdated = true;
-                                                    actionType = `Vizsga frissítve: ${result}`;
+                                                    actionType = `Vizsga frissítve: ${result} (${location})`;
                                                 }
                                             } else {
                                                 // New exam
