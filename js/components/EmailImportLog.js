@@ -28,6 +28,11 @@ const EmailImportLog = ({ onStudentClick }) => {
             }));
             setLogs(logsData);
             setLoading(false);
+
+            // Reset to page 1 if the very first item changes (new log arrived)
+            if (logsData.length > 0 && logs.length > 0 && logsData[0].id !== logs[0].id) {
+                setCurrentPage(1);
+            }
         }, (err) => {
             console.error("Error fetching email logs:", err);
             setError("Nem sikerült betölteni az email naplót.");
@@ -35,7 +40,7 @@ const EmailImportLog = ({ onStudentClick }) => {
         });
 
         return () => unsubscribe();
-    }, []);
+    }, [logs]);
 
     const toggleExpand = (id) => {
         setExpandedLogId(expandedLogId === id ? null : id);
