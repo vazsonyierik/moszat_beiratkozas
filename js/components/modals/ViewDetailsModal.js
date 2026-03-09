@@ -331,6 +331,30 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         return activePhase;
     };
 
+    // Transferred status toggle function
+    const handleToggleTransferred = () => {
+        const currentStatus = !!localStudent.isTransferred;
+        const newStatus = !currentStatus;
+        const actionText = newStatus ? "áthelyezve más képzőszervhez" : "aktív (áthelyezés visszavonva)";
+
+        showConfirmation({
+            message: `Biztosan megváltoztatod a tanuló áthelyezési státuszát erre: ${actionText}?`,
+            onConfirm: async () => {
+                try {
+                    const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
+                    // Update parent (Firestore)
+                    await onUpdate(localStudent.id, { isTransferred: newStatus }, studentName);
+                    // Update local state
+                    setLocalStudent(prev => ({ ...prev, isTransferred: newStatus }));
+                    showToast(`Áthelyezési státusz frissítve.`, "success");
+                } catch (err) {
+                    console.error("Hiba az áthelyezési státusz frissítésekor: ", err);
+                    showToast("Hiba a mentés során.", "error");
+                }
+            }
+        });
+    };
+
     // Exam handling functions
     const handleEditExam = (index, data) => {
         setEditingExamIndex(index);
@@ -480,13 +504,32 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     `;
 
     const renderDeadlineStatus = () => {
-        if (!localStudent.deadlineInfo || !localStudent.deadlineInfo.shiftedDate) {
+        if (!localStudent.deadlineInfo) {
             return html`
                 <p className="text-sm text-gray-500 italic mt-2">A határidő kalkuláció folyamatban van, vagy nincs elegendő adat.</p>
             `;
         }
 
         const info = localStudent.deadlineInfo;
+
+        // If we only have activePhase but no dates (terminal states)
+        if (!info.shiftedDate && info.activePhase) {
+             return html`
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-2">
+                    <div className="flex flex-col border-b border-gray-100 pb-2 md:col-span-2">
+                        <strong className="text-gray-500 mb-1">Aktuális Cél / Fázis</strong>
+                        <span className="text-gray-900 font-medium">${getPhaseLabel(info.activePhase)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!info.shiftedDate) {
+             return html`
+                <p className="text-sm text-gray-500 italic mt-2">A határidő kalkuláció folyamatban van, vagy nincs elegendő adat.</p>
+            `;
+        }
+
         const mappedPhase = getPhaseLabel(info.activePhase);
         const daysRemaining = getDaysRemaining(info.shiftedDate);
 
