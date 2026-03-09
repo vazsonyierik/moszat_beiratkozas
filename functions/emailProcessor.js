@@ -43,9 +43,9 @@ const normalizeDate = (input) => {
     return null;
 };
 
-const normalizeString = (str) => {
+const normalizeForMatch = (str) => {
     if (!str) return "";
-    return str.toString().toLowerCase().replace(/\s+/g, " ").trim();
+    return str.toString().toLowerCase().replace(/\s+/g, "");
 };
 
 const formatExamDate = (rawDate) => {
@@ -340,7 +340,9 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                         // Find existing exam by Subject + Date + Location
                                         const existingIndex = existingResults.findIndex(ex =>
-                                            ex.subject === subject && ex.date === formattedExamDate && normalizeString(ex.location) === normalizeString(location)
+                                            ex.date === formattedExamDate &&
+                                            normalizeForMatch(ex.subject) === normalizeForMatch(subject) &&
+                                            normalizeForMatch(ex.location) === normalizeForMatch(location)
                                         );
 
                                         let examUpdated = false;
