@@ -56,7 +56,7 @@ const IconLegendModal = ({ onClose }) => {
                 </header>
                 <main className="p-4 sm:p-6 space-y-4">
                     ${iconFilterOptions.map(opt => html`
-                        <div key=${opt.key} className="flex items-center gap-4">
+                        <div key="${opt.key}" className="flex items-center gap-4">
                             <div className="flex-shrink-0">
                                 <div className="w-8 h-8 rounded-full flex items-center justify-center ${opt.color} text-white shadow-md">
                                     <${opt.Icon} size=${18} />
@@ -262,7 +262,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const allowDelete = !reg.status_enrolled && !reg.courseCompletedAt;
 
                             return html`
-                            <${Fragment} key=${reg.id}>
+                            <${Fragment} key="${reg.id}">
                                 <tr className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
@@ -327,12 +327,12 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         <div className="flex flex-col justify-center space-y-1">
                                             ${adminIcons.length > 0 && html`
                                                 <div className="flex items-center space-x-1.5">
-                                                    ${adminIcons.map(icon => html`<${StatusIcon} key=${icon.key} ...${icon} />`)}
+                                                    ${adminIcons.map(icon => html`<${StatusIcon} key="${icon.key}" ...${icon} />`)}
                                                 </div>
                                             `}
                                             ${studentIcons.length > 0 && html`
                                                 <div className="flex items-center space-x-1.5">
-                                                    ${studentIcons.map(icon => html`<${StatusIcon} key=${icon.key} ...${icon} />`)}
+                                                    ${studentIcons.map(icon => html`<${StatusIcon} key="${icon.key}" ...${icon} />`)}
                                                 </div>
                                             `}
                                         </div>
@@ -426,7 +426,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         `}
                                     </td>
                                 </tr>
-                                <tr key=${reg.id + '-comment'}>
+                                <tr key="${reg.id}-comment">
                                     <td colSpan="7" className="p-0 border-none">
                                         <div className=${`transition-all duration-300 ease-in-out grid ${openCommentId === reg.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                             <div className="overflow-hidden">
@@ -1381,7 +1381,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                 </${React.Fragment}>`}
                 
-                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
+                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}

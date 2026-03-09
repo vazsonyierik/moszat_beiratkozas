@@ -125,7 +125,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
 
                         if (isEditing) {
                             return html`
-                                <tr key=${res.originalIndex} className="bg-blue-50">
+                                <tr key="${res.originalIndex}" className="bg-blue-50">
                                     <td className="px-3 py-2 align-top">
                                         <input
                                             type="text"
@@ -174,7 +174,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         }
 
                         return html`
-                        <tr key=${res.isSynthetic ? 'synthetic' : res.originalIndex} className="hover:bg-gray-50 group">
+                        <tr key="${res.isSynthetic ? 'synthetic' : res.originalIndex}" className="hover:bg-gray-50 group">
                             <td className="px-3 py-2 whitespace-nowrap text-gray-900">${res.date}</td>
                             <td className="px-3 py-2 text-gray-700">${res.subject}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
@@ -203,7 +203,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
     `;
 };
 
-const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
+const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
     const [localStudent, setLocalStudent] = useState(student);
     const [editingExamIndex, setEditingExamIndex] = useState(null);
     const [tempExamData, setTempExamData] = useState({});
@@ -223,12 +223,12 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             const recalculateFn = httpsCallable(functions, 'recalculateStudentDeadline');
             const result = await recalculateFn({
                 documentId: localStudent.id,
-                isTest: isTestMode()
+                isTest: isTestView
             });
 
             if (result.data.success) {
                 // Re-fetch the entire student document to ensure perfect reactivity with backend formats
-                const collectionName = isTestMode() ? 'registrations_test' : 'registrations';
+                const collectionName = isTestView ? 'registrations_test' : 'registrations';
                 const docRef = doc(db, collectionName, localStudent.id);
                 const docSnap = await getDoc(docRef);
                 
@@ -687,6 +687,27 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                     <div className="mt-6">
                         <${Section} title="Megjegyzés">
                             <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">${localStudent.megjegyzes || 'Nincs megjegyzés.'}</p>
+                        <//>
+                    </div>
+
+                    ${/* Képzés Lezárása szekció - Teljes szélességben */''}
+                    <div className="mt-6 mb-4">
+                        <${Section} title="Képzés Lezárása" className="border-red-100 ring-4 ring-red-50">
+                            <div className="flex items-center justify-between p-2">
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900">Áthelyezve (Másik képzőszervhez)</h4>
+                                    <p className="text-xs text-gray-500">Ha be van kapcsolva, a rendszer lezártnak tekinti a tanulót az aktív határidő riportokban.</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked=${!!localStudent.isTransferred}
+                                        onChange=${handleToggleTransferred}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                </label>
+                            </div>
                         <//>
                     </div>
                 </main>
