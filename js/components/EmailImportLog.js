@@ -10,6 +10,9 @@ const EmailImportLog = ({ onStudentClick }) => {
     const [error, setError] = useState(null);
     const [expandedLogId, setExpandedLogId] = useState(null);
 
+    const [currentPage, setCurrentPage] = useState(1);
+    const logsPerPage = 10;
+
     useEffect(() => {
         // Calculate date 30 days ago
         const thirtyDaysAgo = new Date();
