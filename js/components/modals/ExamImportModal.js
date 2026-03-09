@@ -117,9 +117,9 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         const formattedExamDate = formatExamDate(row.examDateRaw);
         const existingResults = studentData.examResults || [];
 
-        // Logic: Find existing exam by Subject + Date
+        // Logic: Find existing exam by Subject + Date + Location
         const existingIndex = existingResults.findIndex(ex =>
-            ex.subject === row.subject && ex.date === formattedExamDate
+            ex.subject === row.subject && ex.date === formattedExamDate && ex.location === row.location
         );
 
         if (mode === 'delete') {
@@ -145,16 +145,14 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         }
 
         if (existingIndex !== -1) {
-            // Found match. Check if we should update.
+            // Found exact match. Check if status has changed.
             const existingExam = existingResults[existingIndex];
 
-            // Evaluate Differences
-            if (existingExam.location !== row.location || existingExam.result !== row.result) {
-                // Update logic
+            if (existingExam.result !== row.result) {
+                // Update result logic
                 const updatedExam = {
                     ...existingExam,
                     result: row.result,
-                    location: row.location || existingExam.location,
                     importedAt: new Date().toISOString()
                 };
                 const newResults = [...existingResults];

@@ -554,7 +554,7 @@ exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (req
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
     }
 
-    const { documentId, isTest } = request.data;
+    const {documentId, isTest} = request.data;
     if (!documentId) {
         throw new HttpsError("invalid-argument", "Hiányzó dokumentum azonosító.");
     }
@@ -571,10 +571,10 @@ exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (req
         const studentData = docSnap.data();
         const newDeadlineInfo = calculateDeadline(studentData) || null;
 
-        await docRef.update({ deadlineInfo: newDeadlineInfo });
+        await docRef.update({deadlineInfo: newDeadlineInfo});
         logger.info(`Manual deadline recalculation triggered for ${documentId} in ${collectionName} by ${userEmail}.`);
 
-        return { success: true, deadlineInfo: newDeadlineInfo };
+        return {success: true, deadlineInfo: newDeadlineInfo};
     } catch (error) {
         logger.error(`Error recalculating deadline for ${documentId}:`, error);
         throw new HttpsError("internal", "Hiba történt a határidő újraszámításakor.");
@@ -729,7 +729,7 @@ exports.onRegistrationUpdated = onDocumentUpdated(
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
         // Only run if specific deadline-related fields changed
-        const fieldsToWatch = ['examResults', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt', 'studentId'];
+        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId"];
         let needsDeadlineRecalc = false;
 
         for (const field of fieldsToWatch) {
@@ -778,7 +778,7 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
         }
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
-        const fieldsToWatch = ['examResults', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt', 'studentId'];
+        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId"];
         let needsDeadlineRecalc = false;
 
         for (const field of fieldsToWatch) {
