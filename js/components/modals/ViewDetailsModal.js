@@ -344,9 +344,33 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                     const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
                     // Update parent (Firestore)
                     await onUpdate(localStudent.id, { isTransferred: newStatus }, studentName);
-                    // Update local state
-                    setLocalStudent(prev => ({ ...prev, isTransferred: newStatus }));
+
+                    // Update local state optimistically, including the deadlineInfo terminal state
+                    setLocalStudent(prev => {
+                        const updatedStudent = { ...prev, isTransferred: newStatus };
+                        if (newStatus) {
+                            updatedStudent.deadlineInfo = {
+                                activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
+                                originalDate: null,
+                                shiftedDate: null,
+                                isShifted: false
+                            };
+                        } else {
+                            // If toggled off, we should ideally fetch the real deadline from backend.
+                            // But for immediate feedback, we can clear it or just trigger a manual recalculate.
+                            // The backend trigger `onUpdate` will fix it shortly anyway.
+                            updatedStudent.deadlineInfo = null;
+                        }
+                        return updatedStudent;
+                    });
+
                     showToast(`Áthelyezési státusz frissítve.`, "success");
+
+                    // Optionally, if toggled back to active, trigger a recalculation to fetch the proper dates immediately
+                    if (!newStatus) {
+                        handleRecalculateDeadline();
+                    }
+
                 } catch (err) {
                     console.error("Hiba az áthelyezési státusz frissítésekor: ", err);
                     showToast("Hiba a mentés során.", "error");
