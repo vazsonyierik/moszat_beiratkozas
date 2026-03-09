@@ -106,9 +106,33 @@ function parseExamDate(dateStr) {
  * Calculates the deadline phase and dates for a student.
  */
 function calculateDeadline(studentData) {
+    if (studentData.isTransferred === true) {
+        return {
+            activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
+            originalDate: null,
+            shiftedDate: null,
+            isShifted: false
+        };
+    }
+
     const enrolledAt = toDate(studentData.enrolledAt);
     const studentIdAssignedAt = toDate(studentData.studentIdAssignedAt);
     const examResults = studentData.examResults || [];
+
+    // Check for Phase 5: Passed Practical Exam
+    const passedPractical = examResults.find(ex =>
+        ex.subject && ex.subject.toLowerCase().includes("forgalmi") &&
+        ex.result && (ex.result.toLowerCase().includes("sikeres") || ex.result === "M")
+    );
+
+    if (passedPractical) {
+        return {
+            activePhase: "Phase 5: Sikeres forgalmi vizsga (Befejezte)",
+            originalDate: null,
+            shiftedDate: null,
+            isShifted: false
+        };
+    }
 
     // Filter theory exams
     const theoryExams = examResults.filter(ex =>
@@ -150,6 +174,32 @@ function calculateDeadline(studentData) {
         return d;
     };
 
+    // Helper to evaluate if a calculated shifted date is expired
+    const evaluateExpired = (phaseName, original, shiftedDate, isShifted) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const target = new Date(shiftedDate);
+        target.setHours(0, 0, 0, 0);
+
+        const diffTime = target - today;
+        const daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+        if (daysRemaining < 0) {
+            return {
+                activePhase: `Lezárva (Lejárt): ${phaseName}`,
+                originalDate: Timestamp.fromDate(original),
+                shiftedDate: Timestamp.fromDate(shiftedDate),
+                isShifted: isShifted
+            };
+        }
+        return {
+            activePhase: phaseName,
+            originalDate: Timestamp.fromDate(original),
+            shiftedDate: Timestamp.fromDate(shiftedDate),
+            isShifted: isShifted
+        };
+    };
+
     // Phase 4: Successful theory -> 2 years from successful theory exam date. (Shift to working day).
     if (successfulTheory) {
         const examDate = parseExamDate(successfulTheory.date);
@@ -159,12 +209,7 @@ function calculateDeadline(studentData) {
             const {date: finalDate, shifted} = getNextWorkingDay(deadlineDate);
             finalDate.setHours(12, 0, 0, 0);
 
-            return {
-                activePhase: "Phase 4: Sikeres KRESZ vizsga (2 év)",
-                originalDate: Timestamp.fromDate(deadlineDate),
-                shiftedDate: Timestamp.fromDate(finalDate),
-                isShifted: shifted
-            };
+            return evaluateExpired("Phase 4: Sikeres KRESZ vizsga (2 év)", deadlineDate, finalDate, shifted);
         }
     }
 
@@ -199,12 +244,7 @@ function calculateDeadline(studentData) {
             const {date: finalDate, shifted} = getNextWorkingDay(deadlineDate);
             finalDate.setHours(12, 0, 0, 0);
 
-            return {
-                activePhase: "Phase 3: Sikertelen elmélet (12 hónap azonosítótól)",
-                originalDate: Timestamp.fromDate(deadlineDate),
-                shiftedDate: Timestamp.fromDate(finalDate),
-                isShifted: shifted
-            };
+            return evaluateExpired("Phase 3: Sikertelen elmélet (12 hónap azonosítótól)", deadlineDate, finalDate, shifted);
         } else {
             // Phase 2: Has azonositoMegadasa but no successful or valid failed theory -> 9 months from azonositoMegadasa.
             const deadlineDate = calculateKAVDate(studentIdAssignedAt, {months: 9});
@@ -212,12 +252,7 @@ function calculateDeadline(studentData) {
             const {date: finalDate, shifted} = getNextWorkingDay(deadlineDate);
             finalDate.setHours(12, 0, 0, 0);
 
-            return {
-                activePhase: "Phase 2: Azonosító kiadva (9 hónap)",
-                originalDate: Timestamp.fromDate(deadlineDate),
-                shiftedDate: Timestamp.fromDate(finalDate),
-                isShifted: shifted
-            };
+            return evaluateExpired("Phase 2: Azonosító kiadva (9 hónap)", deadlineDate, finalDate, shifted);
         }
     }
 
@@ -226,12 +261,7 @@ function calculateDeadline(studentData) {
         const deadlineDate = calculateKAVDate(enrolledAt, {days: 90});
 
         // NO working day shift for Phase 1
-        return {
-            activePhase: "Phase 1: Beiratkozva (90 nap)",
-            originalDate: Timestamp.fromDate(deadlineDate),
-            shiftedDate: Timestamp.fromDate(deadlineDate),
-            isShifted: false
-        };
+        return evaluateExpired("Phase 1: Beiratkozva (90 nap)", deadlineDate, deadlineDate, false);
     }
 
     // No relevant dates found

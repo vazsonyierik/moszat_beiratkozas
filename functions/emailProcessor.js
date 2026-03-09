@@ -43,6 +43,11 @@ const normalizeDate = (input) => {
     return null;
 };
 
+const normalizeForMatch = (str) => {
+    if (!str) return "";
+    return str.toString().toLowerCase().replace(/\s+/g, "");
+};
+
 const formatExamDate = (rawDate) => {
     if (rawDate instanceof Date) {
         // Round to nearest minute: add 30 seconds, then floor to minute
@@ -335,7 +340,9 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                         // Find existing exam by Subject + Date + Location
                                         const existingIndex = existingResults.findIndex(ex =>
-                                            ex.subject === subject && ex.date === formattedExamDate && ex.location === location
+                                            ex.date === formattedExamDate &&
+                                            normalizeForMatch(ex.subject) === normalizeForMatch(subject) &&
+                                            normalizeForMatch(ex.location) === normalizeForMatch(location)
                                         );
 
                                         let examUpdated = false;

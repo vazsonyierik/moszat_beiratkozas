@@ -78,11 +78,19 @@ export default function DeadlineReports({ students, onShowDetails }) {
         if (!students) return [];
 
         return students.filter(student => {
-            // 1. Must have deadlineInfo and a valid shiftedDate
-            if (!student.deadlineInfo || !student.deadlineInfo.shiftedDate) return false;
+            // 1. Must have deadlineInfo
+            if (!student.deadlineInfo) return false;
 
-            const daysRemaining = getDaysRemaining(student.deadlineInfo.shiftedDate);
-            if (daysRemaining === null) return false;
+            // Allow if shiftedDate is null BUT phase is set (for Lezárva states)
+            const hasShiftedDate = !!student.deadlineInfo.shiftedDate;
+            const isTerminalState = !hasShiftedDate && student.deadlineInfo.activePhase && student.deadlineInfo.activePhase.includes("Lezárva");
+            const isPhase5 = !hasShiftedDate && student.deadlineInfo.activePhase && student.deadlineInfo.activePhase.includes("Phase 5");
+
+            if (!hasShiftedDate && !isTerminalState && !isPhase5) return false;
+
+            const daysRemaining = hasShiftedDate ? getDaysRemaining(student.deadlineInfo.shiftedDate) : null;
+            // Only fail on null daysRemaining if it's not a terminal state
+            if (daysRemaining === null && hasShiftedDate) return false;
 
             // 2. Filter by search term
             if (searchTerm) {
@@ -110,8 +118,8 @@ export default function DeadlineReports({ students, onShowDetails }) {
                 return false;
             }
 
-            // 5. Filter by days remaining
-            if (daysFilter !== '') {
+            // 5. Filter by days remaining (ignore terminal states from this filter)
+            if (daysFilter !== '' && hasShiftedDate) {
                 const maxDays = parseInt(daysFilter, 10);
                 if (!isNaN(maxDays)) {
                     // Only show if daysRemaining is less than or equal to maxDays
@@ -123,8 +131,8 @@ export default function DeadlineReports({ students, onShowDetails }) {
             return true;
         }).sort((a, b) => {
             // Sort by days remaining ascending (most urgent first)
-            const daysA = getDaysRemaining(a.deadlineInfo.shiftedDate) || 0;
-            const daysB = getDaysRemaining(b.deadlineInfo.shiftedDate) || 0;
+            const daysA = a.deadlineInfo.shiftedDate ? (getDaysRemaining(a.deadlineInfo.shiftedDate) || 0) : 999999;
+            const daysB = b.deadlineInfo.shiftedDate ? (getDaysRemaining(b.deadlineInfo.shiftedDate) || 0) : 999999;
             return daysA - daysB;
         });
     }, [students, daysFilter, phaseFilter, includeExpired, searchTerm]);
@@ -260,6 +268,8 @@ export default function DeadlineReports({ students, onShowDetails }) {
                             const lastNameInitial = (student.current_lastName || '').charAt(0).toUpperCase();
                             const firstNameInitial = (student.current_firstName || '').charAt(0).toUpperCase();
 
+                            const hasShiftedDate = !!info.shiftedDate;
+
                             return html`
                                 <tr key="${student.id}" className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -283,15 +293,21 @@ export default function DeadlineReports({ students, onShowDetails }) {
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900 font-medium">${formatJustDate(info.shiftedDate)}</div>
-                                        ${info.isShifted ? html`
-                                            <div className="text-[10px] text-gray-400" title="Ünnepnap/hétvége miatt csúsztatva">(csúsztatva)</div>
-                                        ` : null}
+                                        ${hasShiftedDate ? html`
+                                            <div className="text-sm text-gray-900 font-medium">${formatJustDate(info.shiftedDate)}</div>
+                                            ${info.isShifted ? html`
+                                                <div className="text-[10px] text-gray-400" title="Ünnepnap/hétvége miatt csúsztatva">(csúsztatva)</div>
+                                            ` : null}
+                                        ` : html`
+                                            <div className="text-sm text-gray-400 font-medium">-</div>
+                                        `}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <span className="${statusStyle.className}">
-                                            ${statusStyle.text}
-                                        </span>
+                                        ${hasShiftedDate ? html`
+                                            <span className="${statusStyle.className}">
+                                                ${statusStyle.text}
+                                            </span>
+                                        ` : null}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <button
