@@ -117,9 +117,9 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         const formattedExamDate = formatExamDate(row.examDateRaw);
         const existingResults = studentData.examResults || [];
 
-        // Logic: Find existing exam by Subject + Date
+        // Logic: Find existing exam by Subject + Date + Location
         const existingIndex = existingResults.findIndex(ex =>
-            ex.subject === row.subject && ex.date === formattedExamDate
+            ex.subject === row.subject && ex.date === formattedExamDate && ex.location === row.location
         );
 
         if (mode === 'delete') {
@@ -145,15 +145,16 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         }
 
         if (existingIndex !== -1) {
-            // Found match. Check if we should update.
+            // Found exact match. Check if status has changed.
             const existingExam = existingResults[existingIndex];
 
-            const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-            const isNewConcrete = row.result && row.result !== "Kiírva";
-
-            if (isExistingPlaceholder && isNewConcrete) {
-                // Update logic
-                const updatedExam = { ...existingExam, result: row.result, importedAt: new Date().toISOString() };
+            if (existingExam.result !== row.result) {
+                // Update result logic
+                const updatedExam = {
+                    ...existingExam,
+                    result: row.result,
+                    importedAt: new Date().toISOString()
+                };
                 const newResults = [...existingResults];
                 newResults[existingIndex] = updatedExam;
 
@@ -163,7 +164,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     subject: row.subject,
                     date: formattedExamDate,
                     result: row.result,
-                    prevResult: existingExam.result
+                    prevResult: existingExam.result,
+                    location: row.location
                 });
             } else {
                 // Duplicate or no update needed
@@ -171,7 +173,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     studentId: studentData.studentId,
                     subject: row.subject,
                     date: formattedExamDate,
-                    reason: "Már létező eredmény",
+                    reason: "Már létező, egyező eredmény és helyszín",
                     existingResult: existingExam.result
                 });
             }

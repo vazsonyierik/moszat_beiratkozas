@@ -32,9 +32,25 @@ const DisplayField = ({ label, value }) => html`
 const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editingIndex, tempExamData, setTempExamData }) => {
     if (!results || results.length === 0) return html`<p className="text-sm text-gray-500 italic">Nincsenek rögzített vizsgaeredmények.</p>`;
 
+    // Filter out canceled "Forgalmi" (practical) exams to hide them from the table.
+    // However, synthetic rows (isCaseFiled) or canceled theory exams should remain visible.
+    const filteredResults = results.filter(res => {
+        if (res.isSynthetic) return true; // Keep synthetic rows
+
+        // Hide if subject contains "forgalmi" and result is "Törölve"
+        const isForgalmi = res.subject && res.subject.toLowerCase().includes('forgalmi');
+        const isCanceled = res.result === 'Törölve';
+
+        if (isForgalmi && isCanceled) {
+            return false;
+        }
+
+        return true;
+    });
+
     // Extract synthetic row if present to keep it at the top
-    const syntheticRow = results.find(res => res.isSynthetic);
-    const realResults = results.filter(res => !res.isSynthetic);
+    const syntheticRow = filteredResults.find(res => res.isSynthetic);
+    const realResults = filteredResults.filter(res => !res.isSynthetic);
 
     // We need to keep track of the original index because sorting changes order.
     // So map to include original index first. Note: index must match the original array structure for editing/deleting.

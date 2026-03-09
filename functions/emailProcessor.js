@@ -284,7 +284,7 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                     // 4. Update Logic
                                     if (isCaseFileMode) {
                                         if (!studentData.isCaseFiled || (studentData.isCaseFiled && !studentData.caseFiledAt)) {
-                                            const updateData = { isCaseFiled: true };
+                                            const updateData = {isCaseFiled: true};
 
                                             // Extract the date from the parsed email object, fallback to now.
                                             const fileDate = parsed.date ? new Date(parsed.date) : new Date();
@@ -333,15 +333,17 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
 
-                                        // Find existing exam by Subject + Date
+                                        // Find existing exam by Subject + Date + Location
                                         const existingIndex = existingResults.findIndex(ex =>
-                                            ex.subject === subject && ex.date === formattedExamDate
+                                            ex.subject === subject && ex.date === formattedExamDate && ex.location === location
                                         );
 
                                         let examUpdated = false;
                                         let actionType = "";
 
                                         if (step.mode === "delete") {
+                                            // Keresés helyszín nélkül is, ha törlésről van szó (bár a KAV Excel-ben a törlésnél is ott a helyszín)
+                                            // Azonban a felhasználó kérése: "Two exams should ONLY be considered the exact same attempt if their date, subject, AND location match."
                                             if (existingIndex !== -1) {
                                                 const existingExam = existingResults[existingIndex];
                                                 if (existingExam.result !== "Törölve") {
@@ -354,16 +356,19 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                             // Normal mode (Upsert)
                                             if (existingIndex !== -1) {
                                                 const existingExam = existingResults[existingIndex];
-                                                const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-                                                const isNewConcrete = result && result !== "Kiírva";
 
-                                                if (isExistingPlaceholder && isNewConcrete) {
-                                                    existingResults[existingIndex] = {...existingExam, result: result, importedAt: new Date().toISOString()};
+                                                // Only update if result (status) is different
+                                                if (existingExam.result !== result) {
+                                                    existingResults[existingIndex] = {
+                                                        ...existingExam,
+                                                        result: result,
+                                                        importedAt: new Date().toISOString()
+                                                    };
                                                     examUpdated = true;
                                                     actionType = `Vizsga frissítve: ${result}`;
                                                 }
                                             } else {
-                                                // New exam
+                                                // New exam booking (different location or entirely new)
                                                 existingResults.push({
                                                     subject: subject,
                                                     date: formattedExamDate,
