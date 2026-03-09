@@ -125,7 +125,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
 
                         if (isEditing) {
                             return html`
-                                <tr key=${res.originalIndex} className="bg-blue-50">
+                                <tr key="${res.originalIndex}" className="bg-blue-50">
                                     <td className="px-3 py-2 align-top">
                                         <input
                                             type="text"
@@ -174,7 +174,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         }
 
                         return html`
-                        <tr key=${res.isSynthetic ? 'synthetic' : res.originalIndex} className="hover:bg-gray-50 group">
+                        <tr key="${res.isSynthetic ? 'synthetic' : res.originalIndex}" className="hover:bg-gray-50 group">
                             <td className="px-3 py-2 whitespace-nowrap text-gray-900">${res.date}</td>
                             <td className="px-3 py-2 text-gray-700">${res.subject}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
@@ -203,7 +203,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
     `;
 };
 
-const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
+const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
     const [localStudent, setLocalStudent] = useState(student);
     const [editingExamIndex, setEditingExamIndex] = useState(null);
     const [tempExamData, setTempExamData] = useState({});
@@ -223,12 +223,12 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             const recalculateFn = httpsCallable(functions, 'recalculateStudentDeadline');
             const result = await recalculateFn({
                 documentId: localStudent.id,
-                isTest: isTestMode()
+                isTest: isTestView
             });
 
             if (result.data.success) {
                 // Re-fetch the entire student document to ensure perfect reactivity with backend formats
-                const collectionName = isTestMode() ? 'registrations_test' : 'registrations';
+                const collectionName = isTestView ? 'registrations_test' : 'registrations';
                 const docRef = doc(db, collectionName, localStudent.id);
                 const docSnap = await getDoc(docRef);
                 
@@ -344,9 +344,33 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                     const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
                     // Update parent (Firestore)
                     await onUpdate(localStudent.id, { isTransferred: newStatus }, studentName);
-                    // Update local state
-                    setLocalStudent(prev => ({ ...prev, isTransferred: newStatus }));
+
+                    // Update local state optimistically, including the deadlineInfo terminal state
+                    setLocalStudent(prev => {
+                        const updatedStudent = { ...prev, isTransferred: newStatus };
+                        if (newStatus) {
+                            updatedStudent.deadlineInfo = {
+                                activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
+                                originalDate: null,
+                                shiftedDate: null,
+                                isShifted: false
+                            };
+                        } else {
+                            // If toggled off, we should ideally fetch the real deadline from backend.
+                            // But for immediate feedback, we can clear it or just trigger a manual recalculate.
+                            // The backend trigger `onUpdate` will fix it shortly anyway.
+                            updatedStudent.deadlineInfo = null;
+                        }
+                        return updatedStudent;
+                    });
+
                     showToast(`Áthelyezési státusz frissítve.`, "success");
+
+                    // Optionally, if toggled back to active, trigger a recalculation to fetch the proper dates immediately
+                    if (!newStatus) {
+                        handleRecalculateDeadline();
+                    }
+
                 } catch (err) {
                     console.error("Hiba az áthelyezési státusz frissítésekor: ", err);
                     showToast("Hiba a mentés során.", "error");
@@ -687,6 +711,27 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                     <div className="mt-6">
                         <${Section} title="Megjegyzés">
                             <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">${localStudent.megjegyzes || 'Nincs megjegyzés.'}</p>
+                        <//>
+                    </div>
+
+                    ${/* Képzés Lezárása szekció - Teljes szélességben */''}
+                    <div className="mt-6 mb-4">
+                        <${Section} title="Képzés Lezárása" className="border-red-100 ring-4 ring-red-50">
+                            <div className="flex items-center justify-between p-2">
+                                <div>
+                                    <h4 className="text-sm font-medium text-gray-900">Áthelyezve (Másik képzőszervhez)</h4>
+                                    <p className="text-xs text-gray-500">Ha be van kapcsolva, a rendszer lezártnak tekinti a tanulót az aktív határidő riportokban.</p>
+                                </div>
+                                <label className="relative inline-flex items-center cursor-pointer">
+                                    <input
+                                        type="checkbox"
+                                        className="sr-only peer"
+                                        checked=${!!localStudent.isTransferred}
+                                        onChange=${handleToggleTransferred}
+                                    />
+                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                </label>
+                            </div>
                         <//>
                     </div>
                 </main>

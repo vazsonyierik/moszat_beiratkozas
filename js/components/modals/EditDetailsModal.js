@@ -131,7 +131,7 @@ const EditDetailsModal = ({ student, onClose, onUpdate, adminUser }) => {
     }, [student, onUpdate, showConfirmation, showToast, adminUser]);
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick=${onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-stone-50 rounded-xl shadow-2xl w-full max-w-6xl transform transition-all" onClick=${e => e.stopPropagation()}>
                 <header className="p-6 border-b bg-white rounded-t-xl flex justify-between items-center">
                     <div>
