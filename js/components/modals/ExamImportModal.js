@@ -98,6 +98,11 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         return null;
     };
 
+    const normalizeString = (str) => {
+        if (!str) return '';
+        return str.toString().toLowerCase().replace(/\s+/g, ' ').trim();
+    };
+
     const formatExamDate = (rawDate) => {
         if (rawDate instanceof Date) {
             // Round to nearest minute: add 30 seconds, then floor to minute
@@ -119,7 +124,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
         // Logic: Find existing exam by Subject + Date + Location
         const existingIndex = existingResults.findIndex(ex =>
-            ex.subject === row.subject && ex.date === formattedExamDate && ex.location === row.location
+            ex.subject === row.subject && ex.date === formattedExamDate && normalizeString(ex.location) === normalizeString(row.location)
         );
 
         if (mode === 'delete') {

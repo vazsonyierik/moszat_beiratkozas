@@ -30,12 +30,17 @@ const DisplayField = ({ label, value }) => html`
 `;
 
 const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editingIndex, tempExamData, setTempExamData }) => {
+    const [showCancelledExams, setShowCancelledExams] = useState(false);
+
     if (!results || results.length === 0) return html`<p className="text-sm text-gray-500 italic">Nincsenek rögzített vizsgaeredmények.</p>`;
 
     // Filter out canceled "Forgalmi" (practical) exams to hide them from the table.
     // However, synthetic rows (isCaseFiled) or canceled theory exams should remain visible.
     const filteredResults = results.filter(res => {
         if (res.isSynthetic) return true; // Keep synthetic rows
+
+        // If showCancelledExams is true, render ALL exams.
+        if (showCancelledExams) return true;
 
         // Hide if subject contains "forgalmi" and result is "Törölve"
         const isForgalmi = res.subject && res.subject.toLowerCase().includes('forgalmi');
@@ -75,6 +80,17 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
     const sortedResults = syntheticRow ? [syntheticRow, ...sortedRealResults] : sortedRealResults;
 
     return html`
+        <div className="flex justify-end mb-2">
+            <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                    type="checkbox"
+                    className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4"
+                    checked=${showCancelledExams}
+                    onChange=${(e) => setShowCancelledExams(e.target.checked)}
+                />
+                <span className="text-sm text-gray-600 font-medium">Törölt forgalmi vizsgák mutatása</span>
+            </label>
+        </div>
         <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
