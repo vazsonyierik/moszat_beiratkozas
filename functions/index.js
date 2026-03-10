@@ -471,9 +471,23 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         newRegistrationData.status_paid = true;
         newRegistrationData.status_enrolled = true;
         newRegistrationData.hasMedicalCertificate = true;
-        newRegistrationData.courseCompletedAt = Timestamp.fromDate(new Date(formData.transferKreszDate + "T23:59:59"));
+
+        let kreszDateStr = formData.transferKreszDate;
+        if (!kreszDateStr || typeof kreszDateStr !== 'string') {
+            // Fallback if empty, use current date
+            kreszDateStr = new Date().toISOString().split('T')[0];
+        }
+
+        const dateObj = new Date(kreszDateStr + "T23:59:59");
+        // Ensure valid date before creating timestamp
+        if (!isNaN(dateObj.getTime())) {
+            newRegistrationData.courseCompletedAt = Timestamp.fromDate(dateObj);
+        } else {
+            newRegistrationData.courseCompletedAt = Timestamp.now();
+        }
+
         newRegistrationData.examResults = [{
-            date: formData.transferKreszDate + " 12:00",
+            date: kreszDateStr + " 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
