@@ -1125,7 +1125,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                         </button>
                                         <button onClick=${() => { setIsTransferImporting(true); setIsSystemMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 font-medium border border-gray-200">
                                             <${Icons.UploadCloudIcon} size=${16} />
-                                            Áthelyezett Import (CSV)
+                                            Áthelyezett Import (Excel/CSV)
                                         </button>
                                     </div>
                                 </div>

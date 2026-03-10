@@ -69,75 +69,80 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            const text = e.target.result;
-            // Determine delimiter
-            const delimiter = text.includes('\t') ? '\t' : ';';
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = window.XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
-            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                setError("A fájl üres, vagy nem tartalmaz fejlécet.");
-                setIsParsing(false);
-                return;
-            }
-
-            // Skip header (index 0)
-            const students = [];
-            for (let i = 1; i < lines.length; i++) {
-                const cols = lines[i].split(delimiter).map(col => col.trim());
-                // Expected headers:
-                // 0: Tanuló neve, 1: Születéskori neve, 2: Születési hely, 3: Születési kerület,
-                // 4: Születési idő, 5: Anyja neve, 6: Állandó lakcím, 7: Tartózkodási hely,
-                // 8: Telefonszám, 9: Email cím, 10: Tanuló azonosító, 11: Sikeres KRESZ
-
-                const studentName = parseFullName(cols[0]);
-                const birthName = parseFullName(cols[1]);
-                const motherName = parseFullName(cols[5]);
-
-                const permAddress = parseAddress(cols[6]);
-                const tempAddress = parseAddress(cols[7]);
-
-                const studentObj = {
-                    current_lastName: studentName.lastName,
-                    current_firstName: studentName.firstName,
-                    birth_lastName: birthName.lastName || studentName.lastName,
-                    birth_firstName: birthName.firstName || studentName.firstName,
-                    birth_city: cols[2] || '',
-                    birth_district: cols[3] || '',
-                    birthDate: cols[4] || '',
-                    mother_lastName: motherName.lastName,
-                    mother_firstName: motherName.firstName,
-
-                    permanent_address_zip: permAddress.zip,
-                    permanent_address_city: permAddress.city,
-                    permanent_address_street: permAddress.street,
-
-                    temporary_address_zip: tempAddress.zip,
-                    temporary_address_city: tempAddress.city,
-                    temporary_address_street: tempAddress.street,
-                    residenceIsSame: !cols[7], // if no temp address, assume same
-
-                    phone_number: cols[8] || '',
-                    email: cols[9] || '',
-                    studentId: cols[10] || '',
-                    transferKreszDate: cols[11] || '',
-
-                    isTransferStudent: true,
-
-                    // defaults
-                    nationality: 'magyar',
-                    birth_country: 'Magyarország',
-                    permanent_address_country: 'Magyarország',
-                    temporary_address_country: 'Magyarország',
-                };
-
-                // Only add if it has a name
-                if (studentObj.current_lastName) {
-                    students.push(studentObj);
+                if (jsonData.length === 0) {
+                    setError("A fájl üres.");
+                    setIsParsing(false);
+                    return;
                 }
-            }
 
-            setParsedStudents(students);
-            setIsParsing(false);
+                const students = [];
+                for (const row of jsonData) {
+                    const studentNameStr = String(row['Tanuló neve'] || '');
+                    const birthNameStr = String(row['Születéskori neve'] || '');
+                    const motherNameStr = String(row['Anyja neve'] || '');
+                    const permAddrStr = String(row['Állandó lakcím'] || '');
+                    const tempAddrStr = String(row['Tartózkodási hely'] || '');
+
+                    const studentName = parseFullName(studentNameStr);
+                    const birthName = parseFullName(birthNameStr);
+                    const motherName = parseFullName(motherNameStr);
+
+                    const permAddress = parseAddress(permAddrStr);
+                    const tempAddress = parseAddress(tempAddrStr);
+
+                    const studentObj = {
+                        current_lastName: studentName.lastName,
+                        current_firstName: studentName.firstName,
+                        birth_lastName: birthName.lastName || studentName.lastName,
+                        birth_firstName: birthName.firstName || studentName.firstName,
+                        birth_city: String(row['Születési hely'] || ''),
+                        birth_district: String(row['Születési kerület'] || ''),
+                        birthDate: String(row['Születési idő'] || ''),
+                        mother_lastName: motherName.lastName,
+                        mother_firstName: motherName.firstName,
+
+                        permanent_address_zip: permAddress.zip,
+                        permanent_address_city: permAddress.city,
+                        permanent_address_street: permAddress.street,
+
+                        temporary_address_zip: tempAddress.zip,
+                        temporary_address_city: tempAddress.city,
+                        temporary_address_street: tempAddress.street,
+                        residenceIsSame: !tempAddrStr.trim(), // if no temp address, assume same
+
+                        phone_number: String(row['Telefonszám'] || ''),
+                        email: String(row['Email cím'] || ''),
+                        studentId: String(row['Tanuló azonosító'] || ''),
+                        transferKreszDate: String(row['Sikeres KRESZ'] || ''),
+
+                        isTransferStudent: true,
+
+                        // defaults
+                        nationality: 'magyar',
+                        birth_country: 'Magyarország',
+                        permanent_address_country: 'Magyarország',
+                        temporary_address_country: 'Magyarország',
+                    };
+
+                    // Only add if it has a name
+                    if (studentObj.current_lastName) {
+                        students.push(studentObj);
+                    }
+                }
+
+                setParsedStudents(students);
+            } catch (parseError) {
+                console.error("Hiba a fájl feldolgozása során:", parseError);
+                setError("Hiba a fájl feldolgozása során. Kérjük ellenőrizd a fájl formátumát.");
+            } finally {
+                setIsParsing(false);
+            }
         };
 
         reader.onerror = () => {
@@ -145,7 +150,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
             setIsParsing(false);
         };
 
-        reader.readAsText(fileToParse);
+        reader.readAsArrayBuffer(fileToParse);
     };
 
     const handleImport = async () => {
@@ -193,10 +198,10 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                     ${error && html`<div className="bg-red-50 text-red-700 p-4 rounded-md mb-4">${error}</div>`}
 
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Fájl kiválasztása (.csv, .tsv, .txt)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Fájl kiválasztása (.xlsx, .xls, .csv)</label>
                         <input
                             type="file"
-                            accept=".csv, .tsv, .txt"
+                            accept=".xlsx, .xls, .csv"
                             onChange=${handleFileChange}
                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors cursor-pointer"
                         />
