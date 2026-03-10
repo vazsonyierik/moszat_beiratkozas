@@ -46,6 +46,23 @@ const parseAddress = (addressStr) => {
     return { zip, city, street };
 };
 
+const convertExcelDateIfNumber = (val) => {
+    if (!val) return '';
+    // If it's already a string with a date-like format, just return it
+    if (typeof val === 'string' && val.includes('.')) return val;
+    // If it's a number (Excel serial date)
+    const num = Number(val);
+    if (!isNaN(num) && num > 20000) { // arbitrary bound to catch serial dates
+        // Excel epoch is Dec 30, 1899
+        const date = new Date((num - 25569) * 86400 * 1000);
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}.${m}.${d}.`;
+    }
+    return String(val);
+};
+
 const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
     const [file, setFile] = useState(null);
     const [parsedStudents, setParsedStudents] = useState([]);
@@ -73,7 +90,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                 const data = new Uint8Array(e.target.result);
                 const workbook = window.XLSX.read(data, { type: 'array' });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false, dateNF: "yyyy.mm.dd." });
 
                 if (jsonData.length === 0) {
                     setError("A fájl üres.");
@@ -103,7 +120,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                         birth_firstName: birthName.firstName || studentName.firstName,
                         birth_city: String(row['Születési hely'] || ''),
                         birth_district: String(row['Születési kerület'] || ''),
-                        birthDate: String(row['Születési idő'] || ''),
+                        birthDate: convertExcelDateIfNumber(row['Születési idő']),
                         mother_lastName: motherName.lastName,
                         mother_firstName: motherName.firstName,
 
@@ -119,7 +136,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                         phone_number: String(row['Telefonszám'] || ''),
                         email: String(row['Email cím'] || ''),
                         studentId: String(row['Tanuló azonosító'] || ''),
-                        transferKreszDate: String(row['Sikeres KRESZ'] || ''),
+                        transferKreszDate: convertExcelDateIfNumber(row['Sikeres KRESZ']),
 
                         isTransferStudent: true,
 
@@ -214,19 +231,29 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">Név</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">Email</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">Azonosító</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">KRESZ Dátum</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Név</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Születéskori név</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Születési adatok</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Anyja neve</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Lakcím</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Telefon</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Email</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Azonosító</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">KRESZ Vizsga</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         ${parsedStudents.map((s, idx) => html`
                                             <tr key=${idx} className="hover:bg-gray-50">
-                                                <td className="px-4 py-2 font-medium text-gray-900">${s.current_lastName} ${s.current_firstName}</td>
-                                                <td className="px-4 py-2 text-gray-500">${s.email}</td>
-                                                <td className="px-4 py-2 text-gray-500">${s.studentId}</td>
-                                                <td className="px-4 py-2 text-gray-500">${s.transferKreszDate}</td>
+                                                <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">${s.current_lastName} ${s.current_firstName}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_lastName} ${s.birth_firstName}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_city}, ${s.birthDate}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.mother_lastName} ${s.mother_firstName}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.permanent_address_zip} ${s.permanent_address_city}, ${s.permanent_address_street}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.phone_number}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.email}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.studentId}</td>
+                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap font-medium text-indigo-600">${s.transferKreszDate}</td>
                                             </tr>
                                         `)}
                                     </tbody>
