@@ -468,11 +468,16 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
     delete newRegistrationData.copyNameToBirth;
 
     if (formData.isTransferStudent) {
+        newRegistrationData.status_paid = true;
+        newRegistrationData.status_enrolled = true;
+        newRegistrationData.hasMedicalCertificate = true;
+        newRegistrationData.courseCompletedAt = Timestamp.fromDate(new Date(formData.transferKreszDate + "T23:59:59"));
         newRegistrationData.examResults = [{
             date: formData.transferKreszDate + " 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (Hozott)",
-            location: "Hozott adat (Átjelentkezés)"
+            location: "Hozott adat (Átjelentkezés)",
+            isSynthetic: false
         }];
     }
     delete newRegistrationData.transferKreszDate;

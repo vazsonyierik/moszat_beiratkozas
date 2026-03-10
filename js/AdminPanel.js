@@ -932,7 +932,8 @@ const AdminPanel = ({ user, handleLogout }) => {
         pendingRegistrations, 
         completedRegistrations,
         allExpiredRegistrations,
-        archivedRegistrations
+        archivedRegistrations,
+        transferRegistrations
     } = useMemo(() => {
         const source = filteredRegistrations;
         
@@ -943,10 +944,13 @@ const AdminPanel = ({ user, handleLogout }) => {
         const excludedIds = new Set([...archivedStudents, ...expiredStudents].map(s => s.id));
         const activeStudents = source.filter(reg => !excludedIds.has(reg.id));
 
-        const completed = activeStudents.filter(reg => reg.courseCompletedAt);
-        const enrolled = activeStudents.filter(reg => reg.status_enrolled && !reg.courseCompletedAt);
-        const paid = activeStudents.filter(reg => reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
-        const pending = activeStudents.filter(reg => !reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
+        const transferStudents = activeStudents.filter(reg => reg.isTransferStudent === true);
+        const regularActiveStudents = activeStudents.filter(reg => !reg.isTransferStudent);
+
+        const completed = regularActiveStudents.filter(reg => reg.courseCompletedAt);
+        const enrolled = regularActiveStudents.filter(reg => reg.status_enrolled && !reg.courseCompletedAt);
+        const paid = regularActiveStudents.filter(reg => reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
+        const pending = regularActiveStudents.filter(reg => !reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
 
         return { 
             enrolledRegistrations: enrolled, 
@@ -954,7 +958,8 @@ const AdminPanel = ({ user, handleLogout }) => {
             pendingRegistrations: pending, 
             completedRegistrations: completed,
             allExpiredRegistrations: expiredStudents,
-            archivedRegistrations: archivedStudents
+            archivedRegistrations: archivedStudents,
+            transferRegistrations: transferStudents
         };
     }, [filteredRegistrations]);
 
@@ -1281,6 +1286,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${TabButton} tabName="applicants" label="Jelentkező tanulók" />
                                 <${TabButton} tabName="enrolled" label="Beiratkozott tanulók" />
                                 <${TabButton} tabName="completed" label="E-learninget befejezte" />
+                                <${TabButton} tabName="transfers" label="Átjelentkezett tanulók" />
                                 <${TabButton} tabName="expired" label="Lejárt tanulók" />
                                 <${TabButton} tabName="archived" label="Archivált" />
                             </div>
@@ -1295,6 +1301,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
+                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
                     
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">
