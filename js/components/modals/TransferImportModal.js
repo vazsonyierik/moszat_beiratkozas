@@ -10,39 +10,35 @@ import { useToast } from '../../context/AppContext.js';
 const React = window.React;
 const { useState, Fragment } = React;
 
-const parseFullName = (fullName) => {
-    if (!fullName) return { lastName: '', firstName: '' };
-    const parts = fullName.trim().split(' ');
-    const lastName = parts[0] || '';
-    const firstName = parts.slice(1).join(' ') || '';
-    return { lastName, firstName };
+const parseName = (nameStr) => {
+    if (!nameStr) return { last: '', first: '' };
+    const parts = String(nameStr).trim().split(/\s+/);
+    return { last: parts[0] || '', first: parts.slice(1).join(' ') || '' };
 };
 
-const parseAddress = (addressStr) => {
-    if (!addressStr) return { zip: '', city: '', street: '' };
-    // Matches something like "1234 Budapest, Példa utca 1."
-    const zipMatch = addressStr.match(/\b\d{4}\b/);
+const parseAddress = (addrStr) => {
+    if (!addrStr) return { zip: '', city: '', street: '' };
+    const str = String(addrStr).trim();
+    const zipMatch = str.match(/\b\d{4}\b/);
     const zip = zipMatch ? zipMatch[0] : '';
-
-    let rest = addressStr;
-    if (zip) {
-        rest = rest.replace(zip, '').trim();
-    }
-
-    // Assume city is the next word after zip, usually separated by space or comma
-    const parts = rest.split(/[,]+/);
     let city = '';
-    let street = rest;
+    let street = str;
 
-    if (parts.length > 1) {
-        city = parts[0].trim();
-        street = parts.slice(1).join(',').trim();
-    } else {
-        const words = rest.split(' ');
-        city = words[0] || '';
-        street = words.slice(1).join(' ') || '';
+    if (zip) {
+        let afterZip = str.substring(str.indexOf(zip) + 4).trim();
+        if (afterZip.startsWith(',')) afterZip = afterZip.substring(1).trim();
+        const commaIdx = afterZip.indexOf(',');
+        if (commaIdx !== -1) {
+            city = afterZip.substring(0, commaIdx).trim();
+            street = afterZip.substring(commaIdx + 1).trim();
+        } else {
+            const spaceIdx = afterZip.indexOf(' ');
+            if (spaceIdx !== -1) {
+                city = afterZip.substring(0, spaceIdx).trim();
+                street = afterZip.substring(spaceIdx + 1).trim();
+            }
+        }
     }
-
     return { zip, city, street };
 };
 
@@ -114,51 +110,44 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
 
                 const students = [];
                 for (const row of jsonData) {
-                    const studentNameStr = String(row['Tanuló neve'] || '');
-                    const birthNameStr = String(row['Születéskori neve'] || '');
-                    const motherNameStr = String(row['Anyja neve'] || '');
-                    const permAddrStr = String(row['Állandó lakcím'] || '');
-                    const tempAddrStr = String(row['Tartózkodási hely'] || '');
-
-                    const studentName = parseFullName(studentNameStr);
-                    const birthName = parseFullName(birthNameStr);
-                    const motherName = parseFullName(motherNameStr);
-
-                    const permAddress = parseAddress(permAddrStr);
-                    const tempAddress = parseAddress(tempAddrStr);
+                    const cName = parseName(row['Tanuló neve']);
+                    const bName = parseName(row['Születéskori neve'] || row['Tanuló neve']);
+                    const mName = parseName(row['Anyja neve']);
+                    const permAddr = parseAddress(row['Állandó lakcím']);
+                    const tempAddrStr = row['Tartózkodási hely'];
+                    const tempAddr = tempAddrStr ? parseAddress(tempAddrStr) : permAddr;
 
                     const studentObj = {
-                        current_lastName: studentName.lastName,
-                        current_firstName: studentName.firstName,
-                        birth_lastName: birthName.lastName || studentName.lastName,
-                        birth_firstName: birthName.firstName || studentName.firstName,
-                        birth_city: String(row['Születési hely'] || ''),
-                        birth_district: String(row['Születési kerület'] || ''),
-                        birthDate: normalizeDateToISO(row['Születési idő']),
-                        mother_lastName: motherName.lastName,
-                        mother_firstName: motherName.firstName,
-
-                        permanent_address_zip: permAddress.zip,
-                        permanent_address_city: permAddress.city,
-                        permanent_address_street: permAddress.street,
-
-                        temporary_address_zip: tempAddress.zip,
-                        temporary_address_city: tempAddress.city,
-                        temporary_address_street: tempAddress.street,
-                        residenceIsSame: !tempAddrStr.trim(), // if no temp address, assume same
-
-                        phone_number: normalizePhone(row['Telefonszám']),
-                        email: String(row['Email cím'] || ''),
-                        studentId: String(row['Tanuló azonosító'] || ''),
-                        transferKreszDate: normalizeDateToISO(row['Sikeres KRESZ']),
-
                         isTransferStudent: true,
-
-                        // defaults
-                        nationality: 'magyar',
+                        // Names
+                        current_prefix: '', current_lastName: cName.last, current_firstName: cName.first, current_secondName: '',
+                        birth_prefix: '', birth_lastName: bName.last, birth_firstName: bName.first, birth_secondName: '',
+                        mother_prefix: '', mother_lastName: mName.last, mother_firstName: mName.first, mother_secondName: '',
+                        // Birth & Nationality
                         birth_country: 'Magyarország',
+                        birth_city: String(row['Születési hely'] || '').trim(),
+                        birth_district: String(row['Születési kerület'] || '').trim(),
+                        birthDate: normalizeDateToISO(row['Születési idő']),
+                        nationality: 'magyar', isDualCitizen: false, secondNationality: '',
+                        // Addresses
                         permanent_address_country: 'Magyarország',
+                        permanent_address_zip: permAddr.zip,
+                        permanent_address_city: permAddr.city,
+                        permanent_address_street: permAddr.street,
+                        residenceIsSame: !tempAddrStr,
                         temporary_address_country: 'Magyarország',
+                        temporary_address_zip: tempAddr.zip,
+                        temporary_address_city: tempAddr.city,
+                        temporary_address_street: tempAddr.street,
+                        // Contacts & IDs
+                        phone_number: normalizePhone(row['Telefonszám']),
+                        email: String(row['Email cím'] || '').trim(),
+                        studentId: String(row['Tanuló azonosító'] || '').trim(),
+                        transferKreszDate: normalizeDateToISO(row['Sikeres KRESZ']),
+                        // System Defaults so Modals don't break
+                        documentType: 'Személyi igazolvány', documentNumber: '', documentExpiry: '', education: '',
+                        has_previous_license: 'nem', previous_license_categories: '',
+                        studied_elsewhere_radio: 'igen_mashol', failed_exam_count: 0, megjegyzes: 'Tömeges importtal rögzítve.'
                     };
 
                     // Only add if it has a name
