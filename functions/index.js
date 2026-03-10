@@ -509,6 +509,72 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
 });
 
 
+// ÚJ FUNKCIÓ: Áthelyezett tanulók tömeges importálása (CSV/TSV)
+exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { students, _isTest } = request.data;
+
+    if (!Array.isArray(students) || students.length === 0) {
+        throw new HttpsError("invalid-argument", "A tanulók listája érvénytelen vagy üres.");
+    }
+
+    const collectionName = _isTest ? "registrations_test" : "registrations";
+    const batch = db.batch();
+    let count = 0;
+
+    for (const student of students) {
+        const newRegistrationData = {
+            ...student,
+            createdAt: Timestamp.now(),
+            status: "active",
+            registeredBy: "admin",
+            status_paid: true,
+            status_enrolled: true,
+            hasMedicalCertificate: true,
+        };
+
+        // KRESZ Date logic
+        let kreszDateStr = newRegistrationData.transferKreszDate;
+        if (!kreszDateStr || typeof kreszDateStr !== 'string') {
+            kreszDateStr = new Date().toISOString().split('T')[0];
+        }
+
+        const dateObj = new Date(kreszDateStr + "T23:59:59");
+        if (!isNaN(dateObj.getTime())) {
+            newRegistrationData.courseCompletedAt = Timestamp.fromDate(dateObj);
+        } else {
+            newRegistrationData.courseCompletedAt = Timestamp.now();
+        }
+
+        newRegistrationData.examResults = [{
+            date: kreszDateStr + " 12:00",
+            subject: "Közlekedési alapismeretek",
+            result: "Sikeres (M)",
+            location: "Hozott adat (Átjelentkezés)",
+            isSynthetic: false
+        }];
+
+        delete newRegistrationData.transferKreszDate;
+
+        const docRef = db.collection(collectionName).doc();
+        batch.set(docRef, newRegistrationData);
+        count++;
+    }
+
+    try {
+        await batch.commit();
+        logger.info(`Admin (${userEmail}) successfully bulk added ${count} transfer students to ${collectionName}.`);
+        return { success: true, count };
+    } catch (error) {
+        logger.error(`Error bulk adding transfer students by admin ${userEmail}:`, error);
+        throw new HttpsError("internal", "Hiba történt a tömeges importálás során.");
+    }
+});
+
 // ÚJ FUNKCIÓ: Biztonságos admin bejelentkezési link küldése
 exports.sendAdminLoginLink = onCall({region: "europe-west1"}, async (request) => {
     const email = request.data.email;
