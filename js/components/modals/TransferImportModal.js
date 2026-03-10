@@ -46,21 +46,35 @@ const parseAddress = (addressStr) => {
     return { zip, city, street };
 };
 
-const convertExcelDateIfNumber = (val) => {
+const normalizePhone = (val) => {
     if (!val) return '';
-    // If it's already a string with a date-like format, just return it
-    if (typeof val === 'string' && val.includes('.')) return val;
-    // If it's a number (Excel serial date)
-    const num = Number(val);
-    if (!isNaN(num) && num > 20000) { // arbitrary bound to catch serial dates
-        // Excel epoch is Dec 30, 1899
-        const date = new Date((num - 25569) * 86400 * 1000);
-        const y = date.getFullYear();
-        const m = String(date.getMonth() + 1).padStart(2, '0');
-        const d = String(date.getDate()).padStart(2, '0');
-        return `${y}.${m}.${d}.`;
+    let str = String(val).replace(/[^\d+]/g, ''); // Remove spaces, dashes, slashes
+    if (str.startsWith('06')) return '+36' + str.slice(2);
+    if (str.startsWith('36')) return '+' + str;
+    if (str.startsWith('+36')) return str;
+    if (str.length === 9) return '+36' + str; // fallback for e.g., 301234567
+    return str;
+};
+
+const normalizeDateToISO = (val) => {
+    if (!val) return '';
+    // Handle Excel serial numbers if raw:true was used
+    if (typeof val === 'number') {
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        return date.toISOString().split('T')[0];
     }
-    return String(val);
+    let str = String(val).trim();
+    // Match Hungarian/ISO YYYY.MM.DD or YYYY-MM-DD
+    const isoMatch = str.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+    // Match US MM/DD/YY from SheetJS default string conversion
+    const usMatch = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (usMatch) {
+        let y = usMatch[3];
+        if (y.length === 2) y = parseInt(y) < 50 ? '20' + y : '19' + y;
+        return `${y}-${usMatch[1].padStart(2, '0')}-${usMatch[2].padStart(2, '0')}`;
+    }
+    return str; // Fallback
 };
 
 const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
@@ -120,7 +134,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                         birth_firstName: birthName.firstName || studentName.firstName,
                         birth_city: String(row['Születési hely'] || ''),
                         birth_district: String(row['Születési kerület'] || ''),
-                        birthDate: convertExcelDateIfNumber(row['Születési idő']),
+                        birthDate: normalizeDateToISO(row['Születési idő']),
                         mother_lastName: motherName.lastName,
                         mother_firstName: motherName.firstName,
 
@@ -133,10 +147,10 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                         temporary_address_street: tempAddress.street,
                         residenceIsSame: !tempAddrStr.trim(), // if no temp address, assume same
 
-                        phone_number: String(row['Telefonszám'] || ''),
+                        phone_number: normalizePhone(row['Telefonszám']),
                         email: String(row['Email cím'] || ''),
                         studentId: String(row['Tanuló azonosító'] || ''),
-                        transferKreszDate: convertExcelDateIfNumber(row['Sikeres KRESZ']),
+                        transferKreszDate: normalizeDateToISO(row['Sikeres KRESZ']),
 
                         isTransferStudent: true,
 
@@ -243,19 +257,24 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        ${parsedStudents.map((s, idx) => html`
-                                            <tr key=${idx} className="hover:bg-gray-50">
-                                                <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">${s.current_lastName} ${s.current_firstName}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_lastName} ${s.birth_firstName}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_city}, ${s.birthDate}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.mother_lastName} ${s.mother_firstName}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.permanent_address_zip} ${s.permanent_address_city}, ${s.permanent_address_street}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.phone_number}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.email}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.studentId}</td>
-                                                <td className="px-4 py-2 text-gray-500 whitespace-nowrap font-medium text-indigo-600">${s.transferKreszDate}</td>
-                                            </tr>
-                                        `)}
+                                        ${parsedStudents.map((s, idx) => {
+                                            const displayBirthDate = s.birthDate.replace(/-/g, '.') + '.';
+                                            const displayKreszDate = s.transferKreszDate.replace(/-/g, '.') + '.';
+
+                                            return html`
+                                                <tr key=${idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">${s.current_lastName} ${s.current_firstName}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_lastName} ${s.birth_firstName}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_city}, ${displayBirthDate}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.mother_lastName} ${s.mother_firstName}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.permanent_address_zip} ${s.permanent_address_city}, ${s.permanent_address_street}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.phone_number}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.email}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.studentId}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap font-medium text-indigo-600">${displayKreszDate}</td>
+                                                </tr>
+                                            `;
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
