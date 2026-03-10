@@ -260,7 +260,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             ].filter(Boolean);
 
                             const isEditingThisRow = editingRowId === reg.id;
-                            const allowDelete = !reg.status_enrolled && !reg.courseCompletedAt;
+                            const allowDelete = (!reg.status_enrolled && !reg.courseCompletedAt) || isTransferTab;
 
                             return html`
                             <${Fragment} key="${reg.id}">
@@ -739,6 +739,22 @@ const AdminPanel = ({ user, handleLogout }) => {
         });
     }, [handleDelete, showConfirmation]);
 
+    const handleTransferDeleteRequest = useCallback((id, name) => {
+        showConfirmation({
+            message: `1/2 Biztosan törölni szeretnéd a(z) ${name} nevű ÁTHELYEZETT tanulót?`,
+            onConfirm: () => {
+                setTimeout(() => {
+                    const userInput = window.prompt(`2/2 VÉGLEGES TÖRLÉS:\n\nA(z) ${name} végleges törléséhez írd be csupa nagybetűvel: TÖRLÉS`);
+                    if (userInput === "TÖRLÉS") {
+                        handleDelete(id, name);
+                    } else if (userInput !== null) {
+                        showToast("Helytelen megerősítés, a törlés megszakítva.", "info");
+                    }
+                }, 100);
+            },
+        });
+    }, [handleDelete, showConfirmation, showToast]);
+
     const handleRestoreStudent = useCallback(async (id, studentName) => {
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
         const regRef = doc(db, collectionName, id);
@@ -1125,7 +1141,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                         </button>
                                         <button onClick=${() => { setIsTransferImporting(true); setIsSystemMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 font-medium border border-gray-200">
                                             <${Icons.UploadCloudIcon} size=${16} />
-                                            Áthelyezett Import (CSV)
+                                            Áthelyezett Import (Excel/CSV)
                                         </button>
                                     </div>
                                 </div>
@@ -1350,7 +1366,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
-                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} isTransferTab=${true} /></div>`}
+                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} onDelete=${handleTransferDeleteRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} isTransferTab=${true} /></div>`}
                     
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">

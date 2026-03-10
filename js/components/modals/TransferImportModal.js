@@ -10,40 +10,67 @@ import { useToast } from '../../context/AppContext.js';
 const React = window.React;
 const { useState, Fragment } = React;
 
-const parseFullName = (fullName) => {
-    if (!fullName) return { lastName: '', firstName: '' };
-    const parts = fullName.trim().split(' ');
-    const lastName = parts[0] || '';
-    const firstName = parts.slice(1).join(' ') || '';
-    return { lastName, firstName };
+const parseName = (nameStr) => {
+    if (!nameStr) return { last: '', first: '' };
+    const parts = String(nameStr).trim().split(/\s+/);
+    return { last: parts[0] || '', first: parts.slice(1).join(' ') || '' };
 };
 
-const parseAddress = (addressStr) => {
-    if (!addressStr) return { zip: '', city: '', street: '' };
-    // Matches something like "1234 Budapest, Példa utca 1."
-    const zipMatch = addressStr.match(/\b\d{4}\b/);
+const parseAddress = (addrStr) => {
+    if (!addrStr) return { zip: '', city: '', street: '' };
+    const str = String(addrStr).trim();
+    const zipMatch = str.match(/\b\d{4}\b/);
     const zip = zipMatch ? zipMatch[0] : '';
-
-    let rest = addressStr;
-    if (zip) {
-        rest = rest.replace(zip, '').trim();
-    }
-
-    // Assume city is the next word after zip, usually separated by space or comma
-    const parts = rest.split(/[,]+/);
     let city = '';
-    let street = rest;
+    let street = str;
 
-    if (parts.length > 1) {
-        city = parts[0].trim();
-        street = parts.slice(1).join(',').trim();
-    } else {
-        const words = rest.split(' ');
-        city = words[0] || '';
-        street = words.slice(1).join(' ') || '';
+    if (zip) {
+        let afterZip = str.substring(str.indexOf(zip) + 4).trim();
+        if (afterZip.startsWith(',')) afterZip = afterZip.substring(1).trim();
+        const commaIdx = afterZip.indexOf(',');
+        if (commaIdx !== -1) {
+            city = afterZip.substring(0, commaIdx).trim();
+            street = afterZip.substring(commaIdx + 1).trim();
+        } else {
+            const spaceIdx = afterZip.indexOf(' ');
+            if (spaceIdx !== -1) {
+                city = afterZip.substring(0, spaceIdx).trim();
+                street = afterZip.substring(spaceIdx + 1).trim();
+            }
+        }
     }
-
     return { zip, city, street };
+};
+
+const normalizePhone = (val) => {
+    if (!val) return '';
+    let str = String(val).replace(/[^\d+]/g, ''); // Remove spaces, dashes, slashes
+    if (str.startsWith('06')) return '+36' + str.slice(2);
+    if (str.startsWith('36')) return '+' + str;
+    if (str.startsWith('+36')) return str;
+    if (str.length === 9) return '+36' + str; // fallback for e.g., 301234567
+    return str;
+};
+
+const normalizeDateToISO = (val) => {
+    if (!val) return '';
+    // Handle Excel serial numbers if raw:true was used
+    if (typeof val === 'number') {
+        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
+        return date.toISOString().split('T')[0];
+    }
+    let str = String(val).trim();
+    // Match Hungarian/ISO YYYY.MM.DD or YYYY-MM-DD
+    const isoMatch = str.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
+    // Match US MM/DD/YY from SheetJS default string conversion
+    const usMatch = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
+    if (usMatch) {
+        let y = usMatch[3];
+        if (y.length === 2) y = parseInt(y) < 50 ? '20' + y : '19' + y;
+        return `${y}-${usMatch[1].padStart(2, '0')}-${usMatch[2].padStart(2, '0')}`;
+    }
+    return str; // Fallback
 };
 
 const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
@@ -69,75 +96,73 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
         const reader = new FileReader();
 
         reader.onload = (e) => {
-            const text = e.target.result;
-            // Determine delimiter
-            const delimiter = text.includes('\t') ? '\t' : ';';
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = window.XLSX.read(data, { type: 'array' });
+                const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false, dateNF: "yyyy.mm.dd." });
 
-            const lines = text.split(/\r?\n/).filter(line => line.trim() !== '');
-            if (lines.length < 2) {
-                setError("A fájl üres, vagy nem tartalmaz fejlécet.");
-                setIsParsing(false);
-                return;
-            }
-
-            // Skip header (index 0)
-            const students = [];
-            for (let i = 1; i < lines.length; i++) {
-                const cols = lines[i].split(delimiter).map(col => col.trim());
-                // Expected headers:
-                // 0: Tanuló neve, 1: Születéskori neve, 2: Születési hely, 3: Születési kerület,
-                // 4: Születési idő, 5: Anyja neve, 6: Állandó lakcím, 7: Tartózkodási hely,
-                // 8: Telefonszám, 9: Email cím, 10: Tanuló azonosító, 11: Sikeres KRESZ
-
-                const studentName = parseFullName(cols[0]);
-                const birthName = parseFullName(cols[1]);
-                const motherName = parseFullName(cols[5]);
-
-                const permAddress = parseAddress(cols[6]);
-                const tempAddress = parseAddress(cols[7]);
-
-                const studentObj = {
-                    current_lastName: studentName.lastName,
-                    current_firstName: studentName.firstName,
-                    birth_lastName: birthName.lastName || studentName.lastName,
-                    birth_firstName: birthName.firstName || studentName.firstName,
-                    birth_city: cols[2] || '',
-                    birth_district: cols[3] || '',
-                    birthDate: cols[4] || '',
-                    mother_lastName: motherName.lastName,
-                    mother_firstName: motherName.firstName,
-
-                    permanent_address_zip: permAddress.zip,
-                    permanent_address_city: permAddress.city,
-                    permanent_address_street: permAddress.street,
-
-                    temporary_address_zip: tempAddress.zip,
-                    temporary_address_city: tempAddress.city,
-                    temporary_address_street: tempAddress.street,
-                    residenceIsSame: !cols[7], // if no temp address, assume same
-
-                    phone_number: cols[8] || '',
-                    email: cols[9] || '',
-                    studentId: cols[10] || '',
-                    transferKreszDate: cols[11] || '',
-
-                    isTransferStudent: true,
-
-                    // defaults
-                    nationality: 'magyar',
-                    birth_country: 'Magyarország',
-                    permanent_address_country: 'Magyarország',
-                    temporary_address_country: 'Magyarország',
-                };
-
-                // Only add if it has a name
-                if (studentObj.current_lastName) {
-                    students.push(studentObj);
+                if (jsonData.length === 0) {
+                    setError("A fájl üres.");
+                    setIsParsing(false);
+                    return;
                 }
-            }
 
-            setParsedStudents(students);
-            setIsParsing(false);
+                const students = [];
+                for (const row of jsonData) {
+                    const cName = parseName(row['Tanuló neve']);
+                    const bName = parseName(row['Születéskori neve'] || row['Tanuló neve']);
+                    const mName = parseName(row['Anyja neve']);
+                    const permAddr = parseAddress(row['Állandó lakcím']);
+                    const tempAddrStr = row['Tartózkodási hely'];
+                    const tempAddr = tempAddrStr ? parseAddress(tempAddrStr) : permAddr;
+
+                    const studentObj = {
+                        isTransferStudent: true,
+                        // Names
+                        current_prefix: '', current_lastName: cName.last, current_firstName: cName.first, current_secondName: '',
+                        birth_prefix: '', birth_lastName: bName.last, birth_firstName: bName.first, birth_secondName: '',
+                        mother_prefix: '', mother_lastName: mName.last, mother_firstName: mName.first, mother_secondName: '',
+                        // Birth & Nationality
+                        birth_country: 'Magyarország',
+                        birth_city: String(row['Születési hely'] || '').trim(),
+                        birth_district: String(row['Születési kerület'] || '').trim(),
+                        birthDate: normalizeDateToISO(row['Születési idő']),
+                        nationality: 'magyar', isDualCitizen: false, secondNationality: '',
+                        // Addresses
+                        permanent_address_country: 'Magyarország',
+                        permanent_address_zip: permAddr.zip,
+                        permanent_address_city: permAddr.city,
+                        permanent_address_street: permAddr.street,
+                        residenceIsSame: !tempAddrStr,
+                        temporary_address_country: 'Magyarország',
+                        temporary_address_zip: tempAddr.zip,
+                        temporary_address_city: tempAddr.city,
+                        temporary_address_street: tempAddr.street,
+                        // Contacts & IDs
+                        phone_number: normalizePhone(row['Telefonszám']),
+                        email: String(row['Email cím'] || '').trim(),
+                        studentId: String(row['Tanuló azonosító'] || '').trim(),
+                        transferKreszDate: normalizeDateToISO(row['Sikeres KRESZ']),
+                        // System Defaults so Modals don't break
+                        documentType: 'Személyi igazolvány', documentNumber: '', documentExpiry: '', education: '',
+                        has_previous_license: 'nem', previous_license_categories: '',
+                        studied_elsewhere_radio: 'igen_mashol', failed_exam_count: 0, megjegyzes: 'Tömeges importtal rögzítve.'
+                    };
+
+                    // Only add if it has a name
+                    if (studentObj.current_lastName) {
+                        students.push(studentObj);
+                    }
+                }
+
+                setParsedStudents(students);
+            } catch (parseError) {
+                console.error("Hiba a fájl feldolgozása során:", parseError);
+                setError("Hiba a fájl feldolgozása során. Kérjük ellenőrizd a fájl formátumát.");
+            } finally {
+                setIsParsing(false);
+            }
         };
 
         reader.onerror = () => {
@@ -145,7 +170,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
             setIsParsing(false);
         };
 
-        reader.readAsText(fileToParse);
+        reader.readAsArrayBuffer(fileToParse);
     };
 
     const handleImport = async () => {
@@ -193,10 +218,10 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                     ${error && html`<div className="bg-red-50 text-red-700 p-4 rounded-md mb-4">${error}</div>`}
 
                     <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">Fájl kiválasztása (.csv, .tsv, .txt)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Fájl kiválasztása (.xlsx, .xls, .csv)</label>
                         <input
                             type="file"
-                            accept=".csv, .tsv, .txt"
+                            accept=".xlsx, .xls, .csv"
                             onChange=${handleFileChange}
                             className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 transition-colors cursor-pointer"
                         />
@@ -209,21 +234,36 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                                 <table className="min-w-full divide-y divide-gray-200 text-sm">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">Név</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">Email</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">Azonosító</th>
-                                            <th className="px-4 py-3 text-left font-medium text-gray-500">KRESZ Dátum</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Név</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Születéskori név</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Születési adatok</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Anyja neve</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Lakcím</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Telefon</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Email</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">Azonosító</th>
+                                            <th className="px-4 py-3 text-left font-medium text-gray-500 whitespace-nowrap">KRESZ Vizsga</th>
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        ${parsedStudents.map((s, idx) => html`
-                                            <tr key=${idx} className="hover:bg-gray-50">
-                                                <td className="px-4 py-2 font-medium text-gray-900">${s.current_lastName} ${s.current_firstName}</td>
-                                                <td className="px-4 py-2 text-gray-500">${s.email}</td>
-                                                <td className="px-4 py-2 text-gray-500">${s.studentId}</td>
-                                                <td className="px-4 py-2 text-gray-500">${s.transferKreszDate}</td>
-                                            </tr>
-                                        `)}
+                                        ${parsedStudents.map((s, idx) => {
+                                            const displayBirthDate = s.birthDate.replace(/-/g, '.') + '.';
+                                            const displayKreszDate = s.transferKreszDate.replace(/-/g, '.') + '.';
+
+                                            return html`
+                                                <tr key=${idx} className="hover:bg-gray-50">
+                                                    <td className="px-4 py-2 font-medium text-gray-900 whitespace-nowrap">${s.current_lastName} ${s.current_firstName}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_lastName} ${s.birth_firstName}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.birth_city}, ${displayBirthDate}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.mother_lastName} ${s.mother_firstName}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.permanent_address_zip} ${s.permanent_address_city}, ${s.permanent_address_street}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.phone_number}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.email}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap">${s.studentId}</td>
+                                                    <td className="px-4 py-2 text-gray-500 whitespace-nowrap font-medium text-indigo-600">${displayKreszDate}</td>
+                                                </tr>
+                                            `;
+                                        })}
                                     </tbody>
                                 </table>
                             </div>
