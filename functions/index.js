@@ -467,6 +467,16 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
     // Felesleges mezők eltávolítása a végleges dokumentumból
     delete newRegistrationData.copyNameToBirth;
 
+    if (formData.isTransferStudent) {
+        newRegistrationData.examResults = [{
+            date: formData.transferKreszDate + " 12:00",
+            subject: "Közlekedési alapismeretek",
+            result: "Sikeres (Hozott)",
+            location: "Hozott adat (Átjelentkezés)"
+        }];
+    }
+    delete newRegistrationData.transferKreszDate;
+
     const collectionName = isTest ? "registrations_test" : "registrations";
 
     try {

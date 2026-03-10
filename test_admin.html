@@ -1,0 +1,20 @@
+
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <script src="https://cdn.tailwindcss.com"></script>
+            <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+            <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+        </head>
+        <body class="bg-gray-100">
+            <div id="root"></div>
+            <script type="module">
+                import { html } from './js/UI.js';
+                import AdminPanel from './js/AdminPanel.js';
+
+                const user = { email: 'admin@test.com' };
+                const root = ReactDOM.createRoot(document.getElementById('root'));
+                root.render(html`<${AdminPanel} user=${user} handleLogout=${() => {}} />`);
+            </script>
+        </body>
+        </html>

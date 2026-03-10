@@ -480,6 +480,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     const [selectedIconFilters, setSelectedIconFilters] = useState([]);
     const [isAddingStudent, setIsAddingStudent] = useState(false);
+    const [isTransferStudentMode, setIsTransferStudentMode] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [examResultFilter, setExamResultFilter] = useState('all');
@@ -1098,6 +1099,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 Importálás (KAV)
                             </button>
                             <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
+                            <button onClick=${() => { setIsTransferStudentMode(true); setIsAddingStudent(true); }} className="bg-amber-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-amber-700">Hozott tanuló (KRESZ)</button>
 
                             <div className="relative" ref=${modeMenuRef}>
                                 <button
@@ -1383,7 +1385,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
-                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
+                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => { setIsAddingStudent(false); setIsTransferStudentMode(false); }} adminUser=${user} isTestView=${viewTestDataType} isTransferMode=${isTransferStudentMode} />`}
                 ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
                 ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
