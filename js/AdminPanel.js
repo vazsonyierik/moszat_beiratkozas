@@ -119,7 +119,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     `;
 };
 
-const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false }) => {
+const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false, isTransferTab = false }) => {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [editingRowId, setEditingRowId] = React.useState(null);
@@ -338,30 +338,32 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div className="flex flex-col space-y-2">
-                                            ${!reg.status_enrolled && html`
+                                        ${!isTransferTab && html`
+                                            <div className="flex flex-col space-y-2">
+                                                ${!reg.status_enrolled && html`
+                                                    <label className="flex items-center">
+                                                        <input type="checkbox" checked=${!!reg.status_paid} onChange=${() => onStatusChange(reg.id, 'status_paid', !reg.status_paid, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
+                                                        <span className="ml-2">Fizetve</span>
+                                                    </label>
+                                                `}
+                                                ${reg.status_enrolled && html`
+                                                    <label className="flex items-center">
+                                                        <input type="checkbox" checked=${!!reg.hasMedicalCertificate} onChange=${() => onStatusChange(reg.id, 'hasMedicalCertificate', !reg.hasMedicalCertificate, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
+                                                        <span className="ml-2">Orvosi</span>
+                                                    </label>
+                                                `}
                                                 <label className="flex items-center">
-                                                    <input type="checkbox" checked=${!!reg.status_paid} onChange=${() => onStatusChange(reg.id, 'status_paid', !reg.status_paid, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" /> 
-                                                    <span className="ml-2">Fizetve</span>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked=${!!reg.status_enrolled}
+                                                        onChange=${() => onStatusChange(reg.id, 'status_enrolled', !reg.status_enrolled, fullName)}
+                                                        disabled=${!reg.status_paid}
+                                                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    />
+                                                    <span className=${`ml-2 ${!reg.status_paid ? 'text-gray-400' : ''}`}>Beírva</span>
                                                 </label>
-                                            `}
-                                            ${reg.status_enrolled && html`
-                                                <label className="flex items-center">
-                                                    <input type="checkbox" checked=${!!reg.hasMedicalCertificate} onChange=${() => onStatusChange(reg.id, 'hasMedicalCertificate', !reg.hasMedicalCertificate, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" /> 
-                                                    <span className="ml-2">Orvosi</span>
-                                                </label>
-                                            `}
-                                            <label className="flex items-center">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked=${!!reg.status_enrolled} 
-                                                    onChange=${() => onStatusChange(reg.id, 'status_enrolled', !reg.status_enrolled, fullName)} 
-                                                    disabled=${!reg.status_paid}
-                                                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                /> 
-                                                <span className=${`ml-2 ${!reg.status_paid ? 'text-gray-400' : ''}`}>Beírva</span>
-                                            </label>
-                                        </div>
+                                            </div>
+                                        `}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         ${isEditingThisRow ? html`
@@ -379,13 +381,15 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                                             <${Icons.CheckIcon} size=${20} />
                                                         </button>
                                                     </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-sm font-medium">Befejezte?</span>
-                                                        <input type="date" value=${completeDate} onChange=${e => setCompleteDate(e.target.value)} className="p-1 border rounded-md shadow-sm text-sm" />
-                                                         <button onClick=${() => handleMarkAsCompletedConfirm(reg)} className="p-1.5 hover:bg-green-100 rounded-full" title="Elmélet kész">
-                                                            <${Icons.CheckIcon} size=${20} />
-                                                        </button>
-                                                    </div>
+                                                    ${!isTransferTab && html`
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-sm font-medium">Befejezte?</span>
+                                                            <input type="date" value=${completeDate} onChange=${e => setCompleteDate(e.target.value)} className="p-1 border rounded-md shadow-sm text-sm" />
+                                                             <button onClick=${() => handleMarkAsCompletedConfirm(reg)} className="p-1.5 hover:bg-green-100 rounded-full" title="Elmélet kész">
+                                                                <${Icons.CheckIcon} size=${20} />
+                                                            </button>
+                                                        </div>
+                                                    `}
                                                 </div>
                                                 <button onClick=${handleCancelQuickEdit} className="p-1.5 hover:bg-red-100 rounded-full self-center" title="Mégse">
                                                     <${Icons.XIcon} size=${20} />
@@ -494,7 +498,12 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
     const [historicalStart, setHistoricalStart] = useState('');
     const [historicalEnd, setHistoricalEnd] = useState('');
+    const [isSystemMenuOpen, setIsSystemMenuOpen] = useState(false);
+    const [isStudentMenuOpen, setIsStudentMenuOpen] = useState(false);
+
     const modeMenuRef = useRef(null);
+    const systemMenuRef = useRef(null);
+    const studentMenuRef = useRef(null);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -518,6 +527,12 @@ const AdminPanel = ({ user, handleLogout }) => {
         const handleClickOutside = (event) => {
             if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
                 setIsModeMenuOpen(false);
+            }
+            if (systemMenuRef.current && !systemMenuRef.current.contains(event.target)) {
+                setIsSystemMenuOpen(false);
+            }
+            if (studentMenuRef.current && !studentMenuRef.current.contains(event.target)) {
+                setIsStudentMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -1038,32 +1053,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                             Kijelentkezés
                         </button>
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick=${() => handleProcessEmails({ daysBack: 2, unseenOnly: false })}
-                                disabled=${isProcessingEmails}
-                                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
-                                title="Gyors ellenőrzés: Utolsó 2 nap, minden levél"
-                            >
-                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
-                                Gyors Email
-                            </button>
-
-                            <button
-                                onClick=${() => handleProcessEmails({ daysBack: 7, unseenOnly: true })}
-                                disabled=${isProcessingEmails}
-                                className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-sky-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
-                                title="Mély ellenőrzés: Utolsó 7 nap, csak olvasatlan levelek"
-                            >
-                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.SearchIcon} size=${20} />`}
-                                Mély Email
-                            </button>
-                        </div>
-
-                        <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
-                            ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
-                        </button>
-
                         ${viewTestDataType && html`
                             <button
                                 onClick=${handleGenerateTestData}
@@ -1076,36 +1065,90 @@ const AdminPanel = ({ user, handleLogout }) => {
                             </button>
                         `}
 
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center bg-gray-100 p-1.5 rounded-lg border border-gray-200">
-                                <span className="text-xs font-semibold text-gray-500 mr-2 hidden lg:inline">Történelmi Import:</span>
-                                <input type="date" value=${historicalStart} onChange=${e => setHistoricalStart(e.target.value)} className="text-sm p-1 border rounded mr-1" title="Kezdő dátum" />
-                                <span className="text-gray-400 mx-1">-</span>
-                                <input type="date" value=${historicalEnd} onChange=${e => setHistoricalEnd(e.target.value)} className="text-sm p-1 border rounded mr-2" title="Végdátum" />
-                                <button
-                                    onClick=${() => {
-                                        if(!historicalStart || !historicalEnd) {
-                                            showToast('Kérjük add meg a kezdő és végdátumot is!', 'warning');
-                                            return;
-                                        }
-                                        handleProcessEmails({ startDate: historicalStart, endDate: historicalEnd, unseenOnly: false });
-                                    }}
-                                    disabled=${isProcessingEmails}
-                                    className="bg-indigo-600 text-white text-sm font-semibold py-1.5 px-3 rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait"
-                                >
-                                    Feldolgozás
-                                </button>
-                            </div>
+                        <div className="relative" ref=${systemMenuRef}>
+                            <button onClick=${() => setIsSystemMenuOpen(!isSystemMenuOpen)} className="bg-gray-700 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-800 flex items-center gap-2">
+                                <${Icons.SettingsIcon} size=${16} />
+                                Rendszereszközök
+                                <${Icons.ChevronDownIcon} size=${16} />
+                            </button>
+                            ${isSystemMenuOpen && html`
+                                <div className="absolute right-0 mt-2 w-96 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                                    <div className="p-4 space-y-4">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                onClick=${() => { handleProcessEmails({ daysBack: 2, unseenOnly: false }); setIsSystemMenuOpen(false); }}
+                                                disabled=${isProcessingEmails}
+                                                className="bg-blue-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2"
+                                            >
+                                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${16} />`}
+                                                Gyors Email
+                                            </button>
+                                            <button
+                                                onClick=${() => { handleProcessEmails({ daysBack: 7, unseenOnly: true }); setIsSystemMenuOpen(false); }}
+                                                disabled=${isProcessingEmails}
+                                                className="bg-sky-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-sky-700 disabled:opacity-50 flex justify-center items-center gap-2"
+                                            >
+                                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.SearchIcon} size=${16} />`}
+                                                Mély Email
+                                            </button>
+                                        </div>
+                                        <button onClick=${() => { handleRunChecks(); setIsSystemMenuOpen(false); }} disabled=${isRunningChecks} className="w-full bg-yellow-500 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-yellow-600 disabled:opacity-50">
+                                            ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
+                                        </button>
+                                        <div className="bg-gray-50 p-3 rounded border">
+                                            <span className="block text-xs font-semibold text-gray-500 mb-2">Történelmi Import:</span>
+                                            <div className="flex items-center gap-2">
+                                                <input type="date" value=${historicalStart} onChange=${e => setHistoricalStart(e.target.value)} className="text-sm p-1.5 border rounded w-full" />
+                                                <span className="text-gray-400">-</span>
+                                                <input type="date" value=${historicalEnd} onChange=${e => setHistoricalEnd(e.target.value)} className="text-sm p-1.5 border rounded w-full" />
+                                            </div>
+                                            <button
+                                                onClick=${() => {
+                                                    if(!historicalStart || !historicalEnd) {
+                                                        showToast('Kérjük add meg a kezdő és végdátumot is!', 'warning');
+                                                        return;
+                                                    }
+                                                    handleProcessEmails({ startDate: historicalStart, endDate: historicalEnd, unseenOnly: false });
+                                                    setIsSystemMenuOpen(false);
+                                                }}
+                                                disabled=${isProcessingEmails}
+                                                className="mt-2 w-full bg-indigo-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-indigo-700 disabled:opacity-50"
+                                            >
+                                                Feldolgozás
+                                            </button>
+                                        </div>
+                                        <button onClick=${() => { setIsImporting(true); setIsSystemMenuOpen(false); }} className="w-full bg-emerald-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-emerald-700 flex justify-center items-center gap-2">
+                                            <${Icons.UploadCloudIcon} size=${16} />
+                                            Importálás (KAV)
+                                        </button>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+
+                        <div className="relative" ref=${studentMenuRef}>
+                            <button onClick=${() => setIsStudentMenuOpen(!isStudentMenuOpen)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center gap-2">
+                                <${Icons.UserIcon} size=${16} />
+                                Tanuló felvétele
+                                <${Icons.ChevronDownIcon} size=${16} />
+                            </button>
+                            ${isStudentMenuOpen && html`
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                                    <div className="py-1">
+                                        <button onClick=${() => { setIsAddingStudent(true); setIsStudentMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                            <${Icons.UserPlusIcon} size=${16} />
+                                            Új tanuló rögzítése
+                                        </button>
+                                        <button onClick=${() => { setIsTransferStudentMode(true); setIsAddingStudent(true); setIsStudentMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100">
+                                            <${Icons.FilePlusIcon} size=${16} />
+                                            Áthelyezett tanuló
+                                        </button>
+                                    </div>
+                                </div>
+                            `}
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
-                                <${Icons.UploadCloudIcon} size=${20} />
-                                Importálás (KAV)
-                            </button>
-                            <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
-                            <button onClick=${() => { setIsTransferStudentMode(true); setIsAddingStudent(true); }} className="bg-amber-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-amber-700">Hozott tanuló (KRESZ)</button>
-
                             <div className="relative" ref=${modeMenuRef}>
                                 <button
                                     onClick=${() => setIsModeMenuOpen(!isModeMenuOpen)}
@@ -1301,7 +1344,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
-                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
+                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} isTransferTab=${true} /></div>`}
                     
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">

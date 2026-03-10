@@ -475,7 +475,7 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         newRegistrationData.examResults = [{
             date: formData.transferKreszDate + " 12:00",
             subject: "Közlekedési alapismeretek",
-            result: "Sikeres (Hozott)",
+            result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
             isSynthetic: false
         }];

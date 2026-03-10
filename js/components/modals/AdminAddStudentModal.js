@@ -210,7 +210,7 @@ const AdminAddStudentModal = ({ onClose, adminUser, isTestView, isTransferMode }
                                     <${EditableField} label="Végzettség" name="education" value=${formData.education} onChange=${handleChange} type="select" options=${educationOptions} required=${true} />
                                 <//>
                                 <${Section} title="Tanulmányi előzmények">
-                                    <${EditableField} label="Átjelentkezett tanuló (Sikeres KRESZ vizsgával érkezik)" name="isTransferStudent" value=${formData.isTransferStudent} onChange=${handleChange} type="checkbox" />
+                                    <${EditableField} label="Áthelyezett tanuló (Sikeres KRESZ vizsgával érkezik)" name="isTransferStudent" value=${formData.isTransferStudent} onChange=${handleChange} type="checkbox" />
                                     ${formData.isTransferStudent && html`
                                         <div className="space-y-4">
                                             <${EditableField} label="Tanuló azonosító" name="studentId" value=${formData.studentId} onChange=${handleChange} required=${true} />
