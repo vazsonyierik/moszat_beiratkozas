@@ -487,7 +487,7 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr + " 12:00",
+            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -551,7 +551,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr + " 12:00",
+            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
