@@ -327,13 +327,19 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                         const location = row[8] ? row[8].toString().trim() : "";
 
                                         // A J oszlop (index 9) az eredmény
-                                        let result = "Kiírva";
-                                        if (row[9]) {
-                                            const resultCell = row[9].toString().trim().toLowerCase();
-                                            if (["m", "megfelelt", "sikeres"].includes(resultCell)) result = "Sikeres (M)";
-                                            else if (["1", "nem felelt meg", "sikertelen"].includes(resultCell)) result = "Sikertelen (1)";
-                                            else if (["3", "nem jelent meg"].includes(resultCell)) result = "Nem jelent meg (3)";
-                                            else if (resultCell === "törölve") result = "Törölve";
+                                        const rawResult = String(row[9] || "").trim();
+                                        const lowerResult = rawResult.toLowerCase();
+                                        let result = "Kiírva"; // Default
+
+                                        if (lowerResult.includes("sikeres") || lowerResult === "m" || lowerResult === "megfelelt") {
+                                            result = "Sikeres (M)";
+                                        } else if (lowerResult.includes("sikertelen") || lowerResult === "1" || lowerResult === "nem felelt meg") {
+                                            result = "Sikertelen (1)";
+                                        } else if (lowerResult.includes("törölve")) {
+                                            result = "Törölve";
+                                        } else if (rawResult !== "") {
+                                            // DYNAMIC FALLBACK: If it's none of the core 3, save the exact KAV string with original capitalization
+                                            result = rawResult;
                                         }
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
