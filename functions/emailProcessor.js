@@ -338,19 +338,30 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
 
-                                        // Find existing exam by Subject + Date + Location
-                                        const existingIndex = existingResults.findIndex(ex =>
-                                            ex.date === formattedExamDate &&
-                                            normalizeForMatch(ex.subject) === normalizeForMatch(subject) &&
-                                            normalizeForMatch(ex.location) === normalizeForMatch(location)
-                                        );
+                                        const isDeleteStatus = (step.mode === "delete" || result === "Törölve");
+
+                                        // BIZTONSÁGOSABB VIZSGA-AZONOSÍTÁS (KAV elírások ellen):
+                                        const existingIndex = existingResults.findIndex(ex => {
+                                            const dateMatch = ex.date === formattedExamDate;
+                                            const subjectMatch = normalizeForMatch(ex.subject) === normalizeForMatch(subject);
+
+                                            if (!dateMatch || !subjectMatch) return false;
+
+                                            if (isDeleteStatus) {
+                                                // Törlés esetén megnézzük az első 4 karaktert (irányítószám)
+                                                const existingZip = String(ex.location || "").trim().substring(0, 4);
+                                                const incomingZip = String(location || "").trim().substring(0, 4);
+                                                return existingZip === incomingZip;
+                                            } else {
+                                                // Normál vizsgáknál a helyszínt teljesen figyelmen kívül hagyjuk az azonosításhoz
+                                                return true;
+                                            }
+                                        });
 
                                         let examUpdated = false;
                                         let actionType = "";
 
                                         if (step.mode === "delete") {
-                                            // Keresés helyszín nélkül is, ha törlésről van szó (bár a KAV Excel-ben a törlésnél is ott a helyszín)
-                                            // Azonban a felhasználó kérése: "Two exams should ONLY be considered the exact same attempt if their date, subject, AND location match."
                                             if (existingIndex !== -1) {
                                                 const existingExam = existingResults[existingIndex];
                                                 if (existingExam.result !== "Törölve") {
