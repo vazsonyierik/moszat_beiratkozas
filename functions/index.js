@@ -881,9 +881,16 @@ exports.onRegistrationUpdated = onDocumentUpdated(
         // CRITICAL OPTIMIZATION: Deadline Calculation
         // First check if student is transferred out
         if (after.status === 'transferred' || after.isTransferred === true) {
-            if (before.deadlineInfo !== null || before.status !== after.status || before.isTransferred !== after.isTransferred) {
-                logger.info(`Student ${after.registrationNumber} transferred out. Clearing deadlines.`);
-                await event.data.after.ref.update({ deadlineInfo: null });
+            if (before.deadlineInfo === null || before.deadlineInfo?.activePhase !== 'Lezárva: Másik képzőszervhez áthelyezve' || before.status !== after.status || before.isTransferred !== after.isTransferred) {
+                logger.info(`Student ${after.registrationNumber} transferred out. Setting terminal deadline state.`);
+                await event.data.after.ref.update({
+                    deadlineInfo: {
+                        activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
+                        originalDate: null,
+                        shiftedDate: null,
+                        isShifted: false
+                    }
+                });
             }
         } else {
             // Only run if specific deadline-related fields changed
@@ -938,9 +945,16 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
         if (after.status === 'transferred' || after.isTransferred === true) {
-            if (before.deadlineInfo !== null || before.status !== after.status || before.isTransferred !== after.isTransferred) {
-                logger.info(`Student TEST ${after.registrationNumber} transferred out. Clearing deadlines.`);
-                await event.data.after.ref.update({ deadlineInfo: null });
+            if (before.deadlineInfo === null || before.deadlineInfo?.activePhase !== 'Lezárva: Másik képzőszervhez áthelyezve' || before.status !== after.status || before.isTransferred !== after.isTransferred) {
+                logger.info(`Student TEST ${after.registrationNumber} transferred out. Setting terminal deadline state.`);
+                await event.data.after.ref.update({
+                    deadlineInfo: {
+                        activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
+                        originalDate: null,
+                        shiftedDate: null,
+                        isShifted: false
+                    }
+                });
             }
         } else {
             const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];

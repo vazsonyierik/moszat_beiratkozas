@@ -757,7 +757,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                                     <label className="relative inline-flex items-center cursor-pointer shrink-0">
                                         <input
                                             type="checkbox"
-                                            className="sr-only peer"
+                                            className="hidden peer"
                                             checked=${!!localStudent.isTransferred}
                                             onChange=${handleToggleTransferred}
                                         />
