@@ -123,11 +123,24 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         const existingResults = studentData.examResults || [];
 
         // Logic: Find existing exam by Subject + Date + Location
-        const existingIndex = existingResults.findIndex(ex =>
-            ex.date === formattedExamDate &&
-            normalizeForMatch(ex.subject) === normalizeForMatch(row.subject) &&
-            normalizeForMatch(ex.location) === normalizeForMatch(row.location)
-        );
+        const isDeleteStatus = (mode === 'delete' || row.result === "Törölve");
+
+        const existingIndex = existingResults.findIndex(ex => {
+            const dateMatch = ex.date === formattedExamDate;
+            const subjectMatch = normalizeForMatch(ex.subject) === normalizeForMatch(row.subject);
+
+            if (!dateMatch || !subjectMatch) return false;
+
+            if (isDeleteStatus) {
+                // Törlés esetén csak az irányítószámot (első 4 karakter) hasonlítjuk össze
+                const existingZip = String(ex.location || "").trim().substring(0, 4);
+                const incomingZip = String(row.location || "").trim().substring(0, 4);
+                return existingZip === incomingZip;
+            } else {
+                // Normál eredménynél a helyszín elírásai miatt ignoráljuk a location-t
+                return true;
+            }
+        });
 
         if (mode === 'delete') {
             if (existingIndex !== -1) {
@@ -308,13 +321,19 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         const locationRaw = row[8] ? row[8].toString().trim() : "";
 
                         // A J oszlop (index 9) az eredmény
-                        let resultRaw = "Kiírva";
-                        if (row[9]) {
-                            const resultCell = row[9].toString().trim().toLowerCase();
-                            if (['m', 'megfelelt', 'sikeres'].includes(resultCell)) resultRaw = "Sikeres (M)";
-                            else if (['1', 'nem felelt meg', 'sikertelen'].includes(resultCell)) resultRaw = "Sikertelen (1)";
-                            else if (['3', 'nem jelent meg'].includes(resultCell)) resultRaw = "Nem jelent meg (3)";
-                            else if (resultCell === 'törölve') resultRaw = "Törölve";
+                        const rawResult = String(row[9] || "").trim();
+                        const lowerResult = rawResult.toLowerCase();
+                        let resultRaw = "Kiírva"; // Default
+
+                        if (lowerResult.includes("sikeres") || lowerResult === "m" || lowerResult === "megfelelt") {
+                            resultRaw = "Sikeres (M)";
+                        } else if (lowerResult.includes("sikertelen") || lowerResult === "1" || lowerResult === "nem felelt meg") {
+                            resultRaw = "Sikertelen (1)";
+                        } else if (lowerResult.includes("törölve")) {
+                            resultRaw = "Törölve";
+                        } else if (rawResult !== "") {
+                            // DYNAMIC FALLBACK: Save exact string
+                            resultRaw = rawResult;
                         }
 
                         // Adatbázis lekérdezés mindkét kollekcióból (teszt és éles)
