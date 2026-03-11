@@ -344,12 +344,18 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
             onConfirm: async () => {
                 try {
                     const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
+
+                    const updatePayload = { isTransferred: newStatus };
+                    if (newStatus && !localStudent.transferredOutDate) {
+                        updatePayload.transferredOutDate = new Date().toISOString().split('T')[0];
+                    }
+
                     // Update parent (Firestore)
-                    await onUpdate(localStudent.id, { isTransferred: newStatus }, studentName);
+                    await onUpdate(localStudent.id, updatePayload, studentName);
 
                     // Update local state optimistically, including the deadlineInfo terminal state
                     setLocalStudent(prev => {
-                        const updatedStudent = { ...prev, isTransferred: newStatus };
+                        const updatedStudent = { ...prev, ...updatePayload };
                         if (newStatus) {
                             updatedStudent.deadlineInfo = {
                                 activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
@@ -358,9 +364,6 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                                 isShifted: false
                             };
                         } else {
-                            // If toggled off, we should ideally fetch the real deadline from backend.
-                            // But for immediate feedback, we can clear it or just trigger a manual recalculate.
-                            // The backend trigger `onUpdate` will fix it shortly anyway.
                             updatedStudent.deadlineInfo = null;
                         }
                         return updatedStudent;
@@ -379,6 +382,20 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                 }
             }
         });
+    };
+
+    const handleTransferredDateChange = async (e) => {
+        const newDate = e.target.value;
+        setLocalStudent(prev => ({ ...prev, transferredOutDate: newDate }));
+
+        try {
+            const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
+            await onUpdate(localStudent.id, { transferredOutDate: newDate }, studentName);
+            showToast("Áthelyezés dátuma frissítve.", "success");
+        } catch (err) {
+            console.error("Hiba a dátum frissítésekor: ", err);
+            showToast("Hiba a mentés során.", "error");
+        }
     };
 
     // Exam handling functions
@@ -719,20 +736,34 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                     ${/* Képzés Lezárása szekció - Teljes szélességben */''}
                     <div className="mt-6 mb-4">
                         <${Section} title="Képzés Lezárása" className="border-red-100 ring-4 ring-red-50">
-                            <div className="flex items-center justify-between p-2">
-                                <div>
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 gap-4">
+                                <div className="flex-1">
                                     <h4 className="text-sm font-medium text-gray-900">Áthelyezve (Másik képzőszervhez)</h4>
                                     <p className="text-xs text-gray-500">Ha be van kapcsolva, a rendszer lezártnak tekinti a tanulót az aktív határidő riportokban.</p>
                                 </div>
-                                <label className="relative inline-flex items-center cursor-pointer">
-                                    <input
-                                        type="checkbox"
-                                        className="sr-only peer"
-                                        checked=${!!localStudent.isTransferred}
-                                        onChange=${handleToggleTransferred}
-                                    />
-                                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
-                                </label>
+                                <div className="flex items-center gap-4">
+                                    ${!!localStudent.isTransferred && html`
+                                        <div className="flex items-center gap-2">
+                                            <label htmlFor="transferredOutDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">Áthelyezés dátuma:</label>
+                                            <input
+                                                type="date"
+                                                id="transferredOutDate"
+                                                value=${localStudent.transferredOutDate || ''}
+                                                onChange=${handleTransferredDateChange}
+                                                className="border-gray-300 rounded-md shadow-sm text-sm focus:ring-red-500 focus:border-red-500"
+                                            />
+                                        </div>
+                                    `}
+                                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            className="hidden peer"
+                                            checked=${!!localStudent.isTransferred}
+                                            onChange=${handleToggleTransferred}
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                    </label>
+                                </div>
                             </div>
                         <//>
                     </div>

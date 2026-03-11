@@ -84,22 +84,34 @@ function toDate(input) {
 /**
  * Parses the "YYYY.MM.DD. HH:mm" string format used in exam results.
  */
-function parseExamDate(dateStr) {
-    if (!dateStr) return null;
+function parseExamDate(dateInput) {
+    if (!dateInput) return null;
+
+    let safeDateString = dateInput;
+    if (typeof safeDateString.toDate === 'function') {
+        safeDateString = safeDateString.toDate().toISOString().split('T')[0];
+    } else if (safeDateString instanceof Date) {
+        safeDateString = safeDateString.toISOString().split('T')[0];
+    }
+
+    if (typeof safeDateString !== 'string') {
+        return null;
+    }
+
     // Format: "2023.10.15. 10:00"
-    const cleaned = dateStr.replace(/\./g, "-").replace(/ /g, "T") + ":00";
+    const cleaned = safeDateString.replace(/\./g, "-").replace(/ /g, "T") + ":00";
     // This creates something like "2023-10-15-T10:00:00".
     // Better way: match the parts
-    const match = dateStr.match(/(\d{4})\.(\d{2})\.(\d{2})\.?\s+(\d{2}):(\d{2})/);
+    const match = safeDateString.match(/(\d{4})\.(\d{2})\.(\d{2})\.?\s+(\d{2}):(\d{2})/);
     if (match) {
         return new Date(`${match[1]}-${match[2]}-${match[3]}T${match[4]}:${match[5]}:00`);
     }
     // Fallback simple split
-    const parts = dateStr.split(" ")[0].replace(/\.$/, "").split(".");
+    const parts = safeDateString.split(" ")[0].replace(/\.$/, "").split(".");
     if (parts.length >= 3) {
         return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T23:59:59`);
     }
-    return new Date(dateStr);
+    return new Date(safeDateString);
 }
 
 /**

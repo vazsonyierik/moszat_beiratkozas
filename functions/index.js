@@ -880,7 +880,7 @@ exports.onRegistrationUpdated = onDocumentUpdated(
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
         // Only run if specific deadline-related fields changed
-        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId"];
+        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];
         let needsDeadlineRecalc = false;
 
         for (const field of fieldsToWatch) {
@@ -929,7 +929,7 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
         }
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
-        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId"];
+        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];
         let needsDeadlineRecalc = false;
 
         for (const field of fieldsToWatch) {
