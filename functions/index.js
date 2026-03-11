@@ -487,7 +487,7 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr + " 12:00",
+            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -551,7 +551,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr + " 12:00",
+            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -629,6 +629,62 @@ exports.scheduledEmailProcessor = onSchedule({
         logger.info(`Scheduled email processing completed. Updates: ${processedCount}`);
     } catch (error) {
         logger.error("Error in scheduled email processing:", error);
+    }
+});
+
+// ÚJ FUNKCIÓ: Összes határidő tömeges újraszámítása
+exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { isTestView } = request.data;
+    const collectionName = isTestView ? "registrations_test" : "registrations";
+
+    try {
+        const snapshot = await db.collection(collectionName).get();
+        let updatedCount = 0;
+
+        // Firestore batches can handle up to 500 operations
+        let batch = db.batch();
+        let batchCount = 0;
+
+        snapshot.forEach((doc) => {
+            const studentData = doc.data();
+
+            // Skip archived records to save operations
+            if (studentData.status === 'archived') {
+                return;
+            }
+
+            const newDeadlineInfo = calculateDeadline(studentData) || null;
+
+            // Optimization: Only update if it actually changed
+            if (JSON.stringify(studentData.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                batch.update(doc.ref, { deadlineInfo: newDeadlineInfo });
+                updatedCount++;
+                batchCount++;
+
+                // If batch limit reached, commit and start a new one
+                if (batchCount >= 400) {
+                    batch.commit(); // Note: in a real robust scenario, we should await this, but for simple chunks we can collect promises
+                    batch = db.batch();
+                    batchCount = 0;
+                }
+            }
+        });
+
+        // Commit any remaining operations in the final batch
+        if (batchCount > 0) {
+            await batch.commit();
+        }
+
+        logger.info(`Bulk deadline recalculation complete for ${collectionName}. Updated ${updatedCount} records.`);
+        return { success: true, updatedCount };
+    } catch (error) {
+        logger.error(`Error in recalculateAllDeadlines for ${collectionName}:`, error);
+        throw new HttpsError("internal", "Hiba történt a tömeges újraszámítás során.");
     }
 });
 

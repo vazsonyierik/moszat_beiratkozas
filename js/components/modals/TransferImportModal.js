@@ -10,32 +10,63 @@ import { useToast } from '../../context/AppContext.js';
 const React = window.React;
 const { useState, Fragment } = React;
 
+const formatDateForDB = (val) => {
+    if (!val) return '';
+    if (val instanceof Date) {
+        if (isNaN(val.getTime())) return '';
+        const d = new Date(val.getTime() + Math.abs(val.getTimezoneOffset() * 60000));
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    }
+    let str = String(val).trim();
+    const match = str.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
+    if (match) return `${match[1]}-${match[2].padStart(2, '0')}-${match[3].padStart(2, '0')}`;
+    return str;
+};
+
 const parseName = (nameStr) => {
-    if (!nameStr) return { last: '', first: '' };
-    const parts = String(nameStr).trim().split(/\s+/);
-    return { last: parts[0] || '', first: parts.slice(1).join(' ') || '' };
+    if (!nameStr) return { prefix: '', last: '', first: '' };
+    let str = String(nameStr).trim();
+    let prefix = '';
+    const lowerStr = str.toLowerCase();
+    if (lowerStr.startsWith('dr.') || lowerStr.startsWith('dr ')) {
+        prefix = 'Dr.';
+        str = str.substring(3).trim();
+    } else if (lowerStr.startsWith('ifj.') || lowerStr.startsWith('ifj ')) {
+        prefix = 'ifj.';
+        str = str.substring(4).trim();
+    }
+    const parts = str.split(/\s+/);
+    return {
+        prefix: prefix,
+        last: parts[0] || '',
+        first: parts.slice(1).join(' ') || ''
+    };
 };
 
 const parseAddress = (addrStr) => {
     if (!addrStr) return { zip: '', city: '', street: '' };
-    const str = String(addrStr).trim();
-    const zipMatch = str.match(/\b\d{4}\b/);
-    const zip = zipMatch ? zipMatch[0] : '';
-    let city = '';
-    let street = str;
-
-    if (zip) {
-        let afterZip = str.substring(str.indexOf(zip) + 4).trim();
-        if (afterZip.startsWith(',')) afterZip = afterZip.substring(1).trim();
-        const commaIdx = afterZip.indexOf(',');
-        if (commaIdx !== -1) {
-            city = afterZip.substring(0, commaIdx).trim();
-            street = afterZip.substring(commaIdx + 1).trim();
+    let str = String(addrStr).trim();
+    let zip = '', city = '', street = str;
+    const zipMatch = str.match(/\b(\d{4})\b/);
+    if (zipMatch) {
+        zip = zipMatch[1];
+        let rest = str.replace(zip, '').trim();
+        if (rest.startsWith(',')) rest = rest.substring(1).trim();
+        const parts = rest.split(',');
+        if (parts.length > 1) {
+            city = parts[0].trim();
+            street = parts.slice(1).join(',').trim();
         } else {
-            const spaceIdx = afterZip.indexOf(' ');
+            const spaceIdx = rest.indexOf(' ');
             if (spaceIdx !== -1) {
-                city = afterZip.substring(0, spaceIdx).trim();
-                street = afterZip.substring(spaceIdx + 1).trim();
+                city = rest.substring(0, spaceIdx).trim();
+                street = rest.substring(spaceIdx + 1).trim();
+            } else {
+                city = rest;
+                street = '';
             }
         }
     }
@@ -44,33 +75,12 @@ const parseAddress = (addrStr) => {
 
 const normalizePhone = (val) => {
     if (!val) return '';
-    let str = String(val).replace(/[^\d+]/g, ''); // Remove spaces, dashes, slashes
-    if (str.startsWith('06')) return '+36' + str.slice(2);
-    if (str.startsWith('36')) return '+' + str;
-    if (str.startsWith('+36')) return str;
-    if (str.length === 9) return '+36' + str; // fallback for e.g., 301234567
-    return str;
-};
-
-const normalizeDateToISO = (val) => {
-    if (!val) return '';
-    // Handle Excel serial numbers if raw:true was used
-    if (typeof val === 'number') {
-        const date = new Date(Math.round((val - 25569) * 86400 * 1000));
-        return date.toISOString().split('T')[0];
-    }
-    let str = String(val).trim();
-    // Match Hungarian/ISO YYYY.MM.DD or YYYY-MM-DD
-    const isoMatch = str.match(/(\d{4})[^\d]+(\d{1,2})[^\d]+(\d{1,2})/);
-    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2].padStart(2, '0')}-${isoMatch[3].padStart(2, '0')}`;
-    // Match US MM/DD/YY from SheetJS default string conversion
-    const usMatch = str.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/);
-    if (usMatch) {
-        let y = usMatch[3];
-        if (y.length === 2) y = parseInt(y) < 50 ? '20' + y : '19' + y;
-        return `${y}-${usMatch[1].padStart(2, '0')}-${usMatch[2].padStart(2, '0')}`;
-    }
-    return str; // Fallback
+    let str = String(val).replace(/[^\d]/g, '');
+    if (str.startsWith('06')) str = '36' + str.slice(2);
+    if (str.startsWith('0036')) str = '36' + str.slice(4);
+    if (str.length === 9) str = '36' + str;
+    if (!str.startsWith('36')) str = '36' + str;
+    return '+' + str;
 };
 
 const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
@@ -98,9 +108,9 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
         reader.onload = (e) => {
             try {
                 const data = new Uint8Array(e.target.result);
-                const workbook = window.XLSX.read(data, { type: 'array' });
+                const workbook = window.XLSX.read(data, { type: 'array', cellDates: true });
                 const worksheet = workbook.Sheets[workbook.SheetNames[0]];
-                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: "", raw: false, dateNF: "yyyy.mm.dd." });
+                const jsonData = window.XLSX.utils.sheet_to_json(worksheet, { defval: "" });
 
                 if (jsonData.length === 0) {
                     setError("A fájl üres.");
@@ -120,14 +130,14 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                     const studentObj = {
                         isTransferStudent: true,
                         // Names
-                        current_prefix: '', current_lastName: cName.last, current_firstName: cName.first, current_secondName: '',
-                        birth_prefix: '', birth_lastName: bName.last, birth_firstName: bName.first, birth_secondName: '',
-                        mother_prefix: '', mother_lastName: mName.last, mother_firstName: mName.first, mother_secondName: '',
+                        current_prefix: cName.prefix, current_lastName: cName.last, current_firstName: cName.first, current_secondName: '',
+                        birth_prefix: bName.prefix, birth_lastName: bName.last, birth_firstName: bName.first, birth_secondName: '',
+                        mother_prefix: mName.prefix, mother_lastName: mName.last, mother_firstName: mName.first, mother_secondName: '',
                         // Birth & Nationality
                         birth_country: 'Magyarország',
                         birth_city: String(row['Születési hely'] || '').trim(),
                         birth_district: String(row['Születési kerület'] || '').trim(),
-                        birthDate: normalizeDateToISO(row['Születési idő']),
+                        birthDate: formatDateForDB(row['Születési idő']),
                         nationality: 'magyar', isDualCitizen: false, secondNationality: '',
                         // Addresses
                         permanent_address_country: 'Magyarország',
@@ -143,7 +153,7 @@ const TransferImportModal = ({ onClose, adminUser, isTestView }) => {
                         phone_number: normalizePhone(row['Telefonszám']),
                         email: String(row['Email cím'] || '').trim(),
                         studentId: String(row['Tanuló azonosító'] || '').trim(),
-                        transferKreszDate: normalizeDateToISO(row['Sikeres KRESZ']),
+                        transferKreszDate: formatDateForDB(row['Sikeres KRESZ']),
                         // System Defaults so Modals don't break
                         documentType: 'Személyi igazolvány', documentNumber: '', documentExpiry: '', education: '',
                         has_previous_license: 'nem', previous_license_categories: '',
