@@ -502,6 +502,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [historicalEnd, setHistoricalEnd] = useState('');
     const [isSystemMenuOpen, setIsSystemMenuOpen] = useState(false);
     const [isStudentMenuOpen, setIsStudentMenuOpen] = useState(false);
+    const [isRecalculatingDeadlines, setIsRecalculatingDeadlines] = useState(false);
 
     const modeMenuRef = useRef(null);
     const systemMenuRef = useRef(null);
@@ -838,6 +839,27 @@ const AdminPanel = ({ user, handleLogout }) => {
         }
     }, [showToast]);
 
+    const handleRecalculateDeadlines = () => {
+        setIsSystemMenuOpen(false);
+        showConfirmation({
+            message: "Biztosan újra akarod számolni az ÖSSZES tanuló határidejét? Ez a művelet a háttérben frissíti a fázisokat és a dátumokat.",
+            onConfirm: async () => {
+                setIsRecalculatingDeadlines(true);
+                showToast('Újraszámítás elindítva...', 'info');
+                try {
+                    const recalculateFn = httpsCallable(functions, 'recalculateAllDeadlines');
+                    const result = await recalculateFn({ isTestView: viewTestDataType });
+                    showToast(`Sikeres újraszámítás! ${result.data.updatedCount} tanuló frissítve.`, 'success');
+                } catch (error) {
+                    console.error("Hiba a határidők újraszámításakor:", error);
+                    showToast(`Hiba történt: ${error.message}`, 'error');
+                } finally {
+                    setIsRecalculatingDeadlines(false);
+                }
+            }
+        });
+    };
+
     const handleClearAllTestExams = async () => {
         if (!viewTestDataType) return;
 
@@ -1142,6 +1164,10 @@ const AdminPanel = ({ user, handleLogout }) => {
                                         <button onClick=${() => { setIsTransferImporting(true); setIsSystemMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 font-medium border border-gray-200">
                                             <${Icons.UploadCloudIcon} size=${16} />
                                             Áthelyezett Import (Excel/CSV)
+                                        </button>
+                                        <button onClick=${handleRecalculateDeadlines} disabled=${isRecalculatingDeadlines} className="w-full text-left px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 font-medium border border-gray-200 disabled:opacity-50">
+                                            ${isRecalculatingDeadlines ? html`<span className="animate-spin h-4 w-4 border-2 border-indigo-600 border-t-transparent rounded-full"></span>` : html`<${Icons.RefreshIcon} size=${16} />`}
+                                            Összes határidő újraszámítása
                                         </button>
                                     </div>
                                 </div>
