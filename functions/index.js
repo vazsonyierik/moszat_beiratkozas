@@ -879,38 +879,23 @@ exports.onRegistrationUpdated = onDocumentUpdated(
         }
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
-        // First check if student is transferred out
-        if (after.status === 'transferred' || after.isTransferred === true) {
-            if (before.deadlineInfo === null || before.deadlineInfo?.activePhase !== 'Lezárva: Másik képzőszervhez áthelyezve' || before.status !== after.status || before.isTransferred !== after.isTransferred) {
-                logger.info(`Student ${after.registrationNumber} transferred out. Setting terminal deadline state.`);
-                await event.data.after.ref.update({
-                    deadlineInfo: {
-                        activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
-                        originalDate: null,
-                        shiftedDate: null,
-                        isShifted: false
-                    }
-                });
-            }
-        } else {
-            // Only run if specific deadline-related fields changed
-            const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];
-            let needsDeadlineRecalc = false;
+        // Only run if specific deadline-related fields changed
+        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];
+        let needsDeadlineRecalc = false;
 
-            for (const field of fieldsToWatch) {
-                if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
-                    needsDeadlineRecalc = true;
-                    break;
-                }
+        for (const field of fieldsToWatch) {
+            if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+                needsDeadlineRecalc = true;
+                break;
             }
+        }
 
-            if (needsDeadlineRecalc) {
-                const newDeadlineInfo = calculateDeadline(after) || null;
-                // Only update if the result actually changed
-                if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
-                    logger.info(`Updating deadlineInfo for ${after.registrationNumber}`);
-                    await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
-                }
+        if (needsDeadlineRecalc) {
+            const newDeadlineInfo = calculateDeadline(after) || null;
+            // Only update if the result actually changed
+            if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                logger.info(`Updating deadlineInfo for ${after.registrationNumber}`);
+                await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
             }
         }
     }
@@ -944,35 +929,21 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
         }
 
         // CRITICAL OPTIMIZATION: Deadline Calculation
-        if (after.status === 'transferred' || after.isTransferred === true) {
-            if (before.deadlineInfo === null || before.deadlineInfo?.activePhase !== 'Lezárva: Másik képzőszervhez áthelyezve' || before.status !== after.status || before.isTransferred !== after.isTransferred) {
-                logger.info(`Student TEST ${after.registrationNumber} transferred out. Setting terminal deadline state.`);
-                await event.data.after.ref.update({
-                    deadlineInfo: {
-                        activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
-                        originalDate: null,
-                        shiftedDate: null,
-                        isShifted: false
-                    }
-                });
-            }
-        } else {
-            const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];
-            let needsDeadlineRecalc = false;
+        const fieldsToWatch = ["examResults", "enrolledAt", "studentIdAssignedAt", "courseCompletedAt", "studentId", "isTransferred", "status"];
+        let needsDeadlineRecalc = false;
 
-            for (const field of fieldsToWatch) {
-                if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
-                    needsDeadlineRecalc = true;
-                    break;
-                }
+        for (const field of fieldsToWatch) {
+            if (JSON.stringify(before[field]) !== JSON.stringify(after[field])) {
+                needsDeadlineRecalc = true;
+                break;
             }
+        }
 
-            if (needsDeadlineRecalc) {
-                const newDeadlineInfo = calculateDeadline(after) || null;
-                if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
-                    logger.info(`Updating deadlineInfo for TEST ${after.registrationNumber}`);
-                    await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
-                }
+        if (needsDeadlineRecalc) {
+            const newDeadlineInfo = calculateDeadline(after) || null;
+            if (JSON.stringify(before.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
+                logger.info(`Updating deadlineInfo for TEST ${after.registrationNumber}`);
+                await event.data.after.ref.update({deadlineInfo: newDeadlineInfo});
             }
         }
 
