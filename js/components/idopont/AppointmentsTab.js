@@ -19,13 +19,24 @@ const AppointmentsTab = ({ isTestMode }) => {
 
     useEffect(() => {
         setLoading(true);
-        const q = query(collection(db, collectionName), orderBy('date', 'desc'), orderBy('time', 'desc'));
+        // A dupla orderBy Firestore kompozit indexet igényel. Hogy ne kelljen manuálisan indexet létrehozni a Firebase Console-on,
+        // a másodlagos rendezést (idő szerint) kliens oldalon, memóriában végezzük el.
+        const q = query(collection(db, collectionName), orderBy('date', 'desc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const coursesData = [];
             snapshot.forEach((doc) => {
                 coursesData.push({ id: doc.id, ...doc.data() });
             });
+
+            // Másodlagos rendezés idő szerint (csökkenő)
+            coursesData.sort((a, b) => {
+                if (a.date === b.date) {
+                    return b.time.localeCompare(a.time);
+                }
+                return 0; // A dátum szerinti rendezést a Firestore már megoldotta
+            });
+
             setCourses(coursesData);
             setLoading(false);
         }, (error) => {
