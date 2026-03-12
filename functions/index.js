@@ -478,7 +478,9 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
             kreszDateStr = new Date().toISOString().split('T')[0];
         }
 
-        const dateObj = new Date(kreszDateStr + "T23:59:59");
+        // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk,
+        // így a nyári-téli időszámítás eltolódása miatt sosem ugrik át a következő naptári napra a dátum.
+        const dateObj = new Date(kreszDateStr + "T12:00:00Z");
         // Ensure valid date before creating timestamp
         if (!isNaN(dateObj.getTime())) {
             newRegistrationData.courseCompletedAt = Timestamp.fromDate(dateObj);
@@ -543,7 +545,8 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
             kreszDateStr = new Date().toISOString().split('T')[0];
         }
 
-        const dateObj = new Date(kreszDateStr + "T23:59:59");
+        // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk
+        const dateObj = new Date(kreszDateStr + "T12:00:00Z");
         if (!isNaN(dateObj.getTime())) {
             newRegistrationData.courseCompletedAt = Timestamp.fromDate(dateObj);
         } else {

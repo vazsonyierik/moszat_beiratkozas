@@ -109,7 +109,9 @@ function parseExamDate(dateInput) {
     // Fallback simple split
     const parts = safeDateString.split(" ")[0].replace(/\.$/, "").split(".");
     if (parts.length >= 3) {
-        return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T23:59:59`);
+        // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk,
+        // így a nyári-téli időszámítás eltolódása miatt sosem ugrik át a következő naptári napra a dátum.
+        return new Date(`${parts[0]}-${parts[1]}-${parts[2]}T12:00:00Z`);
     }
     return new Date(safeDateString);
 }
@@ -166,23 +168,22 @@ function calculateDeadline(studentData) {
         ex.result && (ex.result.toLowerCase().includes("sikertelen") || ex.result === "1")
     );
 
-    // KAV "Minus 1 Day" Rule helper
-    // 1. Normalize to noon to avoid midnight rollover bugs.
-    // 2. Add requested time.
-    // 3. Subtract 1 day.
-    // 4. Set to 23:59:59.999.
+    // KAV Deadline Calculation Helper
+    // 1. Normalize to noon (Déli Horgony) to avoid timezone/DST rollover bugs.
+    // 2. Add requested time (exactly 9 months, 1 year, 2 years).
     const calculateKAVDate = (baseDate, {days = 0, months = 0, years = 0}) => {
         const d = new Date(baseDate);
-        d.setHours(12, 0, 0, 0);
+        // "Déli Horgony" (UTC 12:00:00) biztosítja, hogy a nyári/téli időszámítás
+        // ne tolja át a dátumot a szomszédos napra.
+        d.setUTCHours(12, 0, 0, 0);
 
-        if (years) d.setFullYear(d.getFullYear() + years);
-        if (months) d.setMonth(d.getMonth() + months);
-        if (days) d.setDate(d.getDate() + days);
+        if (years) d.setUTCFullYear(d.getUTCFullYear() + years);
+        if (months) d.setUTCMonth(d.getUTCMonth() + months);
+        if (days) d.setUTCDate(d.getUTCDate() + days);
 
-        // KAV Rule: Minus 1 day
-        d.setDate(d.getDate() - 1);
+        // KAV logikájában nincs "Mínusz 1 nap" szabály a lejáratra, a határidő napra pontosan megegyezik a kezdeti nappal.
+        // d.setDate(d.getDate() - 1); // <--- EZT TÖRÖLTÜK
 
-        d.setHours(12, 0, 0, 0);
         return d;
     };
 

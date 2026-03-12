@@ -607,9 +607,10 @@ const AdminPanel = ({ user, handleLogout }) => {
         const regRef = doc(db, collectionName, id);
         const updateData = { [field]: value };
         if (field === 'status_enrolled' && value === true) {
-            // Force enrolledAt to 23:59:59 local time of today to avoid timezone shifting backwards
+            // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk,
+            // hogy a nyári-téli időszámítás eltolódása miatt sosem ugorjon át a következő naptári napra.
             const today = new Date();
-            today.setHours(23, 59, 59, 999);
+            today.setUTCHours(12, 0, 0, 0);
             updateData.enrolledAt = Timestamp.fromDate(today);
         }
         try { 
