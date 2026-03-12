@@ -1,4 +1,4 @@
-import { html } from "../../htm.js";
+import { html } from "../../UI.js";
 import { collection, query, orderBy, onSnapshot, getDocs, doc, deleteDoc } from "../../firebase.js";
 import { db, functions } from "../../firebase.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
