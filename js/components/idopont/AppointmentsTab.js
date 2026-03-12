@@ -1,5 +1,5 @@
 import { html } from "../../UI.js";
-import { collection, query, orderBy, onSnapshot, getDocs, doc, deleteDoc } from "../../firebase.js";
+import { collection, query, orderBy, onSnapshot, getDocs, doc, deleteDoc, addDoc } from "../../firebase.js";
 import { db, functions } from "../../firebase.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
@@ -81,7 +81,6 @@ const AppointmentsTab = ({ isTestMode }) => {
         };
 
         try {
-            const { addDoc } = await import('../../firebase.js');
             await addDoc(collection(db, collectionName), courseData);
             setShowCourseModal(false);
             showToast("Sikeresen létrehozva!");
