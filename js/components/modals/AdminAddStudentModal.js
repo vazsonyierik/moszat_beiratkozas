@@ -47,7 +47,7 @@ const Section = React.memo(({ title, children }) => html`
 `);
 
 
-const AdminAddStudentModal = ({ onClose, adminUser, isTestView }) => { // ÚJ: isTestView prop hozzáadása
+const AdminAddStudentModal = ({ onClose, adminUser, isTestView, isTransferMode }) => { // ÚJ: isTestView prop hozzáadása
     const initialFormData = {
         current_prefix: '', current_lastName: '', current_firstName: '', current_secondName: '',
         birth_prefix: '', birth_lastName: '', birth_firstName: '', birth_secondName: '',
@@ -67,6 +67,9 @@ const AdminAddStudentModal = ({ onClose, adminUser, isTestView }) => { // ÚJ: i
         megjegyzes: '',
         // MÓDOSÍTÁS: Új állapot az email küldés vezérléséhez
         sendInitialEmail: false,
+        isTransferStudent: isTransferMode || false,
+        transferKreszDate: '',
+        studentId: '',
     };
     
     const [formData, setFormData] = useState(initialFormData);
@@ -132,7 +135,7 @@ const AdminAddStudentModal = ({ onClose, adminUser, isTestView }) => { // ÚJ: i
     };
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick=${onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-stone-50 rounded-xl shadow-2xl w-full max-w-6xl transform transition-all" onClick=${e => e.stopPropagation()}>
                 <header className=${`p-6 border-b rounded-t-xl flex justify-between items-center ${isTestView ? 'bg-red-50' : 'bg-white'}`}>
                     <div>
@@ -207,6 +210,18 @@ const AdminAddStudentModal = ({ onClose, adminUser, isTestView }) => { // ÚJ: i
                                     <${EditableField} label="Végzettség" name="education" value=${formData.education} onChange=${handleChange} type="select" options=${educationOptions} required=${true} />
                                 <//>
                                 <${Section} title="Tanulmányi előzmények">
+                                    <${EditableField} label="Áthelyezett tanuló (Sikeres KRESZ vizsgával érkezik)" name="isTransferStudent" value=${formData.isTransferStudent} onChange=${handleChange} type="checkbox" />
+                                    ${formData.isTransferStudent && html`
+                                        <div className="space-y-4">
+                                            <${EditableField} label="Tanuló azonosító" name="studentId" value=${formData.studentId} onChange=${handleChange} required=${true} />
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-x-4 items-center py-1">
+                                                <label htmlFor="transferKreszDate" className="text-sm font-medium text-gray-600">Sikeres KRESZ vizsga dátuma<span className="text-red-500 ml-1">*</span></label>
+                                                <div className="col-span-2">
+                                                    <${DateInput} id="transferKreszDate" name="transferKreszDate" value=${formData.transferKreszDate} onChange=${handleChange} required=${true} className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm" />
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `}
                                     <${EditableField} label="Van korábbi jogosítványa" name="has_previous_license" value=${formData.has_previous_license} onChange=${handleChange} type="select" options=${[{value: 'nem', label: 'Nem'}, {value: 'igen', label: 'Igen'}]} />
                                     <${EditableField} label="Korábbi kategóriák" name="previous_license_categories" value=${formData.previous_license_categories} onChange=${handleChange} />
                                     <${EditableField} label="Tanult máshol/nálunk" name="studied_elsewhere_radio" value=${formData.studied_elsewhere_radio} onChange=${handleChange} type="select" options=${[{value: 'nem', label: 'Nem'}, {value: 'igen_nalunk', label: 'Igen, nálunk'}, {value: 'igen_mashol', label: 'Igen, máshol'}]} />
@@ -260,10 +275,12 @@ const AdminAddStudentModal = ({ onClose, adminUser, isTestView }) => { // ÚJ: i
                     </div>
                 </main>
                 <footer className="p-4 bg-white rounded-b-xl border-t flex justify-between items-center gap-4">
-                    <div className="flex items-center">
-                        <input type="checkbox" id="sendInitialEmail" name="sendInitialEmail" checked=${formData.sendInitialEmail} onChange=${handleChange} className="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
-                        <label htmlFor="sendInitialEmail" className="ml-2 text-sm font-medium text-gray-700">Fizetési tájékoztató e-mail küldése</label>
-                    </div>
+                    ${(!isTransferMode && !formData.isTransferStudent) ? html`
+                        <div className="flex items-center">
+                            <input type="checkbox" id="sendInitialEmail" name="sendInitialEmail" checked=${formData.sendInitialEmail} onChange=${handleChange} className="h-4 w-4 text-teal-600 border-gray-300 rounded focus:ring-teal-500" />
+                            <label htmlFor="sendInitialEmail" className="ml-2 text-sm font-medium text-gray-700">Fizetési tájékoztató e-mail küldése</label>
+                        </div>
+                    ` : html`<div />`}
                     <div className="flex items-center gap-4">
                         <button onClick=${onClose} className="bg-stone-200 text-stone-800 font-semibold py-2 px-6 rounded-md hover:bg-stone-300">Mégse</button>
                         <button onClick=${handleSave} disabled=${isSaving} className="bg-teal-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-teal-700 disabled:opacity-50">

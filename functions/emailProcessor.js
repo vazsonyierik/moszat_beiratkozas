@@ -43,6 +43,11 @@ const normalizeDate = (input) => {
     return null;
 };
 
+const normalizeForMatch = (str) => {
+    if (!str) return "";
+    return str.toString().toLowerCase().replace(/\s+/g, "");
+};
+
 const formatExamDate = (rawDate) => {
     if (rawDate instanceof Date) {
         // Round to nearest minute: add 30 seconds, then floor to minute
@@ -114,10 +119,16 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
         let searchCriteria = [];
 
         if (startDate && endDate) {
-            logger.info(`Using absolute date range for IMAP search: ${startDate} to ${endDate}`);
+            // A felhasználó szempontjából, ha kiválasztja ugyanazt a napot (-tól -ig), pl. 04.04 - 04.04,
+            // az IMAP 04.04 00:00 - 04.04 00:00 között keres, így 0 eredményt hoz.
+            // Hogy a megadott nap is BELEÉRTENDŐ (inclusive) legyen, adunk 1 napot a végdátumhoz.
+            const adjustedEndDate = new Date(endDate);
+            adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+
+            logger.info(`Using absolute date range for IMAP search: ${startDate} to ${adjustedEndDate.toISOString()} (UI requested: ${endDate})`);
             searchCriteria = [
                 ["SINCE", new Date(startDate)],
-                ["BEFORE", new Date(endDate)],
+                ["BEFORE", adjustedEndDate],
                 ["FROM", "kav"]
             ];
         } else {
@@ -284,7 +295,7 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                     // 4. Update Logic
                                     if (isCaseFileMode) {
                                         if (!studentData.isCaseFiled || (studentData.isCaseFiled && !studentData.caseFiledAt)) {
-                                            const updateData = { isCaseFiled: true };
+                                            const updateData = {isCaseFiled: true};
 
                                             // Extract the date from the parsed email object, fallback to now.
                                             const fileDate = parsed.date ? new Date(parsed.date) : new Date();
@@ -322,21 +333,38 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                         const location = row[8] ? row[8].toString().trim() : "";
 
                                         // A J oszlop (index 9) az eredmény
-                                        let result = "Kiírva";
-                                        if (row[9]) {
-                                            const resultCell = row[9].toString().trim().toLowerCase();
-                                            if (["m", "megfelelt", "sikeres"].includes(resultCell)) result = "Sikeres (M)";
-                                            else if (["1", "nem felelt meg", "sikertelen"].includes(resultCell)) result = "Sikertelen (1)";
-                                            else if (["3", "nem jelent meg"].includes(resultCell)) result = "Nem jelent meg (3)";
-                                            else if (resultCell === "törölve") result = "Törölve";
+                                        const rawResult = String(row[9] || "").trim();
+                                        const lowerResult = rawResult.toLowerCase();
+                                        let result = "Kiírva"; // Default
+
+                                        if (lowerResult.includes("sikeres") || lowerResult === "m" || lowerResult === "megfelelt") {
+                                            result = "Sikeres (M)";
+                                        } else if (lowerResult.includes("sikertelen") || lowerResult === "1" || lowerResult === "nem felelt meg") {
+                                            result = "Sikertelen (1)";
+                                        } else if (lowerResult.includes("törölve")) {
+                                            result = "Törölve";
+                                        } else if (rawResult !== "") {
+                                            // DYNAMIC FALLBACK: If it's none of the core 3, save the exact KAV string with original capitalization
+                                            result = rawResult;
                                         }
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
 
-                                        // Find existing exam by Subject + Date
-                                        const existingIndex = existingResults.findIndex(ex =>
-                                            ex.subject === subject && ex.date === formattedExamDate
-                                        );
+                                        const isDeleteStatus = (step.mode === "delete" || result === "Törölve");
+
+                                        // BIZTONSÁGOSABB VIZSGA-AZONOSÍTÁS (KAV elírások ellen):
+                                        const existingIndex = existingResults.findIndex(ex => {
+                                            const dateMatch = ex.date === formattedExamDate;
+                                            const subjectMatch = normalizeForMatch(ex.subject) === normalizeForMatch(subject);
+
+                                            if (!dateMatch || !subjectMatch) return false;
+
+                                            // Dátum és tárgy egyezik. Minden esetben megvizsgáljuk a helyszín irányítószámát is (első 4 karakter),
+                                            // hogy elkerüljük a dupla, de eltérő helyszínű foglalások felülírását/kihagyását.
+                                            const existingZip = String(ex.location || "").trim().substring(0, 4);
+                                            const incomingZip = String(location || "").trim().substring(0, 4);
+                                            return existingZip === incomingZip;
+                                        });
 
                                         let examUpdated = false;
                                         let actionType = "";
@@ -354,16 +382,19 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
                                             // Normal mode (Upsert)
                                             if (existingIndex !== -1) {
                                                 const existingExam = existingResults[existingIndex];
-                                                const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-                                                const isNewConcrete = result && result !== "Kiírva";
 
-                                                if (isExistingPlaceholder && isNewConcrete) {
-                                                    existingResults[existingIndex] = {...existingExam, result: result, importedAt: new Date().toISOString()};
+                                                // Only update if result (status) is different
+                                                if (existingExam.result !== result) {
+                                                    existingResults[existingIndex] = {
+                                                        ...existingExam,
+                                                        result: result,
+                                                        importedAt: new Date().toISOString()
+                                                    };
                                                     examUpdated = true;
                                                     actionType = `Vizsga frissítve: ${result}`;
                                                 }
                                             } else {
-                                                // New exam
+                                                // New exam booking (different location or entirely new)
                                                 existingResults.push({
                                                     subject: subject,
                                                     date: formattedExamDate,

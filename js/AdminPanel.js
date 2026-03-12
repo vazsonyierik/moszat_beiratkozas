@@ -18,9 +18,11 @@ import ViewDetailsModal from './components/modals/ViewDetailsModal.js';
 import EditDetailsModal from './components/modals/EditDetailsModal.js';
 import AdminAddStudentModal from './components/modals/AdminAddStudentModal.js';
 import ExamImportModal from './components/modals/ExamImportModal.js';
+import TransferImportModal from './components/modals/TransferImportModal.js';
 import AutomationLog from './components/AutomationLog.js';
 import AdminLog from './components/AdminLog.js';
 import EmailImportLog from './components/EmailImportLog.js'; // ÚJ
+import DeadlineReports from './components/DeadlineReports.js'; // ÚJ: Határidő Riportok
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import { generateTestStudents } from './utils/testDataGenerator.js';
@@ -55,7 +57,7 @@ const IconLegendModal = ({ onClose }) => {
                 </header>
                 <main className="p-4 sm:p-6 space-y-4">
                     ${iconFilterOptions.map(opt => html`
-                        <div key=${opt.key} className="flex items-center gap-4">
+                        <div key="${opt.key}" className="flex items-center gap-4">
                             <div className="flex-shrink-0">
                                 <div className="w-8 h-8 rounded-full flex items-center justify-center ${opt.color} text-white shadow-md">
                                     <${opt.Icon} size=${18} />
@@ -118,7 +120,7 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     `;
 };
 
-const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false }) => {
+const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDetails, onDelete, onIdSave, onMarkAsCompleted, onRestore, onArchive, onCommentSave, allowIdEditing = false, paginated = false, adminUser, showDayCounter = false, allowRestore = false, allowArchive = false, isTransferTab = false }) => {
     const [currentPage, setCurrentPage] = React.useState(1);
     const [itemsPerPage, setItemsPerPage] = React.useState(10);
     const [editingRowId, setEditingRowId] = React.useState(null);
@@ -258,10 +260,10 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             ].filter(Boolean);
 
                             const isEditingThisRow = editingRowId === reg.id;
-                            const allowDelete = !reg.status_enrolled && !reg.courseCompletedAt;
+                            const allowDelete = (!reg.status_enrolled && !reg.courseCompletedAt) || isTransferTab;
 
                             return html`
-                            <${Fragment} key=${reg.id}>
+                            <${Fragment} key="${reg.id}">
                                 <tr className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
@@ -326,41 +328,43 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         <div className="flex flex-col justify-center space-y-1">
                                             ${adminIcons.length > 0 && html`
                                                 <div className="flex items-center space-x-1.5">
-                                                    ${adminIcons.map(icon => html`<${StatusIcon} key=${icon.key} ...${icon} />`)}
+                                                    ${adminIcons.map(icon => html`<${StatusIcon} key="${icon.key}" ...${icon} />`)}
                                                 </div>
                                             `}
                                             ${studentIcons.length > 0 && html`
                                                 <div className="flex items-center space-x-1.5">
-                                                    ${studentIcons.map(icon => html`<${StatusIcon} key=${icon.key} ...${icon} />`)}
+                                                    ${studentIcons.map(icon => html`<${StatusIcon} key="${icon.key}" ...${icon} />`)}
                                                 </div>
                                             `}
                                         </div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div className="flex flex-col space-y-2">
-                                            ${!reg.status_enrolled && html`
+                                        ${!isTransferTab && html`
+                                            <div className="flex flex-col space-y-2">
+                                                ${!reg.status_enrolled && html`
+                                                    <label className="flex items-center">
+                                                        <input type="checkbox" checked=${!!reg.status_paid} onChange=${() => onStatusChange(reg.id, 'status_paid', !reg.status_paid, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
+                                                        <span className="ml-2">Fizetve</span>
+                                                    </label>
+                                                `}
+                                                ${reg.status_enrolled && html`
+                                                    <label className="flex items-center">
+                                                        <input type="checkbox" checked=${!!reg.hasMedicalCertificate} onChange=${() => onStatusChange(reg.id, 'hasMedicalCertificate', !reg.hasMedicalCertificate, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" />
+                                                        <span className="ml-2">Orvosi</span>
+                                                    </label>
+                                                `}
                                                 <label className="flex items-center">
-                                                    <input type="checkbox" checked=${!!reg.status_paid} onChange=${() => onStatusChange(reg.id, 'status_paid', !reg.status_paid, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" /> 
-                                                    <span className="ml-2">Fizetve</span>
+                                                    <input
+                                                        type="checkbox"
+                                                        checked=${!!reg.status_enrolled}
+                                                        onChange=${() => onStatusChange(reg.id, 'status_enrolled', !reg.status_enrolled, fullName)}
+                                                        disabled=${!reg.status_paid}
+                                                        className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                                    />
+                                                    <span className=${`ml-2 ${!reg.status_paid ? 'text-gray-400' : ''}`}>Beírva</span>
                                                 </label>
-                                            `}
-                                            ${reg.status_enrolled && html`
-                                                <label className="flex items-center">
-                                                    <input type="checkbox" checked=${!!reg.hasMedicalCertificate} onChange=${() => onStatusChange(reg.id, 'hasMedicalCertificate', !reg.hasMedicalCertificate, fullName)} className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer" /> 
-                                                    <span className="ml-2">Orvosi</span>
-                                                </label>
-                                            `}
-                                            <label className="flex items-center">
-                                                <input 
-                                                    type="checkbox" 
-                                                    checked=${!!reg.status_enrolled} 
-                                                    onChange=${() => onStatusChange(reg.id, 'status_enrolled', !reg.status_enrolled, fullName)} 
-                                                    disabled=${!reg.status_paid}
-                                                    className="h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                                /> 
-                                                <span className=${`ml-2 ${!reg.status_paid ? 'text-gray-400' : ''}`}>Beírva</span>
-                                            </label>
-                                        </div>
+                                            </div>
+                                        `}
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         ${isEditingThisRow ? html`
@@ -378,13 +382,15 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                                             <${Icons.CheckIcon} size=${20} />
                                                         </button>
                                                     </div>
-                                                    <div className="flex items-center space-x-2">
-                                                        <span className="text-sm font-medium">Befejezte?</span>
-                                                        <input type="date" value=${completeDate} onChange=${e => setCompleteDate(e.target.value)} className="p-1 border rounded-md shadow-sm text-sm" />
-                                                         <button onClick=${() => handleMarkAsCompletedConfirm(reg)} className="p-1.5 hover:bg-green-100 rounded-full" title="Elmélet kész">
-                                                            <${Icons.CheckIcon} size=${20} />
-                                                        </button>
-                                                    </div>
+                                                    ${!isTransferTab && html`
+                                                        <div className="flex items-center space-x-2">
+                                                            <span className="text-sm font-medium">Befejezte?</span>
+                                                            <input type="date" value=${completeDate} onChange=${e => setCompleteDate(e.target.value)} className="p-1 border rounded-md shadow-sm text-sm" />
+                                                             <button onClick=${() => handleMarkAsCompletedConfirm(reg)} className="p-1.5 hover:bg-green-100 rounded-full" title="Elmélet kész">
+                                                                <${Icons.CheckIcon} size=${20} />
+                                                            </button>
+                                                        </div>
+                                                    `}
                                                 </div>
                                                 <button onClick=${handleCancelQuickEdit} className="p-1.5 hover:bg-red-100 rounded-full self-center" title="Mégse">
                                                     <${Icons.XIcon} size=${20} />
@@ -425,7 +431,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                         `}
                                     </td>
                                 </tr>
-                                <tr key=${reg.id + '-comment'}>
+                                <tr key="${reg.id}-comment">
                                     <td colSpan="7" className="p-0 border-none">
                                         <div className=${`transition-all duration-300 ease-in-out grid ${openCommentId === reg.id ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                             <div className="overflow-hidden">
@@ -479,7 +485,9 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [isFilterVisible, setIsFilterVisible] = useState(false);
     const [selectedIconFilters, setSelectedIconFilters] = useState([]);
     const [isAddingStudent, setIsAddingStudent] = useState(false);
+    const [isTransferStudentMode, setIsTransferStudentMode] = useState(false);
     const [isImporting, setIsImporting] = useState(false);
+    const [isTransferImporting, setIsTransferImporting] = useState(false);
     const [expiredFilter, setExpiredFilter] = useState('all');
     const [examResultFilter, setExamResultFilter] = useState('all');
     const [isRunningChecks, setIsRunningChecks] = useState(false);
@@ -492,7 +500,13 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [testEmailsEnabled, setTestEmailsEnabled] = useState(true); // ÚJ: Teszt e-mailek állapota
     const [historicalStart, setHistoricalStart] = useState('');
     const [historicalEnd, setHistoricalEnd] = useState('');
+    const [isSystemMenuOpen, setIsSystemMenuOpen] = useState(false);
+    const [isStudentMenuOpen, setIsStudentMenuOpen] = useState(false);
+    const [isRecalculatingDeadlines, setIsRecalculatingDeadlines] = useState(false);
+
     const modeMenuRef = useRef(null);
+    const systemMenuRef = useRef(null);
+    const studentMenuRef = useRef(null);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -516,6 +530,12 @@ const AdminPanel = ({ user, handleLogout }) => {
         const handleClickOutside = (event) => {
             if (modeMenuRef.current && !modeMenuRef.current.contains(event.target)) {
                 setIsModeMenuOpen(false);
+            }
+            if (systemMenuRef.current && !systemMenuRef.current.contains(event.target)) {
+                setIsSystemMenuOpen(false);
+            }
+            if (studentMenuRef.current && !studentMenuRef.current.contains(event.target)) {
+                setIsStudentMenuOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -587,9 +607,10 @@ const AdminPanel = ({ user, handleLogout }) => {
         const regRef = doc(db, collectionName, id);
         const updateData = { [field]: value };
         if (field === 'status_enrolled' && value === true) {
-            // Force enrolledAt to 23:59:59 local time of today to avoid timezone shifting backwards
+            // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk,
+            // hogy a nyári-téli időszámítás eltolódása miatt sosem ugorjon át a következő naptári napra.
             const today = new Date();
-            today.setHours(23, 59, 59, 999);
+            today.setUTCHours(12, 0, 0, 0);
             updateData.enrolledAt = Timestamp.fromDate(today);
         }
         try { 
@@ -617,11 +638,13 @@ const AdminPanel = ({ user, handleLogout }) => {
                 let timestamp;
                 if (customDateStr) {
                     const date = new Date(customDateStr);
-                    date.setHours(23, 59, 59, 999);
+                    // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás 
+                    // ne dobja át másnapra az azonosító kiadásának dátumát a határidők számolásánál.
+                    date.setUTCHours(12, 0, 0, 0);
                     timestamp = Timestamp.fromDate(date);
                 } else {
                     const today = new Date();
-                    today.setHours(23, 59, 59, 999);
+                    today.setUTCHours(12, 0, 0, 0);
                     timestamp = Timestamp.fromDate(today);
                 }
                 updatePayload.studentIdAssignedAt = timestamp;
@@ -655,11 +678,13 @@ const AdminPanel = ({ user, handleLogout }) => {
             let timestamp;
             if (customDateStr) {
                 const date = new Date(customDateStr);
-                date.setHours(23, 59, 59, 999);
+                // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás 
+                // ne dobja át másnapra a KRESZ befejezésének dátumát.
+                date.setUTCHours(12, 0, 0, 0);
                 timestamp = Timestamp.fromDate(date);
             } else {
                 const today = new Date();
-                today.setHours(23, 59, 59, 999);
+                today.setUTCHours(12, 0, 0, 0);
                 timestamp = Timestamp.fromDate(today);
             }
             await updateDoc(regRef, { courseCompletedAt: timestamp });
@@ -719,6 +744,22 @@ const AdminPanel = ({ user, handleLogout }) => {
             onConfirm: () => { handleDelete(id, name); },
         });
     }, [handleDelete, showConfirmation]);
+
+    const handleTransferDeleteRequest = useCallback((id, name) => {
+        showConfirmation({
+            message: `1/2 Biztosan törölni szeretnéd a(z) ${name} nevű ÁTHELYEZETT tanulót?`,
+            onConfirm: () => {
+                setTimeout(() => {
+                    const userInput = window.prompt(`2/2 VÉGLEGES TÖRLÉS:\n\nA(z) ${name} végleges törléséhez írd be csupa nagybetűvel: TÖRLÉS`);
+                    if (userInput === "TÖRLÉS") {
+                        handleDelete(id, name);
+                    } else if (userInput !== null) {
+                        showToast("Helytelen megerősítés, a törlés megszakítva.", "info");
+                    }
+                }, 100);
+            },
+        });
+    }, [handleDelete, showConfirmation, showToast]);
 
     const handleRestoreStudent = useCallback(async (id, studentName) => {
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
@@ -802,6 +843,27 @@ const AdminPanel = ({ user, handleLogout }) => {
             setIsProcessingEmails(false);
         }
     }, [showToast]);
+
+    const handleRecalculateDeadlines = () => {
+        setIsSystemMenuOpen(false);
+        showConfirmation({
+            message: "Biztosan újra akarod számolni az ÖSSZES tanuló határidejét? Ez a művelet a háttérben frissíti a fázisokat és a dátumokat.",
+            onConfirm: async () => {
+                setIsRecalculatingDeadlines(true);
+                showToast('Újraszámítás elindítva...', 'info');
+                try {
+                    const recalculateFn = httpsCallable(functions, 'recalculateAllDeadlines');
+                    const result = await recalculateFn({ isTestView: viewTestDataType });
+                    showToast(`Sikeres újraszámítás! ${result.data.updatedCount} tanuló frissítve.`, 'success');
+                } catch (error) {
+                    console.error("Hiba a határidők újraszámításakor:", error);
+                    showToast(`Hiba történt: ${error.message}`, 'error');
+                } finally {
+                    setIsRecalculatingDeadlines(false);
+                }
+            }
+        });
+    };
 
     const handleClearAllTestExams = async () => {
         if (!viewTestDataType) return;
@@ -930,7 +992,8 @@ const AdminPanel = ({ user, handleLogout }) => {
         pendingRegistrations, 
         completedRegistrations,
         allExpiredRegistrations,
-        archivedRegistrations
+        archivedRegistrations,
+        transferRegistrations
     } = useMemo(() => {
         const source = filteredRegistrations;
         
@@ -941,10 +1004,13 @@ const AdminPanel = ({ user, handleLogout }) => {
         const excludedIds = new Set([...archivedStudents, ...expiredStudents].map(s => s.id));
         const activeStudents = source.filter(reg => !excludedIds.has(reg.id));
 
-        const completed = activeStudents.filter(reg => reg.courseCompletedAt);
-        const enrolled = activeStudents.filter(reg => reg.status_enrolled && !reg.courseCompletedAt);
-        const paid = activeStudents.filter(reg => reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
-        const pending = activeStudents.filter(reg => !reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
+        const transferStudents = activeStudents.filter(reg => reg.isTransferStudent === true);
+        const regularActiveStudents = activeStudents.filter(reg => !reg.isTransferStudent);
+
+        const completed = regularActiveStudents.filter(reg => reg.courseCompletedAt);
+        const enrolled = regularActiveStudents.filter(reg => reg.status_enrolled && !reg.courseCompletedAt);
+        const paid = regularActiveStudents.filter(reg => reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
+        const pending = regularActiveStudents.filter(reg => !reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
 
         return { 
             enrolledRegistrations: enrolled, 
@@ -952,7 +1018,8 @@ const AdminPanel = ({ user, handleLogout }) => {
             pendingRegistrations: pending, 
             completedRegistrations: completed,
             allExpiredRegistrations: expiredStudents,
-            archivedRegistrations: archivedStudents
+            archivedRegistrations: archivedStudents,
+            transferRegistrations: transferStudents
         };
     }, [filteredRegistrations]);
 
@@ -1031,32 +1098,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                             Kijelentkezés
                         </button>
 
-                        <div className="flex gap-2">
-                            <button
-                                onClick=${() => handleProcessEmails({ daysBack: 2, unseenOnly: false })}
-                                disabled=${isProcessingEmails}
-                                className="bg-blue-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
-                                title="Gyors ellenőrzés: Utolsó 2 nap, minden levél"
-                            >
-                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${20} />`}
-                                Gyors Email
-                            </button>
-
-                            <button
-                                onClick=${() => handleProcessEmails({ daysBack: 7, unseenOnly: true })}
-                                disabled=${isProcessingEmails}
-                                className="bg-sky-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-sky-700 disabled:opacity-50 disabled:cursor-wait flex items-center gap-2"
-                                title="Mély ellenőrzés: Utolsó 7 nap, csak olvasatlan levelek"
-                            >
-                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.SearchIcon} size=${20} />`}
-                                Mély Email
-                            </button>
-                        </div>
-
-                        <button onClick=${handleRunChecks} disabled=${isRunningChecks} className="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 disabled:opacity-50 disabled:cursor-wait">
-                            ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
-                        </button>
-
                         ${viewTestDataType && html`
                             <button
                                 onClick=${handleGenerateTestData}
@@ -1069,35 +1110,98 @@ const AdminPanel = ({ user, handleLogout }) => {
                             </button>
                         `}
 
-                        <div className="flex items-center gap-2">
-                            <div className="flex items-center bg-gray-100 p-1.5 rounded-lg border border-gray-200">
-                                <span className="text-xs font-semibold text-gray-500 mr-2 hidden lg:inline">Történelmi Import:</span>
-                                <input type="date" value=${historicalStart} onChange=${e => setHistoricalStart(e.target.value)} className="text-sm p-1 border rounded mr-1" title="Kezdő dátum" />
-                                <span className="text-gray-400 mx-1">-</span>
-                                <input type="date" value=${historicalEnd} onChange=${e => setHistoricalEnd(e.target.value)} className="text-sm p-1 border rounded mr-2" title="Végdátum" />
-                                <button
-                                    onClick=${() => {
-                                        if(!historicalStart || !historicalEnd) {
-                                            showToast('Kérjük add meg a kezdő és végdátumot is!', 'warning');
-                                            return;
-                                        }
-                                        handleProcessEmails({ startDate: historicalStart, endDate: historicalEnd, unseenOnly: false });
-                                    }}
-                                    disabled=${isProcessingEmails}
-                                    className="bg-indigo-600 text-white text-sm font-semibold py-1.5 px-3 rounded hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-wait"
-                                >
-                                    Feldolgozás
-                                </button>
-                            </div>
+                        <div className="relative" ref=${systemMenuRef}>
+                            <button onClick=${() => setIsSystemMenuOpen(!isSystemMenuOpen)} className="bg-gray-700 text-white font-semibold py-2 px-4 rounded-md hover:bg-gray-800 flex items-center gap-2">
+                                <${Icons.SettingsIcon} size=${16} />
+                                Rendszereszközök
+                                <${Icons.ChevronDownIcon} size=${16} />
+                            </button>
+                            ${isSystemMenuOpen && html`
+                                <div className="absolute right-0 mt-2 w-96 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                                    <div className="p-4 space-y-4">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <button
+                                                onClick=${() => { handleProcessEmails({ daysBack: 2, unseenOnly: false }); setIsSystemMenuOpen(false); }}
+                                                disabled=${isProcessingEmails}
+                                                className="bg-blue-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-blue-700 disabled:opacity-50 flex justify-center items-center gap-2"
+                                            >
+                                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.MailIcon} size=${16} />`}
+                                                Gyors Email
+                                            </button>
+                                            <button
+                                                onClick=${() => { handleProcessEmails({ daysBack: 7, unseenOnly: true }); setIsSystemMenuOpen(false); }}
+                                                disabled=${isProcessingEmails}
+                                                className="bg-sky-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-sky-700 disabled:opacity-50 flex justify-center items-center gap-2"
+                                            >
+                                                ${isProcessingEmails ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.SearchIcon} size=${16} />`}
+                                                Mély Email
+                                            </button>
+                                        </div>
+                                        <button onClick=${() => { handleRunChecks(); setIsSystemMenuOpen(false); }} disabled=${isRunningChecks} className="w-full bg-yellow-500 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-yellow-600 disabled:opacity-50">
+                                            ${isRunningChecks ? 'Futtatás...' : 'Napi ellenőrzés'}
+                                        </button>
+                                        <div className="bg-gray-50 p-3 rounded border">
+                                            <span className="block text-xs font-semibold text-gray-500 mb-2">Történelmi Import:</span>
+                                            <div className="flex items-center gap-2">
+                                                <input type="date" value=${historicalStart} onChange=${e => setHistoricalStart(e.target.value)} className="text-sm p-1.5 border rounded w-full" />
+                                                <span className="text-gray-400">-</span>
+                                                <input type="date" value=${historicalEnd} onChange=${e => setHistoricalEnd(e.target.value)} className="text-sm p-1.5 border rounded w-full" />
+                                            </div>
+                                            <button
+                                                onClick=${() => {
+                                                    if(!historicalStart || !historicalEnd) {
+                                                        showToast('Kérjük add meg a kezdő és végdátumot is!', 'warning');
+                                                        return;
+                                                    }
+                                                    handleProcessEmails({ startDate: historicalStart, endDate: historicalEnd, unseenOnly: false });
+                                                    setIsSystemMenuOpen(false);
+                                                }}
+                                                disabled=${isProcessingEmails}
+                                                className="mt-2 w-full bg-indigo-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-indigo-700 disabled:opacity-50"
+                                            >
+                                                Feldolgozás
+                                            </button>
+                                        </div>
+                                        <button onClick=${() => { setIsImporting(true); setIsSystemMenuOpen(false); }} className="w-full bg-emerald-600 text-white text-sm font-semibold py-2 px-3 rounded hover:bg-emerald-700 flex justify-center items-center gap-2">
+                                            <${Icons.UploadCloudIcon} size=${16} />
+                                            Importálás (KAV)
+                                        </button>
+                                        <button onClick=${() => { setIsTransferImporting(true); setIsSystemMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 font-medium border border-gray-200">
+                                            <${Icons.UploadCloudIcon} size=${16} />
+                                            Áthelyezett Import (Excel/CSV)
+                                        </button>
+                                        <button onClick=${handleRecalculateDeadlines} disabled=${isRecalculatingDeadlines} className="w-full text-left px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded hover:bg-gray-200 flex items-center gap-2 font-medium border border-gray-200 disabled:opacity-50">
+                                            ${isRecalculatingDeadlines ? html`<span className="animate-spin h-4 w-4 border-2 border-indigo-600 border-t-transparent rounded-full"></span>` : html`<${Icons.RefreshIcon} size=${16} />`}
+                                            Összes határidő újraszámítása
+                                        </button>
+                                    </div>
+                                </div>
+                            `}
+                        </div>
+
+                        <div className="relative" ref=${studentMenuRef}>
+                            <button onClick=${() => setIsStudentMenuOpen(!isStudentMenuOpen)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700 flex items-center gap-2">
+                                <${Icons.UserIcon} size=${16} />
+                                Tanuló felvétele
+                                <${Icons.ChevronDownIcon} size=${16} />
+                            </button>
+                            ${isStudentMenuOpen && html`
+                                <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-50 border border-gray-200 overflow-hidden">
+                                    <div className="py-1">
+                                        <button onClick=${() => { setIsAddingStudent(true); setIsStudentMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2">
+                                            <${Icons.UserPlusIcon} size=${16} />
+                                            Új tanuló rögzítése
+                                        </button>
+                                        <button onClick=${() => { setIsTransferStudentMode(true); setIsAddingStudent(true); setIsStudentMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2 border-t border-gray-100">
+                                            <${Icons.FilePlusIcon} size=${16} />
+                                            Áthelyezett tanuló
+                                        </button>
+                                    </div>
+                                </div>
+                            `}
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button onClick=${() => setIsImporting(true)} className="bg-emerald-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-emerald-700 flex items-center gap-2">
-                                <${Icons.UploadCloudIcon} size=${20} />
-                                Importálás (KAV)
-                            </button>
-                            <button onClick=${() => setIsAddingStudent(true)} className="bg-indigo-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-indigo-700">Új tanuló rögzítése</button>
-
                             <div className="relative" ref=${modeMenuRef}>
                                 <button
                                     onClick=${() => setIsModeMenuOpen(!isModeMenuOpen)}
@@ -1278,10 +1382,12 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${TabButton} tabName="applicants" label="Jelentkező tanulók" />
                                 <${TabButton} tabName="enrolled" label="Beiratkozott tanulók" />
                                 <${TabButton} tabName="completed" label="E-learninget befejezte" />
+                                <${TabButton} tabName="transfers" label="Átjelentkezett tanulók" />
                                 <${TabButton} tabName="expired" label="Lejárt tanulók" />
                                 <${TabButton} tabName="archived" label="Archivált" />
                             </div>
                             <div className="flex space-x-8">
+                                <${TabButton} tabName="deadline_reports" label="Határidő Riportok" />
                                 <${TabButton} tabName="automation_logs" label="Automatizálási Napló" />
                                 <${TabButton} tabName="admin_logs" label="Admin Napló" />
                                 <${TabButton} tabName="email_logs" label="Email Feldolgozás Napló" />
@@ -1291,6 +1397,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'applicants' && html`<div key="applicants-tab"><${StudentTable} adminUser=${user} title="Fizetett (beiratkozásra váró) tanulók" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${StudentTable} adminUser=${user} title="Új és folyamatban lévő jelentkezők" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
+                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} onDelete=${handleTransferDeleteRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} isTransferTab=${true} /></div>`}
                     
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">
@@ -1366,6 +1473,12 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${AdminLog} />
                         </div>
                     `}
+                    ${activeTab === 'deadline_reports' && html`
+                        <div key="deadline-reports-tab">
+                            <${DeadlineReports} students=${registrations} onShowDetails=${setViewingStudent} />
+                        </div>
+                    `}
+
                     ${activeTab === 'email_logs' && html`
                         <div key="email-logs-tab">
                             <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
@@ -1373,10 +1486,11 @@ const AdminPanel = ({ user, handleLogout }) => {
                     `}
                 </${React.Fragment}>`}
                 
-                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} />`}
+                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
-                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => setIsAddingStudent(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
+                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => { setIsAddingStudent(false); setIsTransferStudentMode(false); }} adminUser=${user} isTestView=${viewTestDataType} isTransferMode=${isTransferStudentMode} />`}
                 ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}
+                ${isTransferImporting && html`<${TransferImportModal} onClose=${() => setIsTransferImporting(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
                 ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
                 ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
             </div>

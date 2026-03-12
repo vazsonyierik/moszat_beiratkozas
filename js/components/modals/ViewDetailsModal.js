@@ -30,11 +30,32 @@ const DisplayField = ({ label, value }) => html`
 `;
 
 const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editingIndex, tempExamData, setTempExamData }) => {
-    if (!results || results.length === 0) return html`<p className="text-sm text-gray-500 italic">Nincsenek rögzített vizsgaeredmények.</p>`;
+    const [showCancelledExams, setShowCancelledExams] = useState(false);
+
+    if (!results || results.length === 0) return html`<p key="empty-exams" className="text-sm text-gray-500 italic">Nincsenek rögzített vizsgaeredmények.</p>`;
+
+    // Filter out canceled "Forgalmi" (practical) exams to hide them from the table.
+    // However, synthetic rows (isCaseFiled) or canceled theory exams should remain visible.
+    const filteredResults = results.filter(res => {
+        if (res.isSynthetic) return true; // Keep synthetic rows
+
+        // If showCancelledExams is true, render ALL exams.
+        if (showCancelledExams) return true;
+
+        // Hide if subject contains "forgalmi" and result is "Törölve"
+        const isForgalmi = res.subject && res.subject.toLowerCase().includes('forgalmi');
+        const isCanceled = res.result === 'Törölve';
+
+        if (isForgalmi && isCanceled) {
+            return false;
+        }
+
+        return true;
+    });
 
     // Extract synthetic row if present to keep it at the top
-    const syntheticRow = results.find(res => res.isSynthetic);
-    const realResults = results.filter(res => !res.isSynthetic);
+    const syntheticRow = filteredResults.find(res => res.isSynthetic);
+    const realResults = filteredResults.filter(res => !res.isSynthetic);
 
     // We need to keep track of the original index because sorting changes order.
     // So map to include original index first. Note: index must match the original array structure for editing/deleting.
@@ -59,7 +80,19 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
     const sortedResults = syntheticRow ? [syntheticRow, ...sortedRealResults] : sortedRealResults;
 
     return html`
-        <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
+        <div key="table-wrapper">
+            <div className="flex justify-end mb-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                        type="checkbox"
+                        className="rounded border-gray-300 text-indigo-600 shadow-sm focus:ring-indigo-500 w-4 h-4"
+                        checked=${showCancelledExams}
+                        onChange=${(e) => setShowCancelledExams(e.target.checked)}
+                    />
+                    <span className="text-sm text-gray-600 font-medium">Törölt forgalmi vizsgák mutatása</span>
+                </label>
+            </div>
+            <div className="overflow-x-auto rounded-lg border border-gray-200 mt-2">
             <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                     <tr>
@@ -93,7 +126,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
 
                         if (isEditing) {
                             return html`
-                                <tr key=${res.originalIndex} className="bg-blue-50">
+                                <tr key="${res.originalIndex}" className="bg-blue-50">
                                     <td className="px-3 py-2 align-top">
                                         <input
                                             type="text"
@@ -142,7 +175,7 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                         }
 
                         return html`
-                        <tr key=${res.isSynthetic ? 'synthetic' : res.originalIndex} className="hover:bg-gray-50 group">
+                        <tr key="${res.isSynthetic ? 'synthetic' : res.originalIndex}" className="hover:bg-gray-50 group">
                             <td className="px-3 py-2 whitespace-nowrap text-gray-900">${res.date}</td>
                             <td className="px-3 py-2 text-gray-700">${res.subject}</td>
                             <td className="px-3 py-2 whitespace-nowrap">
@@ -165,13 +198,14 @@ const ExamResultsTable = ({ results, onEdit, onDelete, onSave, onCancel, editing
                             </td>
                         </tr>
                     `})}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     `;
 };
 
-const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
+const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
     const [localStudent, setLocalStudent] = useState(student);
     const [editingExamIndex, setEditingExamIndex] = useState(null);
     const [tempExamData, setTempExamData] = useState({});
@@ -191,12 +225,12 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
             const recalculateFn = httpsCallable(functions, 'recalculateStudentDeadline');
             const result = await recalculateFn({
                 documentId: localStudent.id,
-                isTest: isTestMode()
+                isTest: isTestView
             });
 
             if (result.data.success) {
                 // Re-fetch the entire student document to ensure perfect reactivity with backend formats
-                const collectionName = isTestMode() ? 'registrations_test' : 'registrations';
+                const collectionName = isTestView ? 'registrations_test' : 'registrations';
                 const docRef = doc(db, collectionName, localStudent.id);
                 const docSnap = await getDoc(docRef);
                 
@@ -297,6 +331,71 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
         if (activePhase.includes('Phase 3')) return 'Sikeres elméleti vizsga határideje (12 hónap)';
         if (activePhase.includes('Phase 4')) return 'Sikeres forgalmi vizsga határideje (2 év)';
         return activePhase;
+    };
+
+    // Transferred status toggle function
+    const handleToggleTransferred = () => {
+        const currentStatus = !!localStudent.isTransferred;
+        const newStatus = !currentStatus;
+        const actionText = newStatus ? "áthelyezve más képzőszervhez" : "aktív (áthelyezés visszavonva)";
+
+        showConfirmation({
+            message: `Biztosan megváltoztatod a tanuló áthelyezési státuszát erre: ${actionText}?`,
+            onConfirm: async () => {
+                try {
+                    const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
+                    
+                    const updatePayload = { isTransferred: newStatus };
+                    if (newStatus && !localStudent.transferredOutDate) {
+                        updatePayload.transferredOutDate = new Date().toISOString().split('T')[0];
+                    }
+
+                    // Update parent (Firestore)
+                    await onUpdate(localStudent.id, updatePayload, studentName);
+
+                    // Update local state optimistically, including the deadlineInfo terminal state
+                    setLocalStudent(prev => {
+                        const updatedStudent = { ...prev, ...updatePayload };
+                        if (newStatus) {
+                            updatedStudent.deadlineInfo = {
+                                activePhase: "Lezárva: Másik képzőszervhez áthelyezve",
+                                originalDate: null,
+                                shiftedDate: null,
+                                isShifted: false
+                            };
+                        } else {
+                            updatedStudent.deadlineInfo = null;
+                        }
+                        return updatedStudent;
+                    });
+
+                    showToast(`Áthelyezési státusz frissítve.`, "success");
+
+                    // Optionally, if toggled back to active, trigger a recalculation to fetch the proper dates immediately
+                    if (!newStatus) {
+                        handleRecalculateDeadline();
+                    }
+
+                } catch (err) {
+                    console.error("Hiba az áthelyezési státusz frissítésekor: ", err);
+                    showToast("Hiba a mentés során.", "error");
+                }
+            }
+        });
+    };
+
+    const handleTransferredDateChange = async (e) => {
+        const newDate = e.target.value;
+        setLocalStudent(prev => ({ ...prev, transferredOutDate: newDate }));
+        
+        try {
+            const studentName = formatFullName(localStudent.current_prefix, localStudent.current_firstName, localStudent.current_lastName, localStudent.current_secondName);
+            await onUpdate(localStudent.id, { transferredOutDate: newDate }, studentName);
+            showToast("Áthelyezés dátuma frissítve.", "success");
+        } catch (err) {
+            console.error("Hiba a dátum frissítésekor: ", err);
+            showToast("Hiba a mentés során.", "error");
+        }
     };
 
     // Exam handling functions
@@ -448,13 +547,32 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
     `;
 
     const renderDeadlineStatus = () => {
-        if (!localStudent.deadlineInfo || !localStudent.deadlineInfo.shiftedDate) {
+        if (!localStudent.deadlineInfo) {
             return html`
                 <p className="text-sm text-gray-500 italic mt-2">A határidő kalkuláció folyamatban van, vagy nincs elegendő adat.</p>
             `;
         }
 
         const info = localStudent.deadlineInfo;
+
+        // If we only have activePhase but no dates (terminal states)
+        if (!info.shiftedDate && info.activePhase) {
+             return html`
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm mt-2">
+                    <div className="flex flex-col border-b border-gray-100 pb-2 md:col-span-2">
+                        <strong className="text-gray-500 mb-1">Aktuális Cél / Fázis</strong>
+                        <span className="text-gray-900 font-medium">${getPhaseLabel(info.activePhase)}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        if (!info.shiftedDate) {
+             return html`
+                <p className="text-sm text-gray-500 italic mt-2">A határidő kalkuláció folyamatban van, vagy nincs elegendő adat.</p>
+            `;
+        }
+
         const mappedPhase = getPhaseLabel(info.activePhase);
         const daysRemaining = getDaysRemaining(info.shiftedDate);
 
@@ -612,6 +730,41 @@ const ViewDetailsModal = ({ student, onClose, onUpdate }) => {
                     <div className="mt-6">
                         <${Section} title="Megjegyzés">
                             <p className="text-gray-700 whitespace-pre-wrap text-sm leading-relaxed">${localStudent.megjegyzes || 'Nincs megjegyzés.'}</p>
+                        <//>
+                    </div>
+
+                    ${/* Képzés Lezárása szekció - Teljes szélességben */''}
+                    <div className="mt-6 mb-4">
+                        <${Section} title="Képzés Lezárása" className="border-red-100 ring-4 ring-red-50">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-2 gap-4">
+                                <div className="flex-1">
+                                    <h4 className="text-sm font-medium text-gray-900">Áthelyezve (Másik képzőszervhez)</h4>
+                                    <p className="text-xs text-gray-500">Ha be van kapcsolva, a rendszer lezártnak tekinti a tanulót az aktív határidő riportokban.</p>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                    ${!!localStudent.isTransferred && html`
+                                        <div className="flex items-center gap-2">
+                                            <label htmlFor="transferredOutDate" className="text-sm font-medium text-gray-700 whitespace-nowrap">Áthelyezés dátuma:</label>
+                                            <input 
+                                                type="date" 
+                                                id="transferredOutDate"
+                                                value=${localStudent.transferredOutDate || ''} 
+                                                onChange=${handleTransferredDateChange} 
+                                                className="border-gray-300 rounded-md shadow-sm text-sm focus:ring-red-500 focus:border-red-500" 
+                                            />
+                                        </div>
+                                    `}
+                                    <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                                        <input
+                                            type="checkbox"
+                                            className="opacity-0 w-0 h-0 absolute peer"
+                                            checked=${!!localStudent.isTransferred}
+                                            onChange=${handleToggleTransferred}
+                                        />
+                                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-red-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
+                                    </label>
+                                </div>
+                            </div>
                         <//>
                     </div>
                 </main>

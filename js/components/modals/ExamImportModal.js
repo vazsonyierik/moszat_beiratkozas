@@ -98,6 +98,11 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         return null;
     };
 
+    const normalizeForMatch = (str) => {
+        if (!str) return '';
+        return str.toString().toLowerCase().replace(/\s+/g, '');
+    };
+
     const formatExamDate = (rawDate) => {
         if (rawDate instanceof Date) {
             // Round to nearest minute: add 30 seconds, then floor to minute
@@ -117,10 +122,21 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         const formattedExamDate = formatExamDate(row.examDateRaw);
         const existingResults = studentData.examResults || [];
 
-        // Logic: Find existing exam by Subject + Date
-        const existingIndex = existingResults.findIndex(ex =>
-            ex.subject === row.subject && ex.date === formattedExamDate
-        );
+        // Logic: Find existing exam by Subject + Date + Location
+        const isDeleteStatus = (mode === 'delete' || row.result === "Törölve");
+
+        const existingIndex = existingResults.findIndex(ex => {
+            const dateMatch = ex.date === formattedExamDate;
+            const subjectMatch = normalizeForMatch(ex.subject) === normalizeForMatch(row.subject);
+
+            if (!dateMatch || !subjectMatch) return false;
+
+            // Dátum és tárgy egyezik. Minden esetben megvizsgáljuk a helyszín irányítószámát is (első 4 karakter),
+            // hogy elkerüljük a dupla, de eltérő helyszínű foglalások felülírását/kihagyását.
+            const existingZip = String(ex.location || "").trim().substring(0, 4);
+            const incomingZip = String(row.location || "").trim().substring(0, 4);
+            return existingZip === incomingZip;
+        });
 
         if (mode === 'delete') {
             if (existingIndex !== -1) {
@@ -145,15 +161,16 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
         }
 
         if (existingIndex !== -1) {
-            // Found match. Check if we should update.
+            // Found exact match. Check if status has changed.
             const existingExam = existingResults[existingIndex];
 
-            const isExistingPlaceholder = !existingExam.result || existingExam.result === "Kiírva";
-            const isNewConcrete = row.result && row.result !== "Kiírva";
-
-            if (isExistingPlaceholder && isNewConcrete) {
-                // Update logic
-                const updatedExam = { ...existingExam, result: row.result, importedAt: new Date().toISOString() };
+            if (existingExam.result !== row.result) {
+                // Update result logic
+                const updatedExam = {
+                    ...existingExam,
+                    result: row.result,
+                    importedAt: new Date().toISOString()
+                };
                 const newResults = [...existingResults];
                 newResults[existingIndex] = updatedExam;
 
@@ -163,7 +180,8 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     subject: row.subject,
                     date: formattedExamDate,
                     result: row.result,
-                    prevResult: existingExam.result
+                    prevResult: existingExam.result,
+                    location: row.location
                 });
             } else {
                 // Duplicate or no update needed
@@ -171,7 +189,7 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                     studentId: studentData.studentId,
                     subject: row.subject,
                     date: formattedExamDate,
-                    reason: "Már létező eredmény",
+                    reason: "Már létező, egyező eredmény és helyszín",
                     existingResult: existingExam.result
                 });
             }
@@ -299,13 +317,19 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
                         const locationRaw = row[8] ? row[8].toString().trim() : "";
 
                         // A J oszlop (index 9) az eredmény
-                        let resultRaw = "Kiírva";
-                        if (row[9]) {
-                            const resultCell = row[9].toString().trim().toLowerCase();
-                            if (['m', 'megfelelt', 'sikeres'].includes(resultCell)) resultRaw = "Sikeres (M)";
-                            else if (['1', 'nem felelt meg', 'sikertelen'].includes(resultCell)) resultRaw = "Sikertelen (1)";
-                            else if (['3', 'nem jelent meg'].includes(resultCell)) resultRaw = "Nem jelent meg (3)";
-                            else if (resultCell === 'törölve') resultRaw = "Törölve";
+                        const rawResult = String(row[9] || "").trim();
+                        const lowerResult = rawResult.toLowerCase();
+                        let resultRaw = "Kiírva"; // Default
+
+                        if (lowerResult.includes("sikeres") || lowerResult === "m" || lowerResult === "megfelelt") {
+                            resultRaw = "Sikeres (M)";
+                        } else if (lowerResult.includes("sikertelen") || lowerResult === "1" || lowerResult === "nem felelt meg") {
+                            resultRaw = "Sikertelen (1)";
+                        } else if (lowerResult.includes("törölve")) {
+                            resultRaw = "Törölve";
+                        } else if (rawResult !== "") {
+                            // DYNAMIC FALLBACK: Save exact string
+                            resultRaw = rawResult;
                         }
 
                         // Adatbázis lekérdezés mindkét kollekcióból (teszt és éles)

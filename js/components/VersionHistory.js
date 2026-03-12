@@ -207,7 +207,7 @@ const VersionHistory = ({ onClose, adminUser }) => {
     };
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50" onClick=${onClose}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
                 <header className="p-6 border-b flex justify-between items-center bg-indigo-50 rounded-t-xl">
                     <div className="flex items-center gap-3">
