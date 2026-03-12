@@ -77,5 +77,32 @@ service cloud.firestore {
         // Csak adminok olvashatják és írhatják (verziók létrehozása)
         allow read, write: if isAdmin();
     }
+
+    // --- ÚJ RENDSZER: Időpontfoglaló Modul (ÉLES) ---
+    match /courses/{courseId} {
+      // Publikus olvasás engedélyezett az időpontok listázásához
+      allow read: if true;
+      // Létrehozás, módosítás, törlés csak adminoknak
+      allow write: if isAdmin();
+
+      match /bookings/{bookingId} {
+        // Jelentkezéseket csak az admin olvashat/módosíthat (tanulók nem láthatják mások adatait)
+        allow read, update, delete: if isAdmin();
+        // A tanulók is csak Cloud Function-ön keresztül foglalhatnak, direkt írás tiltva.
+        allow create: if false;
+      }
+    }
+
+    // --- ÚJ RENDSZER: Időpontfoglaló Modul (TESZT) ---
+    match /courses_test/{courseId} {
+      // Ugyanaz a logika, mint az élesnél
+      allow read: if true;
+      allow write: if isAdmin();
+
+      match /bookings_test/{bookingId} {
+        allow read, update, delete: if isAdmin();
+        allow create: if false;
+      }
+    }
   }
 }
