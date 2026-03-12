@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Időpontfoglaló - Mosolyzóna Autósiskola</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        .hidden { display: none !important; }
+        .bg-mosoly-red { background-color: #e53e3e; }
+        .bg-mosoly-red:hover { background-color: #c53030; }
+        .text-mosoly-red { color: #e53e3e; }
+        
+        /* Modal Transitions */
+        .modal-enter { opacity: 0; transform: scale(0.9); }
+        .modal-enter-active { opacity: 1; transform: scale(1); transition: opacity 300ms, transform 300ms; }
+        .modal-exit { opacity: 1; transform: scale(1); }
+        .modal-exit-active { opacity: 0; transform: scale(0.9); transition: opacity 300ms, transform 300ms; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center py-10 px-4">
+
+    <!-- Teszt Üzemmód Banner -->
+    <div id="testModeBanner" class="hidden w-full max-w-4xl bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4 text-center">
+        <strong class="font-bold">FIGYELEM: Teszt Üzemmód Aktív!</strong>
+        <span class="block sm:inline"> Az adatok a teszt adatbázisba kerülnek mentésre.</span>
+    </div>
+
+    <!-- Fejléc -->
+    <div class="max-w-4xl w-full bg-white rounded-xl shadow-md overflow-hidden p-6 mb-6 text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Mosolyzóna Autósiskola</h1>
+        <h2 class="text-xl text-gray-600">Online Időpontfoglaló Rendszer</h2>
+        <div class="mt-4 text-sm text-gray-500">
+            <p>Válaszd ki a számodra megfelelő képzést az alábbi listából, majd add meg az adataidat a jelentkezéshez!</p>
+            <p class="mt-2"><a href="index.html" class="text-blue-500 hover:underline">&larr; Vissza a beiratkozáshoz</a></p>
+        </div>
+    </div>
+
+    <!-- Betöltés animáció -->
+    <div id="globalLoader" class="flex flex-col items-center justify-center my-10">
+        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-mosoly-red"></div>
+        <p class="mt-4 text-gray-600">Időpontok betöltése...</p>
+    </div>
+
+    <!-- Nincs elérhető kurzus üzenet -->
+    <div id="noCoursesMessage" class="hidden w-full max-w-4xl bg-yellow-50 border border-yellow-200 text-yellow-800 px-6 py-8 rounded-xl shadow-sm text-center">
+        <svg class="mx-auto h-12 w-12 text-yellow-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+        </svg>
+        <h3 class="text-lg font-medium">Jelenleg nincsenek meghirdetett időpontok.</h3>
+        <p class="mt-2 text-sm">Kérjük, látogass vissza később, vagy keress minket elérhetőségeinken!</p>
+    </div>
+
+    <!-- Kurzusok listája (Kártyák) -->
+    <div id="coursesContainer" class="max-w-4xl w-full grid grid-cols-1 md:grid-cols-2 gap-6 hidden">
+        <!-- JS generálja a kártyákat ide -->
+    </div>
+
+    <!-- Foglalás Modal -->
+    <div id="bookingModal" class="fixed z-50 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Háttér sötétítés -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" id="modalBackdrop"></div>
+
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            
+            <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                <form id="bookingForm" class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div class="sm:flex sm:items-start">
+                        <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+                            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modalCourseTitle">Jelentkezés a kurzusra</h3>
+                            <div class="mt-2 mb-4">
+                                <p class="text-sm text-gray-500" id="modalCourseDetails">Dátum: ...</p>
+                            </div>
+                            
+                            <!-- Űrlap mezők -->
+                            <input type="hidden" id="modalCourseId" name="courseId">
+                            
+                            <div class="mb-4">
+                                <label for="lastName" class="block text-sm font-medium text-gray-700">Vezetéknév</label>
+                                <input type="text" name="lastName" id="lastName" required class="mt-1 focus:ring-mosoly-red focus:border-mosoly-red block w-full shadow-sm sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="firstName" class="block text-sm font-medium text-gray-700">Keresztnév</label>
+                                <input type="text" name="firstName" id="firstName" required class="mt-1 focus:ring-mosoly-red focus:border-mosoly-red block w-full shadow-sm sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+
+                            <div class="mb-4">
+                                <label for="email" class="block text-sm font-medium text-gray-700">E-mail cím</label>
+                                <input type="email" name="email" id="email" required class="mt-1 focus:ring-mosoly-red focus:border-mosoly-red block w-full shadow-sm sm:text-sm border-gray-300 rounded-md py-2 px-3 border">
+                            </div>
+                            
+                            <div id="bookingError" class="hidden mt-2 text-sm text-red-600 bg-red-50 p-2 rounded"></div>
+                        </div>
+                    </div>
+                </form>
+                <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button type="button" id="submitBookingBtn" class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-mosoly-red text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                        Jelentkezem
+                    </button>
+                    <button type="button" id="closeModalBtn" class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                        Mégsem
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sikeres foglalás üzenet (toast) -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-green-500 text-white px-6 py-3 rounded shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        Sikeres jelentkezés!
+    </div>
+
+    <script type="module" src="js/idopont.js"></script>
+</body>
+</html>
