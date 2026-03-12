@@ -220,7 +220,7 @@ function calculateDeadline(studentData) {
             const deadlineDate = calculateKAVDate(examDate, {years: 2});
 
             const {date: finalDate, shifted} = getNextWorkingDay(deadlineDate);
-            finalDate.setHours(12, 0, 0, 0);
+            finalDate.setUTCHours(12, 0, 0, 0);
 
             return evaluateExpired("Phase 4: Sikeres KRESZ vizsga (2 év)", deadlineDate, finalDate, shifted);
         }
@@ -233,9 +233,9 @@ function calculateDeadline(studentData) {
 
         // Use standard exactly 9 months ahead for the failure window check
         const nineMonthsFromAssigned = new Date(studentIdAssignedAt);
-        nineMonthsFromAssigned.setHours(12, 0, 0, 0);
-        nineMonthsFromAssigned.setMonth(nineMonthsFromAssigned.getMonth() + 9);
-        nineMonthsFromAssigned.setHours(23, 59, 59, 999);
+        // Déli Horgony használata a vizsgaablak vizsgálatához is!
+        nineMonthsFromAssigned.setUTCHours(12, 0, 0, 0);
+        nineMonthsFromAssigned.setUTCMonth(nineMonthsFromAssigned.getUTCMonth() + 9);
 
         for (const failed of failedTheories) {
             // Check if the failure is within 9 months AFTER the studentIdAssignedAt date.
@@ -255,7 +255,7 @@ function calculateDeadline(studentData) {
             const deadlineDate = calculateKAVDate(studentIdAssignedAt, {months: 12});
 
             const {date: finalDate, shifted} = getNextWorkingDay(deadlineDate);
-            finalDate.setHours(12, 0, 0, 0);
+            finalDate.setUTCHours(12, 0, 0, 0);
 
             return evaluateExpired("Phase 3: Sikertelen elmélet (12 hónap azonosítótól)", deadlineDate, finalDate, shifted);
         } else {
@@ -263,7 +263,7 @@ function calculateDeadline(studentData) {
             const deadlineDate = calculateKAVDate(studentIdAssignedAt, {months: 9});
 
             const {date: finalDate, shifted} = getNextWorkingDay(deadlineDate);
-            finalDate.setHours(12, 0, 0, 0);
+            finalDate.setUTCHours(12, 0, 0, 0);
 
             return evaluateExpired("Phase 2: Azonosító kiadva (9 hónap)", deadlineDate, finalDate, shifted);
         }

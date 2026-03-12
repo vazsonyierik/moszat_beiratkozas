@@ -678,11 +678,13 @@ const AdminPanel = ({ user, handleLogout }) => {
             let timestamp;
             if (customDateStr) {
                 const date = new Date(customDateStr);
-                date.setHours(23, 59, 59, 999);
+                // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás
+                // ne dobja át másnapra a KRESZ befejezésének dátumát.
+                date.setUTCHours(12, 0, 0, 0);
                 timestamp = Timestamp.fromDate(date);
             } else {
                 const today = new Date();
-                today.setHours(23, 59, 59, 999);
+                today.setUTCHours(12, 0, 0, 0);
                 timestamp = Timestamp.fromDate(today);
             }
             await updateDoc(regRef, { courseCompletedAt: timestamp });
