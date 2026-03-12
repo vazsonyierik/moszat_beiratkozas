@@ -119,10 +119,16 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
         let searchCriteria = [];
 
         if (startDate && endDate) {
-            logger.info(`Using absolute date range for IMAP search: ${startDate} to ${endDate}`);
+            // A felhasználó szempontjából, ha kiválasztja ugyanazt a napot (-tól -ig), pl. 04.04 - 04.04,
+            // az IMAP 04.04 00:00 - 04.04 00:00 között keres, így 0 eredményt hoz.
+            // Hogy a megadott nap is BELEÉRTENDŐ (inclusive) legyen, adunk 1 napot a végdátumhoz.
+            const adjustedEndDate = new Date(endDate);
+            adjustedEndDate.setDate(adjustedEndDate.getDate() + 1);
+
+            logger.info(`Using absolute date range for IMAP search: ${startDate} to ${adjustedEndDate.toISOString()} (UI requested: ${endDate})`);
             searchCriteria = [
                 ["SINCE", new Date(startDate)],
-                ["BEFORE", new Date(endDate)],
+                ["BEFORE", adjustedEndDate],
                 ["FROM", "kav"]
             ];
         } else {
