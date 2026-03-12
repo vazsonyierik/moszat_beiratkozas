@@ -353,15 +353,11 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                             if (!dateMatch || !subjectMatch) return false;
 
-                                            if (isDeleteStatus) {
-                                                // Törlés esetén megnézzük az első 4 karaktert (irányítószám)
-                                                const existingZip = String(ex.location || "").trim().substring(0, 4);
-                                                const incomingZip = String(location || "").trim().substring(0, 4);
-                                                return existingZip === incomingZip;
-                                            } else {
-                                                // Normál vizsgáknál a helyszínt teljesen figyelmen kívül hagyjuk az azonosításhoz
-                                                return true;
-                                            }
+                                            // Dátum és tárgy egyezik. Minden esetben megvizsgáljuk a helyszín irányítószámát is (első 4 karakter),
+                                            // hogy elkerüljük a dupla, de eltérő helyszínű foglalások felülírását/kihagyását.
+                                            const existingZip = String(ex.location || "").trim().substring(0, 4);
+                                            const incomingZip = String(location || "").trim().substring(0, 4);
+                                            return existingZip === incomingZip;
                                         });
 
                                         let examUpdated = false;
