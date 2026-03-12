@@ -1,6 +1,6 @@
 const {onDocumentCreated, onDocumentUpdated} = require("firebase-functions/v2/firestore");
 const {onSchedule} = require("firebase-functions/v2/scheduler");
-const {onCall, HttpsError} = require("firebase-functions/v2/https"); // HttpsError importálása
+const {onCall, onRequest, HttpsError} = require("firebase-functions/v2/https"); // HttpsError importálása
 const {setGlobalOptions} = require("firebase-functions/v2");
 const logger = require("firebase-functions/logger");
 const {getFirestore, Timestamp, FieldValue} = require("firebase-admin/firestore");
