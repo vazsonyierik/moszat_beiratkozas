@@ -131,15 +131,11 @@ const ExamImportModal = ({ onClose, onImportComplete, isTestView }) => {
 
             if (!dateMatch || !subjectMatch) return false;
 
-            if (isDeleteStatus) {
-                // Törlés esetén csak az irányítószámot (első 4 karakter) hasonlítjuk össze
-                const existingZip = String(ex.location || "").trim().substring(0, 4);
-                const incomingZip = String(row.location || "").trim().substring(0, 4);
-                return existingZip === incomingZip;
-            } else {
-                // Normál eredménynél a helyszín elírásai miatt ignoráljuk a location-t
-                return true;
-            }
+            // Dátum és tárgy egyezik. Minden esetben megvizsgáljuk a helyszín irányítószámát is (első 4 karakter),
+            // hogy elkerüljük a dupla, de eltérő helyszínű foglalások felülírását/kihagyását.
+            const existingZip = String(ex.location || "").trim().substring(0, 4);
+            const incomingZip = String(row.location || "").trim().substring(0, 4);
+            return existingZip === incomingZip;
         });
 
         if (mode === 'delete') {
