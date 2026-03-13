@@ -1,17 +1,17 @@
-import { collection, query, where, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+import { collection, query, where, orderBy, onSnapshot, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 import { db, functions } from './firebase.js';
 
 // --- TESZT MÓD ELLENŐRZÉSE ---
 const urlParams = new URLSearchParams(window.location.search);
-const isTestMode = urlParams.get('test') === 'true';
+const isTestModeLocal = urlParams.get('test') === 'true';
 
-if (isTestMode) {
+if (isTestModeLocal) {
     document.getElementById('testModeBanner').classList.remove('hidden');
     console.warn("Teszt üzemmód aktív az időpontfoglalóban.");
 }
 
-const collectionName = isTestMode ? 'courses_test' : 'courses';
+const collectionName = isTestModeLocal ? 'courses_test' : 'courses';
 const coursesRef = collection(db, collectionName);
 
 // --- DOM Elemek ---
@@ -52,6 +52,8 @@ submitBookingBtn.addEventListener('click', async () => {
 });
 
 // --- Kurzusok Lekérdezése (Valós idejű) ---
+let currentRenderId = 0; // Globális változó a race condition elkerülésére
+
 function loadCourses() {
     // Csak a mai és jövőbeli kurzusokat listázzuk
     const today = new Date().toISOString().split('T')[0];
@@ -63,29 +65,62 @@ function loadCourses() {
     );
 
     onSnapshot(q, (snapshot) => {
+        currentRenderId++;
+        const myRenderId = currentRenderId;
+        
         globalLoader.classList.add('hidden');
         
         if (snapshot.empty) {
-            coursesContainer.classList.add('hidden');
-            noCoursesMessage.classList.remove('hidden');
+            if (myRenderId === currentRenderId) {
+                coursesContainer.classList.add('hidden');
+                noCoursesMessage.classList.remove('hidden');
+            }
             return;
         }
 
-        noCoursesMessage.classList.add('hidden');
-        coursesContainer.classList.remove('hidden');
+        if (myRenderId === currentRenderId) {
+            noCoursesMessage.classList.add('hidden');
+            coursesContainer.classList.remove('hidden');
+        }
         
-        coursesContainer.innerHTML = ''; // Kiürítés
-
-        snapshot.forEach((doc) => {
-            const courseData = doc.data();
-            courseData.id = doc.id;
+        // Összegyűjtjük a kurzusokat és a hozzájuk tartozó aszinkron hívásokat
+        const coursesPromises = snapshot.docs.map(async (docSnap) => {
+            const courseData = docSnap.data();
+            courseData.id = docSnap.id;
             
-            // Jelenlegi jelentkezők számának lekérdezése alkollekcióból (valós időben)
-            // Megjegyzés: Ez egy új onSnapshot lenne minden kurzusra, ami sok olvasást jelenthet.
-            // Alternatíva: Csak egyszerűen megjelenítjük a kártyát, és foglaláskor ellenőrizzük a max létszámot.
-            // Egyszerűsített logika a tanulói felülethez:
-            renderCourseCard(courseData);
+            // Lekérdezzük az aktuális jelentkezők számát a bookings alkollekcióból
+            const bookingsCollectionName = isTestModeLocal ? 'bookings_test' : 'bookings';
+            const bookingsRef = collection(db, `${collectionName}/${courseData.id}/${bookingsCollectionName}`);
+            
+            try {
+                const countSnapshot = await getCountFromServer(bookingsRef);
+                courseData.currentParticipants = countSnapshot.data().count;
+            } catch (err) {
+                console.error("Nem sikerült lekérdezni a jelentkezők számát a kurzushoz: " + courseData.id, err);
+                courseData.currentParticipants = 0; // Hiba esetén feltételezzük, hogy 0
+            }
+
+            return courseData;
         });
+
+        // Megvárjuk, amíg az összes kurzus létszáma betöltődik
+        Promise.all(coursesPromises).then(coursesWithCounts => {
+            // Csak akkor frissítjük a DOM-ot, ha ez a lekérdezés az utolsó snapshotból indult
+            if (myRenderId === currentRenderId) {
+                coursesContainer.innerHTML = ''; // Csak ekkor ürítjük ki, hogy elkerüljük a villogást és a versenyhelyzeteket
+                
+                // Rendereljük a kártyákat az eredeti sorrendben
+                coursesWithCounts.forEach(course => {
+                    renderCourseCard(course);
+                });
+            }
+        }).catch(err => {
+            if (myRenderId === currentRenderId) {
+                console.error("Kritikus hiba a kurzusok létszámának lekérdezésekor:", err);
+                globalLoader.innerHTML = '<p class="text-red-500">Hiba történt az adatok betöltésekor. Kérjük frissítsd az oldalt.</p>';
+            }
+        });
+
     }, (error) => {
         console.error("Hiba a kurzusok lekérdezésekor:", error);
         globalLoader.innerHTML = '<p class="text-red-500">Hiba történt az adatok betöltésekor. Kérjük frissítsd az oldalt.</p>';
@@ -101,6 +136,11 @@ function renderCourseCard(course) {
     const dateParts = course.date.split('-');
     const formattedDate = `${dateParts[0]}. ${dateParts[1]}. ${dateParts[2]}.`;
 
+    const isFull = course.currentParticipants >= course.maxParticipants;
+    const buttonClass = isFull 
+        ? "bg-gray-400 text-white font-medium py-2 px-4 rounded cursor-not-allowed" 
+        : "book-btn bg-mosoly-red hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors";
+    
     card.innerHTML = `
         <div class="p-6">
             <div class="flex items-center justify-between mb-2">
@@ -125,10 +165,10 @@ function renderCourseCard(course) {
             
             <div class="mt-6 flex items-center justify-between">
                 <div class="text-sm text-gray-500">
-                    <span class="font-medium">Létszámkorlát:</span> ${course.maxParticipants} fő
+                    <span class="font-medium">Jelentkeztek:</span> ${course.currentParticipants} / ${course.maxParticipants} fő
                 </div>
-                <button type="button" class="book-btn bg-mosoly-red hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors" data-id="${course.id}" data-title="${course.title}" data-date="${formattedDate}" data-time="${course.time}">
-                    Jelentkezés
+                <button type="button" class="${buttonClass}" ${isFull ? 'disabled' : ''} data-id="${course.id}" data-title="${course.title}" data-date="${formattedDate}" data-time="${course.time}">
+                    ${isFull ? 'Megtelt' : 'Jelentkezés'}
                 </button>
             </div>
         </div>
@@ -164,6 +204,13 @@ function showModal(id, title, date, time) {
 
 function hideModal() {
     bookingModal.classList.add('hidden');
+    const modalInner = bookingModal.querySelector('.inline-block');
+    if (modalInner) {
+        modalInner.classList.remove('modal-enter-active');
+    }
+    bookingForm.reset();
+    bookingError.classList.add('hidden');
+    bookingError.textContent = '';
     selectedCourse = null;
 }
 
@@ -178,7 +225,7 @@ async function submitBooking(courseId, studentInfo) {
         const response = await bookAppointmentFn({ 
             courseId, 
             studentInfo,
-            isTestMode: isTestMode
+            isTestMode: isTestModeLocal
         });
 
         if (response.data.success) {

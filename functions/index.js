@@ -14,9 +14,6 @@ const {calculateDeadline} = require("./deadlineCalculator");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
-
-// Új időpontfoglaló modul importálása
-const appointments = require("./appointments");
 const db = getFirestore();
 const auth = getAuth(); // Auth szolgáltatás inicializálása
 
@@ -956,15 +953,4 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
         logger.info(`TEST Registration updated for ${after.registrationNumber}. Emails sent if triggered. Sheet update SKIPPED.`);
     }
 );
-
-// ============================================================================
-// = IDŐPONTFOGLALÓ MODUL (APPOINTMENTS) EXPORTÁLÁSA
-// ============================================================================
-
-exports.bookAppointment = appointments.bookAppointment;
-exports.addStudentAsAdmin = appointments.addStudentAsAdmin;
-exports.toggleBookingStatus = appointments.toggleBookingStatus;
-exports.deleteBookingAsAdmin = appointments.deleteBookingAsAdmin;
-exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
-exports.sendDailyReminders = appointments.sendDailyReminders;
 

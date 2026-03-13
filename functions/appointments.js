@@ -1,10 +1,10 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { logger } = require("firebase-functions");
-const admin = require("firebase-admin");
+const logger = require("firebase-functions/logger");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 // FONTOS: Feltételezzük, hogy az admin már inicializálva van az index.js-ben
-const db = admin.firestore();
+const db = getFirestore();
 
 // Segédfüggvény a jogosultság ellenőrzéséhez (az index.js-ből)
 // Ezt később átadhatjuk importtal, de mivel ez ugyanabban a projektben fut,
@@ -50,6 +50,8 @@ exports.bookAppointment = onCall({ region: "europe-west3", cors: true }, async (
             const courseData = courseDoc.data();
 
             // 1. Üresedés / Létszám ellenőrzése
+            // Mivel a tranzakcióban a get() csak dokumentumokra működik, a legegyszerűbb és
+            // biztos módja az ellenőrzésnek, ha lekérjük a jelenlegi jelentkezéseket tartalmazó dokumentumokat.
             const allBookingsSnapshot = await transaction.get(bookingsCollectionRef);
             if (allBookingsSnapshot.size >= courseData.maxParticipants) {
                 throw new HttpsError("resource-exhausted", "Sajnos a kiválasztott foglalkozás már betelt.");
@@ -68,7 +70,7 @@ exports.bookAppointment = onCall({ region: "europe-west3", cors: true }, async (
                 lastName: lastName.trim(),
                 firstName: firstName.trim(),
                 email: email,
-                bookingDate: admin.firestore.FieldValue.serverTimestamp(),
+                bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.title,
                 courseDate: courseData.date,
@@ -173,7 +175,7 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                 lastName: lastName.trim(),
                 firstName: firstName.trim(),
                 email: email,
-                bookingDate: admin.firestore.FieldValue.serverTimestamp(),
+                bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.title,
                 courseDate: courseData.date,
@@ -184,6 +186,48 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                 addedByAdmin: true
             });
         });
+
+        // Visszaigazoló e-mail küldése, mert admin adta hozzá
+        let sendEmail = true;
+        if (isTestMode) {
+            const testConfigDoc = await db.collection("settings").doc("testConfig").get();
+            if (testConfigDoc.exists && testConfigDoc.data().emailsEnabled === false) {
+                sendEmail = false;
+            }
+        }
+        
+        if (sendEmail) {
+            const courseDoc = await courseRef.get();
+            const courseData = courseDoc.data();
+            const testPrefix = isTestMode ? "[TEST] " : "";
+            
+            await db.collection("mail").add({
+                to: email,
+                message: {
+                    subject: `${testPrefix}Sikeres jelentkezés (Admin rögzítette): ${courseData.title} (${courseData.date})`,
+                    text: `Kedves ${firstName}!\n\nAutósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:\n\n` +
+                          `Kurzus: ${courseData.title}\n` +
+                          `Dátum: ${courseData.date}\n` +
+                          `Kezdés: ${courseData.time.split('-')[0].trim()}\n\n` +
+                          `Várunk szeretettel!\nMosolyzóna Autósiskola`,
+                    html: `
+                    <div style="font-family: sans-serif;">
+                        <h2>${testPrefix}Sikeres jelentkezés</h2>
+                        <p>Kedves <strong>${firstName}</strong>!</p>
+                        <p>Autósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:</p>
+                        <ul>
+                            <li><strong>Kurzus:</strong> ${courseData.title}</li>
+                            <li><strong>Dátum:</strong> ${courseData.date}</li>
+                            <li><strong>Kezdés:</strong> ${courseData.time.split('-')[0].trim()}</li>
+                        </ul>
+                        <br>
+                        <p>Várunk szeretettel!</p>
+                        <p>Üdvözlettel,<br><strong>Mosolyzóna Autósiskola</strong></p>
+                    </div>`
+                }
+            });
+            logger.info(`Visszaigazoló e-mail sorba állítva az admin által hozzáadott tanulónak: ${email}`);
+        }
 
         return { success: true, message: "Tanuló sikeresen hozzáadva." };
     } catch (error) {
@@ -231,11 +275,58 @@ exports.deleteBookingAsAdmin = onCall({ region: "europe-west3", cors: true }, as
     const courseCollectionName = isTestMode ? "courses_test" : "courses";
     const bookingCollectionName = isTestMode ? "bookings_test" : "bookings";
     
+    const courseRef = db.doc(`${courseCollectionName}/${courseId}`);
     const bookingRef = db.doc(`${courseCollectionName}/${courseId}/${bookingCollectionName}/${bookingId}`);
 
     try {
+        const bookingDoc = await bookingRef.get();
+        if (!bookingDoc.exists) {
+            throw new HttpsError("not-found", "A jelentkezés nem található.");
+        }
+        const bookingData = bookingDoc.data();
+        
+        const courseDoc = await courseRef.get();
+        const courseData = courseDoc.exists ? courseDoc.data() : { title: bookingData.courseName, date: bookingData.courseDate };
+        
         await bookingRef.delete();
         logger.info(`Admin törölte a jelentkezést: ${bookingId} Kurzus: ${courseId}. Ok: ${reason}`);
+        
+        // Törlésről szóló értesítő e-mail küldése
+        let sendEmail = true;
+        if (isTestMode) {
+            const testConfigDoc = await db.collection("settings").doc("testConfig").get();
+            if (testConfigDoc.exists && testConfigDoc.data().emailsEnabled === false) {
+                sendEmail = false;
+            }
+        }
+        
+        if (sendEmail && bookingData.email) {
+            const testPrefix = isTestMode ? "[TEST] " : "";
+            await db.collection("mail").add({
+                to: bookingData.email,
+                message: {
+                    subject: `${testPrefix}Jelentkezés törölve: ${courseData.title} (${courseData.date})`,
+                    text: `Kedves ${bookingData.firstName}!\n\nTájékoztatunk, hogy a(z) ${courseData.title} kurzusra (${courseData.date}) leadott jelentkezésedet töröltük.\n\n` +
+                          `Kérjük, vedd fel velünk a kapcsolatot, ha kérdésed van.\n\n` +
+                          `Üdvözlettel,\nMosolyzóna Autósiskola`,
+                    html: `
+                    <div style="font-family: sans-serif;">
+                        <h2>${testPrefix}Jelentkezés törölve</h2>
+                        <p>Kedves <strong>${bookingData.firstName}</strong>!</p>
+                        <p>Tájékoztatunk, hogy a következő foglalkozásra leadott jelentkezésedet <strong>töröltük</strong>:</p>
+                        <ul>
+                            <li><strong>Kurzus:</strong> ${courseData.title}</li>
+                            <li><strong>Dátum:</strong> ${courseData.date}</li>
+                        </ul>
+                        <br>
+                        <p>Kérjük, vedd fel velünk a kapcsolatot, ha bármilyen kérdésed lenne ezzel kapcsolatban.</p>
+                        <p>Üdvözlettel,<br><strong>Mosolyzóna Autósiskola</strong></p>
+                    </div>`
+                }
+            });
+            logger.info(`Törlés értesítő e-mail sorba állítva a tanulónak: ${bookingData.email}`);
+        }
+        
         return { success: true, message: "Jelentkezés sikeresen törölve." };
     } catch (error) {
         logger.error("Hiba a jelentkezés törlése során:", error);
@@ -258,13 +349,27 @@ exports.deleteCourseAsAdmin = onCall({ region: "europe-west3", cors: true }, asy
     const bookingsCollectionRef = courseRef.collection(bookingCollectionName);
 
     try {
-        // 1. Összes jelentkezés (alkollekció) törlése
+        // 1. Összes jelentkezés (alkollekció) törlése kötegekben (batch)
         const bookingsSnapshot = await bookingsCollectionRef.get();
-        const batch = db.batch();
-        bookingsSnapshot.forEach(doc => {
-            batch.delete(doc.ref);
-        });
-        await batch.commit();
+        if (!bookingsSnapshot.empty) {
+            let batch = db.batch();
+            let batchCount = 0;
+
+            for (const doc of bookingsSnapshot.docs) {
+                batch.delete(doc.ref);
+                batchCount++;
+
+                if (batchCount === 400) {
+                    await batch.commit();
+                    batch = db.batch();
+                    batchCount = 0;
+                }
+            }
+
+            if (batchCount > 0) {
+                await batch.commit();
+            }
+        }
 
         // 2. Maga a kurzus törlése
         await courseRef.delete();
@@ -284,14 +389,24 @@ exports.deleteCourseAsAdmin = onCall({ region: "europe-west3", cors: true }, asy
 exports.sendDailyReminders = onSchedule({ schedule: "every day 09:00", timeZone: "Europe/Budapest", region: "europe-west3" }, async (event) => {
     logger.info("Napi emlékeztető küldés elindult a másnapi kurzusokhoz.");
 
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Budapesti idő szerinti holnapi dátum string generálása (YYYY-MM-DD)
+    const budapestFormatter = new Intl.DateTimeFormat('hu-HU', {
+        timeZone: 'Europe/Budapest',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+    });
     
-    // YYYY-MM-DD formátum (helyi idő szerint)
-    const year = tomorrow.getFullYear();
-    const month = String(tomorrow.getMonth() + 1).padStart(2, '0');
-    const day = String(tomorrow.getDate()).padStart(2, '0');
+    // Egy nap múlva (24 óra) a jelenlegi időponttól
+    const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const parts = budapestFormatter.formatToParts(tomorrow);
+    
+    let year = '', month = '', day = '';
+    for (const part of parts) {
+        if (part.type === 'year') year = part.value;
+        if (part.type === 'month') month = part.value;
+        if (part.type === 'day') day = part.value;
+    }
     const tomorrowStr = `${year}-${month}-${day}`;
 
     // ÉLES KURZUSOK FELDOLGOZÁSA (A teszt módúakat a Cron Job most figyelmen kívül hagyja, hogy biztonságos legyen)
