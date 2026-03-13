@@ -134,10 +134,7 @@ exports.enrolledConfirmation = (studentData) => ({
                 <li><strong>Tantermi órák:</strong> Ezeken korlátlan számban vehetsz részt! Minden páros héten tartunk délelőtti és délutáni foglalkozásokat is, hogy biztosan megtaláld a neked megfelelőt.</li>
                 <li><strong>Szombati konzultáció:</strong> Ha már végigértél az elméleti anyagon (akár online, akár tanteremben), gyere el 3-4 hetente, szombatonként tartott konzultációnkra! Itt átbeszéljük a legtrükkösebb kérdéseket, és mindenre felkészülünk a sikeres vizsga érdekében.</li>
             </ul>
-            <p><strong>Fontos!</strong> Az órákon és a konzultáción való részvételhez minden esetben online időpontfoglalás szükséges.</p>
-            <ul style="list-style-type: disc; padding-left: 20px;">
-                <li><strong>Jelentkezés, további információk:</strong> <a href="https://moszat.hu/idopont" target="_blank" style="color: #4f46e5; text-decoration: underline;">https://moszat.hu/idopont</a></li>
-            </ul>
+            <p><strong>Fontos!</strong> Az órákon és a konzultáción való részvételhez minden esetben előzetes egyeztetés szükséges.</p>
 
             <h3 style="margin-top: 1.5em; margin-bottom: 1em;">4. A KRESZ-vizsgára jelentkezés menete</h3>
             <ul style="list-style-type: disc; padding-left: 20px;">
@@ -392,8 +389,7 @@ exports.elearningProgressReminderDay90 = (studentData) => {
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
                 <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
                 <p>Ez egy emlékeztető, hogy 3 hónapja kezdted el az online KRESZ tanfolyamot, ezért egy rövid helyzetjelentéssel és néhány fontos információval szeretnénk segíteni a haladásodat.</p>
-                <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong></p>
-                <p>A pontos időpontokat és a további részleteket a következő linken találod: <a href="https://moszat.hu/idopont" target="_blank" style="color: #4f46e5; text-decoration: underline;">https://moszat.hu/idopont</a></p>
+                <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong> Ehhez kérjük, keress minket elérhetőségeinken!</p>
                 ${medicalReminderHtml}
                 <p>Kérdés esetén ne habozz keresni minket! Sikeres tanulást kívánunk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
