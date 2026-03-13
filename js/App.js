@@ -156,13 +156,21 @@ function App() {
             }
         }
 
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            // Check if the user is anonymous. If so, they shouldn't access the admin panel.
+            // But we don't automatically log them out if they are on the student form view.
+            // If they are on the admin view, we don't let them in as admin.
+            if (currentUser && currentUser.isAnonymous && view === 'admin') {
+                await signOut(auth);
+                setUser(null);
+            } else {
+                setUser(currentUser);
+            }
             setAuthLoading(false);
         });
 
         return () => unsubscribe();
-    }, [showToast]);
+    }, [showToast, view]);
 
     const handleLogout = useCallback(async () => {
         await signOut(auth);

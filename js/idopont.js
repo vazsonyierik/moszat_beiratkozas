@@ -4,7 +4,7 @@
  */
 
 import { html, LoadingOverlay } from './UI.js';
-import { db, collection, onSnapshot, query, where, auth, signInAnonymously, functions, httpsCallable } from './firebase.js';
+import { db, collection, onSnapshot, query, where, auth, signInAnonymously, onAuthStateChanged, functions, httpsCallable } from './firebase.js';
 import * as Icons from './Icons.js';
 
 const React = window.React;
@@ -172,22 +172,27 @@ const StudentAppointmentsApp = () => {
         setToast({ message, type });
     };
 
-    // 1. Setup Anonymous Auth
+    // 1. Setup Auth (Wait for initial state, sign in anonymously if no user)
     useEffect(() => {
-        const initAuth = async () => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
             try {
-                // If user is not logged in at all, sign in anonymously.
-                // Cloud functions require an auth token (even anonymous) to run.
-                if (!auth.currentUser) {
+                if (!user) {
+                    // Only sign in anonymously if there is truly no user after Firebase checks cache
                     await signInAnonymously(auth);
+                } else {
+                    // User is already logged in (could be an admin testing the page)
+                    setIsAuthReady(true);
                 }
-                setIsAuthReady(true);
             } catch (error) {
                 console.error("Auth error:", error);
                 showToast("Hiba a hitelesítés során.", "error");
             }
-        };
-        initAuth();
+            // Once auth state is determined (either way), we are ready
+            setIsAuthReady(true);
+        });
+
+        // Cleanup listener on unmount
+        return () => unsubscribe();
     }, []);
 
     // 2. Fetch active courses
