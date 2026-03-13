@@ -200,10 +200,10 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
             const testPrefix = isTestMode ? "[TEST] " : "";
 
             await db.collection("mail").add({
-                to: email,
+                to: studentInfo.email,
                 message: {
                     subject: `${testPrefix}Sikeres jelentkezés (Admin rögzítette): ${courseData.title} (${courseData.date})`,
-                    text: `Kedves ${firstName}!\n\nAutósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:\n\n` +
+                    text: `Kedves ${studentInfo.firstName}!\n\nAutósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:\n\n` +
                           `Kurzus: ${courseData.title}\n` +
                           `Dátum: ${courseData.date}\n` +
                           `Kezdés: ${courseData.time.split('-')[0].trim()}\n\n` +
@@ -211,7 +211,7 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                     html: `
                     <div style="font-family: sans-serif;">
                         <h2>${testPrefix}Sikeres jelentkezés</h2>
-                        <p>Kedves <strong>${firstName}</strong>!</p>
+                        <p>Kedves <strong>${studentInfo.firstName}</strong>!</p>
                         <p>Autósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:</p>
                         <ul>
                             <li><strong>Kurzus:</strong> ${courseData.title}</li>
@@ -224,7 +224,7 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                     </div>`
                 }
             });
-            logger.info(`Visszaigazoló e-mail sorba állítva az admin által hozzáadott tanulónak: ${email}`);
+            logger.info(`Visszaigazoló e-mail sorba állítva az admin által hozzáadott tanulónak: ${studentInfo.email}`);
         }
 
         return { success: true, message: "Tanuló sikeresen hozzáadva." };

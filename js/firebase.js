@@ -45,7 +45,7 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 // JAVÍTÁS: A Cloud Functions régiójának megadása
-const functions = getFunctions(app, 'europe-west1');
+const functions = getFunctions(app, 'europe-west3');
 
 // ÚJ: Segédfüggvény a teszt mód detektálására
 const isTestMode = () => {

@@ -52,6 +52,8 @@ submitBookingBtn.addEventListener('click', async () => {
 });
 
 // --- Kurzusok Lekérdezése (Valós idejű) ---
+let currentRenderId = 0; // Globális változó a race condition elkerülésére
+
 function loadCourses() {
     // Csak a mai és jövőbeli kurzusokat listázzuk
     const today = new Date().toISOString().split('T')[0];
@@ -63,16 +65,23 @@ function loadCourses() {
     );
 
     onSnapshot(q, (snapshot) => {
+        currentRenderId++;
+        const myRenderId = currentRenderId;
+
         globalLoader.classList.add('hidden');
         
         if (snapshot.empty) {
-            coursesContainer.classList.add('hidden');
-            noCoursesMessage.classList.remove('hidden');
+            if (myRenderId === currentRenderId) {
+                coursesContainer.classList.add('hidden');
+                noCoursesMessage.classList.remove('hidden');
+            }
             return;
         }
 
-        noCoursesMessage.classList.add('hidden');
-        coursesContainer.classList.remove('hidden');
+        if (myRenderId === currentRenderId) {
+            noCoursesMessage.classList.add('hidden');
+            coursesContainer.classList.remove('hidden');
+        }
         
         // Összegyűjtjük a kurzusokat és a hozzájuk tartozó aszinkron hívásokat
         const coursesPromises = snapshot.docs.map(async (docSnap) => {
@@ -96,15 +105,20 @@ function loadCourses() {
 
         // Megvárjuk, amíg az összes kurzus létszáma betöltődik
         Promise.all(coursesPromises).then(coursesWithCounts => {
-            coursesContainer.innerHTML = ''; // Csak ekkor ürítjük ki, hogy elkerüljük a villogást és a versenyhelyzeteket
-            
-            // Rendereljük a kártyákat az eredeti sorrendben
-            coursesWithCounts.forEach(course => {
-                renderCourseCard(course);
-            });
+            // Csak akkor frissítjük a DOM-ot, ha ez a lekérdezés az utolsó snapshotból indult
+            if (myRenderId === currentRenderId) {
+                coursesContainer.innerHTML = ''; // Csak ekkor ürítjük ki, hogy elkerüljük a villogást és a versenyhelyzeteket
+
+                // Rendereljük a kártyákat az eredeti sorrendben
+                coursesWithCounts.forEach(course => {
+                    renderCourseCard(course);
+                });
+            }
         }).catch(err => {
-            console.error("Kritikus hiba a kurzusok létszámának lekérdezésekor:", err);
-            globalLoader.innerHTML = '<p class="text-red-500">Hiba történt az adatok betöltésekor. Kérjük frissítsd az oldalt.</p>';
+            if (myRenderId === currentRenderId) {
+                console.error("Kritikus hiba a kurzusok létszámának lekérdezésekor:", err);
+                globalLoader.innerHTML = '<p class="text-red-500">Hiba történt az adatok betöltésekor. Kérjük frissítsd az oldalt.</p>';
+            }
         });
 
     }, (error) => {
