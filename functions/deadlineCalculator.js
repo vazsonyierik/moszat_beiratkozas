@@ -41,11 +41,14 @@ const WORKING_SATURDAYS = [
 /**
  * Checks if a given date string (YYYY-MM-DD) is a weekend or holiday.
  * Extends the deadline to the next working day.
+ * @param {Date} date The date to check.
+ * @return {Date} The next working day.
  */
 function getNextWorkingDay(date) {
     const resultDate = new Date(date);
     let shifted = false;
 
+    // eslint-disable-next-line no-constant-condition
     while (true) {
         // Correct timezone offset before checking ISO string so it matches Hungarian local time
         const localDate = new Date(resultDate.getTime() - (resultDate.getTimezoneOffset() * 60000));
@@ -71,6 +74,8 @@ function getNextWorkingDay(date) {
 
 /**
  * Extracts a Date object from a Firestore Timestamp, ISO string, or Date object.
+ * @param {any} input The input to convert.
+ * @return {Date|null} The converted Date.
  */
 function toDate(input) {
     if (!input) return null;
@@ -83,24 +88,24 @@ function toDate(input) {
 
 /**
  * Parses the "YYYY.MM.DD. HH:mm" string format used in exam results.
+ * @param {string|Date|any} dateInput The input date string.
+ * @return {Date|null} The parsed Date object.
  */
 function parseExamDate(dateInput) {
     if (!dateInput) return null;
 
     let safeDateString = dateInput;
-    if (typeof safeDateString.toDate === 'function') {
-        safeDateString = safeDateString.toDate().toISOString().split('T')[0];
+    if (typeof safeDateString.toDate === "function") {
+        safeDateString = safeDateString.toDate().toISOString().split("T")[0];
     } else if (safeDateString instanceof Date) {
-        safeDateString = safeDateString.toISOString().split('T')[0];
+        safeDateString = safeDateString.toISOString().split("T")[0];
     }
 
-    if (typeof safeDateString !== 'string') {
+    if (typeof safeDateString !== "string") {
         return null;
     }
 
     // Format: "2023.10.15. 10:00"
-    const cleaned = safeDateString.replace(/\./g, "-").replace(/ /g, "T") + ":00";
-    // This creates something like "2023-10-15-T10:00:00".
     // Better way: match the parts
     const match = safeDateString.match(/(\d{4})\.(\d{2})\.(\d{2})\.?\s+(\d{2}):(\d{2})/);
     if (match) {
@@ -118,6 +123,8 @@ function parseExamDate(dateInput) {
 
 /**
  * Calculates the deadline phase and dates for a student.
+ * @param {object} studentData The student data object.
+ * @return {object|null} The calculated deadline info object.
  */
 function calculateDeadline(studentData) {
     if (studentData.isTransferred === true) {
@@ -173,7 +180,7 @@ function calculateDeadline(studentData) {
     // 2. Add requested time (exactly 9 months, 1 year, 2 years).
     const calculateKAVDate = (baseDate, {days = 0, months = 0, years = 0}) => {
         const d = new Date(baseDate);
-        // "Déli Horgony" (UTC 12:00:00) biztosítja, hogy a nyári/téli időszámítás 
+        // "Déli Horgony" (UTC 12:00:00) biztosítja, hogy a nyári/téli időszámítás
         // ne tolja át a dátumot a szomszédos napra.
         d.setUTCHours(12, 0, 0, 0);
 

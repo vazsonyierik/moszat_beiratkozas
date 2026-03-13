@@ -11,6 +11,7 @@ const templates = require("./emailTemplates");
 const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
 const {calculateDeadline} = require("./deadlineCalculator");
+const appointments = require("./appointments");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
@@ -473,9 +474,9 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         newRegistrationData.hasMedicalCertificate = true;
 
         let kreszDateStr = formData.transferKreszDate;
-        if (!kreszDateStr || typeof kreszDateStr !== 'string') {
+        if (!kreszDateStr || typeof kreszDateStr !== "string") {
             // Fallback if empty, use current date
-            kreszDateStr = new Date().toISOString().split('T')[0];
+            kreszDateStr = new Date().toISOString().split("T")[0];
         }
 
         // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk,
@@ -489,7 +490,7 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
+            date: kreszDateStr.replace(/-/g, ".") + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -518,7 +519,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
     }
 
-    const { students, _isTest } = request.data;
+    const {students, _isTest} = request.data;
 
     if (!Array.isArray(students) || students.length === 0) {
         throw new HttpsError("invalid-argument", "A tanulók listája érvénytelen vagy üres.");
@@ -541,8 +542,8 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
 
         // KRESZ Date logic
         let kreszDateStr = newRegistrationData.transferKreszDate;
-        if (!kreszDateStr || typeof kreszDateStr !== 'string') {
-            kreszDateStr = new Date().toISOString().split('T')[0];
+        if (!kreszDateStr || typeof kreszDateStr !== "string") {
+            kreszDateStr = new Date().toISOString().split("T")[0];
         }
 
         // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk
@@ -554,7 +555,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
+            date: kreszDateStr.replace(/-/g, ".") + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -571,7 +572,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
     try {
         await batch.commit();
         logger.info(`Admin (${userEmail}) successfully bulk added ${count} transfer students to ${collectionName}.`);
-        return { success: true, count };
+        return {success: true, count};
     } catch (error) {
         logger.error(`Error bulk adding transfer students by admin ${userEmail}:`, error);
         throw new HttpsError("internal", "Hiba történt a tömeges importálás során.");
@@ -642,7 +643,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
     }
 
-    const { isTestView } = request.data;
+    const {isTestView} = request.data;
     const collectionName = isTestView ? "registrations_test" : "registrations";
 
     try {
@@ -657,7 +658,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
             const studentData = doc.data();
 
             // Skip archived records to save operations
-            if (studentData.status === 'archived') {
+            if (studentData.status === "archived") {
                 return;
             }
 
@@ -665,7 +666,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
 
             // Optimization: Only update if it actually changed
             if (JSON.stringify(studentData.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
-                batch.update(doc.ref, { deadlineInfo: newDeadlineInfo });
+                batch.update(doc.ref, {deadlineInfo: newDeadlineInfo});
                 updatedCount++;
                 batchCount++;
 
@@ -684,7 +685,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
         }
 
         logger.info(`Bulk deadline recalculation complete for ${collectionName}. Updated ${updatedCount} records.`);
-        return { success: true, updatedCount };
+        return {success: true, updatedCount};
     } catch (error) {
         logger.error(`Error in recalculateAllDeadlines for ${collectionName}:`, error);
         throw new HttpsError("internal", "Hiba történt a tömeges újraszámítás során.");
@@ -954,3 +955,6 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
     }
 );
 
+// --- Időpontfoglaló funkciók exportálása ---
+exports.createCourse = appointments.createCourse;
+exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;

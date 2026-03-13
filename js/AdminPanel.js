@@ -25,6 +25,7 @@ import EmailImportLog from './components/EmailImportLog.js'; // ÚJ
 import DeadlineReports from './components/DeadlineReports.js'; // ÚJ: Határidő Riportok
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
+import AppointmentsTab from './components/idopont/AppointmentsTab.js'; // ÚJ: Időpontfoglaló fül
 import { generateTestStudents } from './utils/testDataGenerator.js';
 
 const React = window.React;
@@ -477,6 +478,7 @@ const AdminPanel = ({ user, handleLogout }) => {
     const [error, setError] = useState(null);
     const [viewingStudent, setViewingStudent] = useState(null);
     const [editingStudent, setEditingStudent] = useState(null);
+    const [mainTab, setMainTab] = useState('registrations'); // ÚJ: 'registrations' vagy 'appointments'
     const [activeTab, setActiveTab] = useState('applicants');
     const [searchTerm, setSearchTerm] = useState('');
     const [searchInArchive, setSearchInArchive] = useState(false); // ÚJ
@@ -1261,6 +1263,26 @@ const AdminPanel = ({ user, handleLogout }) => {
                     </div>
                 </header>
 
+                <div className="flex justify-center mb-8">
+                    <div className="bg-white rounded-lg p-1 shadow-md border border-gray-200 inline-flex">
+                        <button
+                            onClick=${() => setMainTab('registrations')}
+                            className=${`px-6 py-3 rounded-md font-bold text-sm sm:text-base transition-colors duration-200 flex items-center gap-2 ${mainTab === 'registrations' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                        >
+                            <${Icons.UserIcon} size=${20} />
+                            Beiratkozások
+                        </button>
+                        <button
+                            onClick=${() => setMainTab('appointments')}
+                            className=${`px-6 py-3 rounded-md font-bold text-sm sm:text-base transition-colors duration-200 flex items-center gap-2 ${mainTab === 'appointments' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                        >
+                            <${Icons.CalendarIcon} size=${20} />
+                            Foglalkozások (Időpontok)
+                        </button>
+                    </div>
+                </div>
+
+                ${mainTab === 'registrations' ? html`
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
@@ -1485,6 +1507,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                         </div>
                     `}
                 </${React.Fragment}>`}
+                ` : html`
+                    <${AppointmentsTab} isTestView=${viewTestDataType} adminUser=${user} />
+                `}
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
