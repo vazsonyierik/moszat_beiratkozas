@@ -21,7 +21,7 @@ const db = getFirestore();
 const auth = getAuth(); // Auth szolgáltatás inicializálása
 
 // Globális beállítások a funkcióknak
-setGlobalOptions({region: "europe-west1", memory: "512MiB"});
+setGlobalOptions({region: "europe-west3", memory: "512MiB"});
 
 // --- Segédfüggvények ---
 
@@ -405,7 +405,7 @@ const runDailyChecks = async () => {
 // --- EXPORTÁLT CLOUD FUNKCIÓK ---
 
 // ÚJ FUNKCIÓ: Biztonságos regisztrációkezelés
-exports.submitRegistration = onCall({region: "europe-west1"}, async (request) => {
+exports.submitRegistration = onCall({region: "europe-west3"}, async (request) => {
     const formData = request.data;
 
     // ÚJ: Teszt mód detektálása a kérésből
@@ -450,7 +450,7 @@ exports.submitRegistration = onCall({region: "europe-west1"}, async (request) =>
 });
 
 // JAVÍTÁS: Új Cloud Function az admin általi tanuló hozzáadáshoz
-exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
+exports.adminAddStudent = onCall({region: "europe-west3"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
@@ -515,7 +515,7 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
 
 
 // ÚJ FUNKCIÓ: Áthelyezett tanulók tömeges importálása (CSV/TSV)
-exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (request) => {
+exports.adminBulkAddTransferStudents = onCall({region: "europe-west3"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
@@ -582,7 +582,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
 });
 
 // ÚJ FUNKCIÓ: Biztonságos admin bejelentkezési link küldése
-exports.sendAdminLoginLink = onCall({region: "europe-west1"}, async (request) => {
+exports.sendAdminLoginLink = onCall({region: "europe-west3"}, async (request) => {
     const email = request.data.email;
     if (!email) {
         throw new HttpsError("invalid-argument", "Az e-mail cím megadása kötelező.");
@@ -625,7 +625,7 @@ exports.dailyScheduledChecks = onSchedule("every day 08:00", () => runDailyCheck
 exports.scheduledEmailProcessor = onSchedule({
     schedule: "5 6-18 * * 1-5",
     timeZone: "Europe/Budapest",
-    region: "europe-west1",
+    region: "europe-west3",
     timeoutSeconds: 540,
     memory: "1GiB",
 }, async () => {
@@ -639,7 +639,7 @@ exports.scheduledEmailProcessor = onSchedule({
 });
 
 // ÚJ FUNKCIÓ: Összes határidő tömeges újraszámítása
-exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
+exports.recalculateAllDeadlines = onCall({region: "europe-west3", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
@@ -695,7 +695,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
 });
 
 // Manuális ellenőrzések
-exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => {
+exports.manualDailyChecks = onCall({region: "europe-west3"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
@@ -705,7 +705,7 @@ exports.manualDailyChecks = onCall({region: "europe-west1"}, async (request) => 
 });
 
 // ÚJ FUNKCIÓ: Manuális határidő újraszámítás egy adott tanulóra
-exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (request) => {
+exports.recalculateStudentDeadline = onCall({region: "europe-west3"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
@@ -739,7 +739,7 @@ exports.recalculateStudentDeadline = onCall({region: "europe-west1"}, async (req
 });
 
 // Manuális email feldolgozás (KIZÁRÓLAG email)
-exports.processEmailsManual = onCall({region: "europe-west1", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
+exports.processEmailsManual = onCall({region: "europe-west3", timeoutSeconds: 540, memory: "1GiB"}, async (request) => {
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");

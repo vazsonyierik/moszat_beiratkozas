@@ -1,10 +1,10 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { onSchedule } = require("firebase-functions/v2/scheduler");
-const { logger } = require("firebase-functions");
-const admin = require("firebase-admin");
+const logger = require("firebase-functions/logger");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 // FONTOS: Feltételezzük, hogy az admin már inicializálva van az index.js-ben
-const db = admin.firestore();
+const db = getFirestore();
 
 // Segédfüggvény a jogosultság ellenőrzéséhez (az index.js-ből)
 // Ezt később átadhatjuk importtal, de mivel ez ugyanabban a projektben fut,
@@ -50,6 +50,8 @@ exports.bookAppointment = onCall({ region: "europe-west3", cors: true }, async (
             const courseData = courseDoc.data();
 
             // 1. Üresedés / Létszám ellenőrzése
+            // Mivel a tranzakcióban a get() csak dokumentumokra működik, a legegyszerűbb és
+            // biztos módja az ellenőrzésnek, ha lekérjük a jelenlegi jelentkezéseket tartalmazó dokumentumokat.
             const allBookingsSnapshot = await transaction.get(bookingsCollectionRef);
             if (allBookingsSnapshot.size >= courseData.maxParticipants) {
                 throw new HttpsError("resource-exhausted", "Sajnos a kiválasztott foglalkozás már betelt.");
@@ -68,7 +70,7 @@ exports.bookAppointment = onCall({ region: "europe-west3", cors: true }, async (
                 lastName: lastName.trim(),
                 firstName: firstName.trim(),
                 email: email,
-                bookingDate: admin.firestore.FieldValue.serverTimestamp(),
+                bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.title,
                 courseDate: courseData.date,
@@ -173,7 +175,7 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                 lastName: lastName.trim(),
                 firstName: firstName.trim(),
                 email: email,
-                bookingDate: admin.firestore.FieldValue.serverTimestamp(),
+                bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.title,
                 courseDate: courseData.date,
@@ -200,10 +202,10 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
             const testPrefix = isTestMode ? "[TEST] " : "";
 
             await db.collection("mail").add({
-                to: studentInfo.email,
+                to: email,
                 message: {
                     subject: `${testPrefix}Sikeres jelentkezés (Admin rögzítette): ${courseData.title} (${courseData.date})`,
-                    text: `Kedves ${studentInfo.firstName}!\n\nAutósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:\n\n` +
+                    text: `Kedves ${firstName}!\n\nAutósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:\n\n` +
                           `Kurzus: ${courseData.title}\n` +
                           `Dátum: ${courseData.date}\n` +
                           `Kezdés: ${courseData.time.split('-')[0].trim()}\n\n` +
@@ -211,7 +213,7 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                     html: `
                     <div style="font-family: sans-serif;">
                         <h2>${testPrefix}Sikeres jelentkezés</h2>
-                        <p>Kedves <strong>${studentInfo.firstName}</strong>!</p>
+                        <p>Kedves <strong>${firstName}</strong>!</p>
                         <p>Autósiskolánk rögzítette a jelentkezésedet a következő foglalkozásra:</p>
                         <ul>
                             <li><strong>Kurzus:</strong> ${courseData.title}</li>
@@ -224,7 +226,7 @@ exports.addStudentAsAdmin = onCall({ region: "europe-west3", cors: true }, async
                     </div>`
                 }
             });
-            logger.info(`Visszaigazoló e-mail sorba állítva az admin által hozzáadott tanulónak: ${studentInfo.email}`);
+            logger.info(`Visszaigazoló e-mail sorba állítva az admin által hozzáadott tanulónak: ${email}`);
         }
 
         return { success: true, message: "Tanuló sikeresen hozzáadva." };

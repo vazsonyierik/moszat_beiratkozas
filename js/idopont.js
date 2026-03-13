@@ -4,14 +4,14 @@ import { db, functions } from './firebase.js';
 
 // --- TESZT MÓD ELLENŐRZÉSE ---
 const urlParams = new URLSearchParams(window.location.search);
-const isTestMode = urlParams.get('test') === 'true';
+const isTestModeLocal = urlParams.get('test') === 'true';
 
-if (isTestMode) {
+if (isTestModeLocal) {
     document.getElementById('testModeBanner').classList.remove('hidden');
     console.warn("Teszt üzemmód aktív az időpontfoglalóban.");
 }
 
-const collectionName = isTestMode ? 'courses_test' : 'courses';
+const collectionName = isTestModeLocal ? 'courses_test' : 'courses';
 const coursesRef = collection(db, collectionName);
 
 // --- DOM Elemek ---
@@ -89,7 +89,7 @@ function loadCourses() {
             courseData.id = docSnap.id;
 
             // Lekérdezzük az aktuális jelentkezők számát a bookings alkollekcióból
-            const bookingsCollectionName = isTestMode ? 'bookings_test' : 'bookings';
+            const bookingsCollectionName = isTestModeLocal ? 'bookings_test' : 'bookings';
             const bookingsRef = collection(db, `${collectionName}/${courseData.id}/${bookingsCollectionName}`);
 
             try {
@@ -225,7 +225,7 @@ async function submitBooking(courseId, studentInfo) {
         const response = await bookAppointmentFn({ 
             courseId, 
             studentInfo,
-            isTestMode: isTestMode
+            isTestMode: isTestModeLocal
         });
 
         if (response.data.success) {
