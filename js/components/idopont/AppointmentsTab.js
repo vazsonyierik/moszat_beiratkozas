@@ -23,13 +23,24 @@ const AppointmentsTab = ({ isTestView }) => {
 
     useEffect(() => {
         const collectionName = isTestView ? 'courses_test' : 'courses';
-        const q = query(collection(db, collectionName), orderBy('date', 'asc'), orderBy('startTime', 'asc'));
+        // Simplify query to avoid requiring a composite index, sort locally instead
+        const q = query(collection(db, collectionName));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const coursesData = snapshot.docs.map(doc => ({
+            let coursesData = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
+
+            // Local sort: Date ascending, then startTime ascending
+            coursesData.sort((a, b) => {
+                if (a.date < b.date) return -1;
+                if (a.date > b.date) return 1;
+                if (a.startTime < b.startTime) return -1;
+                if (a.startTime > b.startTime) return 1;
+                return 0;
+            });
+
             setCourses(coursesData);
             setIsLoading(false);
         }, (error) => {
