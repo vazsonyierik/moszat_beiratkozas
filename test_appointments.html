@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kreszprofesszor - Időpont Teszt</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <link rel="stylesheet" href="./jelentkezes.css">
+</head>
+<body class="bg-gray-100 p-8">
+    <div id="root"></div>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "../../firebase.js": "./js/mockFirebase.js"
+        }
+      }
+    </script>
+
+    <script type="module">
+        import { html } from './js/UI.js';
+        import { AppProvider } from './js/context/AppContext.js';
+        import AppointmentsTab from './js/components/idopont/AppointmentsTab.js';
+        import * as Icons from './js/Icons.js';
+
+        console.log('Icons Check:', Icons);
+        console.log('AppProvider Check:', AppProvider);
+        console.log('AppointmentsTab Check:', AppointmentsTab);
+
+        const ReactDOM = window.ReactDOM;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+
+        try {
+            root.render(html`
+                <${AppProvider}>
+                    <${AppointmentsTab} isTestView=${true} />
+                <//>
+            `);
+        } catch (e) {
+            document.body.innerHTML += '<pre>' + e.toString() + '</pre>';
+        }
+    </script>
+</body>
+</html>

@@ -350,8 +350,6 @@ const processIncomingEmails = async ({daysBack = 2, unseenOnly = false, startDat
 
                                         const formattedExamDate = formatExamDate(examDateRaw);
 
-                                        const isDeleteStatus = (step.mode === "delete" || result === "Törölve");
-
                                         // BIZTONSÁGOSABB VIZSGA-AZONOSÍTÁS (KAV elírások ellen):
                                         const existingIndex = existingResults.findIndex(ex => {
                                             const dateMatch = ex.date === formattedExamDate;

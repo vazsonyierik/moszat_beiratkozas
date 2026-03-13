@@ -1,2 +1,5 @@
-export const useConfirmation = () => () => console.log("Confirmation requested");
-export const useToast = () => () => console.log("Toast requested");
+export const useToast = () => (msg) => console.log('Toast:', msg);
+export const useConfirmation = () => ({ message, onConfirm }) => {
+    console.log('Confirm:', message);
+    onConfirm();
+};
