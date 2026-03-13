@@ -1,5 +1,6 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
+const crypto = require("crypto");
 const {ensureIsAdmin} = require("./utils");
 
 /**
@@ -76,5 +77,105 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
     } catch (error) {
         console.error("Error deleting course:", error);
         throw new HttpsError("internal", "Hiba történt a foglalkozás törlésekor.", error);
+    }
+});
+
+/**
+ * bookAppointment
+ * Student creates a booking for a course. Uses a transaction to prevent overbooking.
+ */
+exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
+    // Requires some form of auth (Anonymous is fine)
+    if (!request.auth) {
+        throw new HttpsError("unauthenticated", "Be kell jelentkezned a jelentkezéshez.");
+    }
+
+    const data = request.data;
+    const {courseId, firstName, lastName, email, isTestView} = data;
+
+    if (!courseId || !firstName || !lastName || !email) {
+        throw new HttpsError("invalid-argument", "Minden mező kitöltése kötelező.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+
+    const courseRef = db.collection(coursesCollection).doc(courseId);
+    const bookingsSubcollection = courseRef.collection("bookings");
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            // 1. Get course to check capacity
+            const courseDoc = await transaction.get(courseRef);
+            if (!courseDoc.exists) {
+                throw new HttpsError("not-found", "A foglalkozás nem található.");
+            }
+
+            const courseData = courseDoc.data();
+            const currentBookings = courseData.bookingsCount || 0;
+
+            if (currentBookings >= courseData.capacity) {
+                throw new HttpsError("resource-exhausted", "Sajnos ez a foglalkozás időközben betelt. (Course is full)");
+            }
+
+            // 2. Check if this email is already registered for THIS course
+            // Note: Since we are inside a transaction, we can't do a query (.where) safely without locks or limitations.
+            // But we CAN read specific documents. However, we don't know the doc ID (it's auto-generated).
+            // A robust way in NoSQL is to use the email as the Document ID in the subcollection.
+            // E.g., bookingsSubcollection.doc(email.toLowerCase())
+            const normalizedEmail = email.toLowerCase().trim();
+            const bookingDocRef = bookingsSubcollection.doc(normalizedEmail);
+            const existingBooking = await transaction.get(bookingDocRef);
+
+            if (existingBooking.exists) {
+                throw new HttpsError("already-exists", "Ezzel az e-mail címmel már jelentkeztél erre a foglalkozásra!");
+            }
+
+            // 3. Generate cancellation token
+            const cancellationToken = crypto.randomUUID();
+
+            // 4. Prepare booking data
+            const bookingData = {
+                firstName: firstName.trim(),
+                lastName: lastName.trim(),
+                email: normalizedEmail,
+                bookingDate: FieldValue.serverTimestamp(),
+                courseId: courseId,
+                courseName: courseData.name,
+                courseDate: courseData.date,
+                startTime: courseData.startTime,
+                cancellation_token: cancellationToken,
+                isPresent: null,
+                feePaid: false,
+            };
+
+            // 5. Prepare global reference
+            const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+            bookingData.allBookingId = globalBookingRef.id;
+
+            // 6. Add to subcollection (using email as ID prevents double booking naturally)
+            transaction.set(bookingDocRef, bookingData);
+
+            // Add to global allBookings collection
+            transaction.set(globalBookingRef, bookingData);
+
+            // 7. Increment course counter
+            transaction.update(courseRef, {
+                bookingsCount: FieldValue.increment(1)
+            });
+
+            // Note: Email sending (Trigger Email) is intentionally omitted in this phase
+            // as per user request.
+        });
+
+        return {success: true};
+    } catch (error) {
+        console.error("Booking transaction failed:", error);
+        // Re-throw known HttpErrors
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Hiba történt a jelentkezés rögzítésekor.", error.message);
     }
 });
