@@ -44,9 +44,41 @@ const isUnder18 = (birthDateStr) => {
     return age < 18;
 };
 
+/**
+ * Ellenőrzi, hogy egy adott e-mail cím adminisztrátor-e.
+ * Ezt úgy végzi el, hogy megkeresi a doc-ot az admins kollekcióban.
+ * Mivel a functions könyvtár használja a getFirestore-t a utils-ban, azt itt is be kell húzni,
+ * vagy átadni az adatbázist. Mivel a `utils` még nem húzza be a firestore-t,
+ * behúzzuk most ide is.
+ */
+const {getFirestore} = require("firebase-admin/firestore");
+
+const isAdmin = async (email) => {
+    if (!email) return false;
+    const db = getFirestore();
+    const adminRef = db.doc(`admins/${email}`);
+    const adminSnap = await adminRef.get();
+    return adminSnap.exists;
+};
+
+const ensureIsAdmin = async (auth) => {
+    const userEmail = auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        // A Cloud Functions onCall híváskor HttpsError-t dobunk,
+        // ehhez a hívónak is importálnia kell az osztályt.
+        // Mivel mi itt csak ellenőrizzük, de az importok eltérhetnek,
+        // így csak bedobjuk az error-t string üzenettel amit majd elkaphatnak,
+        // vagy ide is importáljuk a HttpsError-t.
+        const {HttpsError} = require("firebase-functions/v2/https");
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+};
+
 // A függvények exportálása CommonJS szintaxissal.
 module.exports = {
     formatFullName,
     formatSingleTimestamp,
     isUnder18,
+    isAdmin,
+    ensureIsAdmin,
 };

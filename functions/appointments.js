@@ -6,8 +6,8 @@ const {ensureIsAdmin} = require("./utils");
  * createCourse
  * Creates a new course/appointment.
  */
-exports.createCourse = onCall({ region: "europe-west1" }, async (request) => {
-    ensureIsAdmin(request.auth);
+exports.createCourse = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
 
     const data = request.data;
     const {name, date, startTime, endTime, capacity, isTestView} = data;
@@ -46,7 +46,7 @@ exports.createCourse = onCall({ region: "europe-west1" }, async (request) => {
  * Deletes a course/appointment and handles related actions (e.g. notifications) if necessary.
  */
 exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) => {
-    ensureIsAdmin(request.auth);
+    await ensureIsAdmin(request.auth);
 
     const data = request.data;
     const {courseId, isTestView} = data;

@@ -8,7 +8,7 @@ const {initializeApp} = require("firebase-admin/app");
 const {getAuth} = require("firebase-admin/auth"); // getAuth importálása
 const {google} = require("googleapis");
 const templates = require("./emailTemplates");
-const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
+const {formatFullName, formatSingleTimestamp, isUnder18, isAdmin} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
 const {calculateDeadline} = require("./deadlineCalculator");
 const appointments = require("./appointments");
@@ -44,17 +44,7 @@ const sanitizeInput = (input) => {
 };
 
 
-/**
- * Ellenőrzi, hogy egy adott e-mail cím adminisztrátor-e.
- * @param {string} email Az ellenőrizendő e-mail cím.
- * @return {Promise<boolean>} Igaz, ha a felhasználó admin.
- */
-const isAdmin = async (email) => {
-    if (!email) return false;
-    const adminRef = db.doc(`admins/${email}`);
-    const adminSnap = await adminRef.get();
-    return adminSnap.exists;
-};
+// isAdmin function moved to utils.js
 
 
 /**
