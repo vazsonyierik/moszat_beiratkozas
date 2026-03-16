@@ -1,7 +1,7 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const crypto = require("crypto");
-const {ensureIsAdmin, sendEmail} = require("./utils");
+const {ensureIsAdmin, sendDynamicEmail} = require("./utils");
 const templates = require("./emailTemplates");
 
 /**
@@ -87,7 +87,8 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
 
                 // Delete from global collections
                 if (doc.data().allBookingId) {
-                    const globalRef = db.collection("allBookings").doc(doc.data().allBookingId);
+                    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+                    const globalRef = db.collection(allBookingsCollection).doc(doc.data().allBookingId);
                     transaction.delete(globalRef);
                 }
             });
@@ -99,8 +100,8 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
         // Send emails outside the transaction
         if (courseData && bookingsToCancel.length > 0) {
             const emailPromises = bookingsToCancel.map(booking => {
-                // Megmarad az isTestView flag átadása
-                return sendEmail(booking, templates.courseDeleted(booking), isTestView);
+                // ÚJ: Használjuk a dinamikus e-mail küldőt
+                return sendDynamicEmail("courseDeleted", booking, templates.courseDeleted(booking), isTestView);
             });
             await Promise.allSettled(emailPromises);
         }
@@ -158,7 +159,7 @@ exports.cancelBookingAsAdmin = onCall({region: "europe-west1"}, async (request) 
         });
 
         if (bookingData) {
-            await sendEmail(bookingData, templates.bookingCancelledByAdmin(bookingData), isTestView);
+            await sendDynamicEmail("bookingCancelledByAdmin", bookingData, templates.bookingCancelledByAdmin(bookingData), isTestView);
         }
 
         return {success: true, message: "Jelentkezés sikeresen törölve, e-mail kiküldve."};
@@ -258,7 +259,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
         });
 
         if (bookingDataToEmail) {
-            await sendEmail(bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
+            await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
         }
 
         return {success: true};
@@ -334,7 +335,7 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
         });
 
         if (bookingData) {
-            await sendEmail(bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
+            await sendDynamicEmail("bookingCancelledByStudent", bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
         }
 
         return {success: true, message: "Jelentkezés sikeresen lemondva."};
