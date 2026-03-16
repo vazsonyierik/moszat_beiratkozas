@@ -26,6 +26,7 @@ import DeadlineReports from './components/DeadlineReports.js'; // ÚJ: Határid�
 import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import AppointmentsTab from './components/idopont/AppointmentsTab.js'; // ÚJ: Időpontfoglaló fül
+import EmailTemplatesTab from './components/EmailTemplatesTab.js'; // ÚJ: Email Sablonok szerkesztője
 import { generateTestStudents } from './utils/testDataGenerator.js';
 
 const React = window.React;
@@ -1279,6 +1280,13 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${Icons.CalendarIcon} size=${20} />
                             Foglalkozások (Időpontok)
                         </button>
+                        <button
+                            onClick=${() => setMainTab('emailTemplates')}
+                            className=${`px-6 py-3 rounded-md font-bold text-sm sm:text-base transition-colors duration-200 flex items-center gap-2 ${mainTab === 'emailTemplates' ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-600 hover:bg-gray-100'}`}
+                        >
+                            <${Icons.UploadCloudIcon} size=${20} />
+                            E-mail sablonok
+                        </button>
                     </div>
                 </div>
 
@@ -1507,8 +1515,10 @@ const AdminPanel = ({ user, handleLogout }) => {
                         </div>
                     `}
                 </${React.Fragment}>`}
-                ` : html`
+                ` : mainTab === 'appointments' ? html`
                     <${AppointmentsTab} isTestView=${viewTestDataType} adminUser=${user} />
+                ` : html`
+                    <${EmailTemplatesTab} isTestView=${viewTestDataType} />
                 `}
                 
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
