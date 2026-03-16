@@ -81,6 +81,58 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
 });
 
 /**
+ * cancelBookingAsAdmin
+ * Deletes a student's booking from a course as an admin.
+ */
+exports.cancelBookingAsAdmin = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const {courseId, studentEmail, isTestView} = data;
+
+    if (!courseId || !studentEmail) {
+        throw new HttpsError("invalid-argument", "Hiányzó courseId vagy studentEmail.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+
+    const normalizedEmail = studentEmail.toLowerCase().trim();
+    const courseRef = db.collection(coursesCollection).doc(courseId);
+    const bookingDocRef = courseRef.collection("bookings").doc(normalizedEmail);
+    const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            const bookingDoc = await transaction.get(bookingDocRef);
+            if (!bookingDoc.exists) {
+                throw new HttpsError("not-found", "A jelentkezés nem található.");
+            }
+
+            // Delete subcollection document
+            transaction.delete(bookingDocRef);
+
+            // Delete global allBookings document
+            transaction.delete(globalBookingRef);
+
+            // Decrement course counter
+            transaction.update(courseRef, {
+                bookingsCount: FieldValue.increment(-1)
+            });
+        });
+
+        return {success: true, message: "Jelentkezés sikeresen törölve."};
+    } catch (error) {
+        console.error("Error cancelling booking:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Hiba történt a jelentkezés törlésekor.", error.message);
+    }
+});
+
+/**
  * bookAppointment
  * Student creates a booking for a course. Uses a transaction to prevent overbooking.
  */

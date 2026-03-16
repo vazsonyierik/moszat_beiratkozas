@@ -6,10 +6,137 @@ import { useToast, useConfirmation } from '../../context/AppContext.js';
 const React = window.React;
 const { useState, useEffect } = React;
 
+/**
+ * Modal to view and manage students who booked a specific course
+ */
+const CourseBookingsModal = ({ course, onClose, isTestView }) => {
+    const [bookings, setBookings] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const showToast = useToast();
+    const showConfirmation = useConfirmation();
+
+    useEffect(() => {
+        if (!course) return;
+
+        const collectionName = isTestView ? 'courses_test' : 'courses';
+        // Subcollection is 'bookings'
+        const q = query(
+            collection(db, collectionName, course.id, 'bookings'),
+            orderBy('bookingDate', 'asc')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setBookings(data);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching bookings:", error);
+            showToast("Hiba történt a jelentkezők betöltésekor.", "error");
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [course, isTestView, showToast]);
+
+    const handleCancelBooking = (booking) => {
+        showConfirmation({
+            message: `Biztosan törölni szeretnéd ${booking.firstName} ${booking.lastName} jelentkezését erről a foglalkozásról?`,
+            onConfirm: async () => {
+                try {
+                    const cancelBookingFn = httpsCallable(functions, 'cancelBookingAsAdmin');
+                    await cancelBookingFn({
+                        courseId: course.id,
+                        studentEmail: booking.email,
+                        isTestView
+                    });
+                    showToast('Jelentkezés sikeresen törölve.', 'success');
+                } catch (error) {
+                    console.error("Error cancelling booking:", error);
+                    showToast(`Hiba a törlés során: ${error.message}`, 'error');
+                }
+            }
+        });
+    };
+
+    return html`
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-50 p-4">
+            <div className="relative w-full max-w-4xl rounded-lg bg-white shadow-xl flex flex-col max-h-[90vh]">
+
+                <div className="flex items-center justify-between rounded-t border-b p-4">
+                    <div>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                            Jelentkezők: ${course.name}
+                        </h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                            ${course.date} | ${course.startTime} - ${course.endTime}
+                        </p>
+                    </div>
+                    <button onClick=${onClose} className="ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900">
+                        <${Icons.XIcon} size=${20} />
+                    </button>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                    ${isLoading ? html`
+                        <div className="text-center py-8 text-gray-500">Jelentkezők betöltése...</div>
+                    ` : bookings.length === 0 ? html`
+                        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                            <${Icons.UsersIcon} size=${48} className="mx-auto text-gray-400 mb-4" />
+                            <p className="text-gray-500">Még nincs jelentkező erre a foglalkozásra.</p>
+                        </div>
+                    ` : html`
+                        <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                            <ul className="divide-y divide-gray-200">
+                                ${bookings.map((booking, index) => html`
+                                    <li key=${booking.id} className="hover:bg-gray-50">
+                                        <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                                    ${index + 1}.
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm font-medium text-indigo-600 truncate">${booking.lastName} ${booking.firstName}</p>
+                                                    <p className="text-sm text-gray-500 truncate">${booking.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-4">
+                                                <div className="text-sm text-gray-500">
+                                                    ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
+                                                </div>
+                                                <button
+                                                    onClick=${() => handleCancelBooking(booking)}
+                                                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                    title="Jelentkezés törlése"
+                                                >
+                                                    <${Icons.TrashIcon} size=${16} />
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </li>
+                                `)}
+                            </ul>
+                        </div>
+                    `}
+                </div>
+
+                <div className="flex items-center justify-end rounded-b border-t p-4 bg-white">
+                    <button onClick=${onClose} className="rounded-lg bg-gray-500 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-300">
+                        Bezárás
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
 const AppointmentsTab = ({ isTestView }) => {
     const [courses, setCourses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
+    const [selectedCourseForBookings, setSelectedCourseForBookings] = useState(null);
 
     // Form states
     const [courseName, setCourseName] = useState('');
@@ -243,9 +370,16 @@ const AppointmentsTab = ({ isTestView }) => {
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                             <button
+                                                onClick=${() => setSelectedCourseForBookings(course)}
+                                                className="text-indigo-600 hover:text-indigo-900 ml-4"
+                                                title="Jelentkezők megtekintése"
+                                            >
+                                                <${Icons.UsersIcon} size=${20} />
+                                            </button>
+                                            <button
                                                 onClick=${() => handleDeleteCourse(course.id, course.name)}
                                                 className="text-red-600 hover:text-red-900 ml-4"
-                                                title="Törlés"
+                                                title="Foglalkozás törlése"
                                             >
                                                 <${Icons.TrashIcon} size=${20} />
                                             </button>
@@ -257,6 +391,14 @@ const AppointmentsTab = ({ isTestView }) => {
                     </table>
                 </div>
             </div>
+
+            ${selectedCourseForBookings && html`
+                <${CourseBookingsModal}
+                    course=${selectedCourseForBookings}
+                    onClose=${() => setSelectedCourseForBookings(null)}
+                    isTestView=${isTestView}
+                />
+            `}
         </div>
     `;
 };
