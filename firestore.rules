@@ -77,5 +77,10 @@ service cloud.firestore {
         // Csak adminok olvashatják és írhatják (verziók létrehozása)
         allow read, write: if isAdmin();
     }
+
+    // ÚJ: Szabályok az e-mail sablonokhoz
+    match /email_templates/{templateId} {
+        allow read, write: if isAdmin();
+    }
   }
 }

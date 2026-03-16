@@ -140,7 +140,12 @@ const EmailTemplatesTab = () => {
 
         } catch (error) {
             console.error("Error loading templates:", error);
-            showToast("Nem sikerült betölteni az e-mail sablonokat.", "error");
+            showToast("Nem sikerült betölteni az e-mail sablonokat (valószínűleg jogosultsági hiba). Alapértelmezett betöltése.", "warning");
+
+            // Biztonsági fallback hiba esetén
+            setTemplates({...DEFAULT_TEMPLATES});
+            setSubject(DEFAULT_TEMPLATES[activeTemplateId].subject);
+            setHtmlContent(DEFAULT_TEMPLATES[activeTemplateId].html);
         } finally {
             setIsLoading(false);
         }
