@@ -1,254 +1,341 @@
-import { collection, query, where, orderBy, onSnapshot, getCountFromServer } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { httpsCallable } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
-import { db, functions } from './firebase.js';
+/**
+ * js/idopont.js
+ * Entry point for the student appointment booking page.
+ */
 
-// --- TESZT MÓD ELLENŐRZÉSE ---
-const urlParams = new URLSearchParams(window.location.search);
-const isTestModeLocal = urlParams.get('test') === 'true';
+import { html, LoadingOverlay } from './UI.js';
+import { db, collection, onSnapshot, query, where, auth, signInAnonymously, onAuthStateChanged, functions, httpsCallable } from './firebase.js';
+import * as Icons from './Icons.js';
 
-if (isTestModeLocal) {
-    document.getElementById('testModeBanner').classList.remove('hidden');
-    console.warn("Teszt üzemmód aktív az időpontfoglalóban.");
-}
+const React = window.React;
+const ReactDOM = window.ReactDOM;
+const { useState, useEffect } = React;
 
-const collectionName = isTestModeLocal ? 'courses_test' : 'courses';
-const coursesRef = collection(db, collectionName);
+// Simple Toast component since we don't have AppContext wrapper here by default
+const Toast = ({ message, type, onClose }) => {
+    useEffect(() => {
+        const timer = setTimeout(onClose, 3000);
+        return () => clearTimeout(timer);
+    }, [onClose]);
 
-// --- DOM Elemek ---
-const coursesContainer = document.getElementById('coursesContainer');
-const globalLoader = document.getElementById('globalLoader');
-const noCoursesMessage = document.getElementById('noCoursesMessage');
-const bookingModal = document.getElementById('bookingModal');
-const modalCourseTitle = document.getElementById('modalCourseTitle');
-const modalCourseDetails = document.getElementById('modalCourseDetails');
-const modalCourseId = document.getElementById('modalCourseId');
-const bookingForm = document.getElementById('bookingForm');
-const submitBookingBtn = document.getElementById('submitBookingBtn');
-const closeModalBtn = document.getElementById('closeModalBtn');
-const bookingError = document.getElementById('bookingError');
+    const bgClass = type === 'error' ? 'bg-red-500' : type === 'warning' ? 'bg-yellow-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
 
-let selectedCourse = null;
-
-// --- Eseménykezelők ---
-closeModalBtn.addEventListener('click', hideModal);
-document.getElementById('modalBackdrop').addEventListener('click', hideModal);
-
-submitBookingBtn.addEventListener('click', async () => {
-    if (!bookingForm.checkValidity()) {
-        bookingForm.reportValidity();
-        return;
-    }
-
-    const formData = new FormData(bookingForm);
-    const studentInfo = {
-        lastName: formData.get('lastName'),
-        firstName: formData.get('firstName'),
-        email: formData.get('email')
-    };
-
-    const courseId = formData.get('courseId');
-
-    await submitBooking(courseId, studentInfo);
-});
-
-// --- Kurzusok Lekérdezése (Valós idejű) ---
-let currentRenderId = 0; // Globális változó a race condition elkerülésére
-
-function loadCourses() {
-    // Csak a mai és jövőbeli kurzusokat listázzuk
-    const today = new Date().toISOString().split('T')[0];
-    
-    const q = query(
-        coursesRef, 
-        where('date', '>=', today),
-        orderBy('date', 'asc')
-    );
-
-    onSnapshot(q, (snapshot) => {
-        currentRenderId++;
-        const myRenderId = currentRenderId;
-        
-        globalLoader.classList.add('hidden');
-        
-        if (snapshot.empty) {
-            if (myRenderId === currentRenderId) {
-                coursesContainer.classList.add('hidden');
-                noCoursesMessage.classList.remove('hidden');
-            }
-            return;
-        }
-
-        if (myRenderId === currentRenderId) {
-            noCoursesMessage.classList.add('hidden');
-            coursesContainer.classList.remove('hidden');
-        }
-        
-        // Összegyűjtjük a kurzusokat és a hozzájuk tartozó aszinkron hívásokat
-        const coursesPromises = snapshot.docs.map(async (docSnap) => {
-            const courseData = docSnap.data();
-            courseData.id = docSnap.id;
-            
-            // Lekérdezzük az aktuális jelentkezők számát a bookings alkollekcióból
-            const bookingsCollectionName = isTestModeLocal ? 'bookings_test' : 'bookings';
-            const bookingsRef = collection(db, `${collectionName}/${courseData.id}/${bookingsCollectionName}`);
-            
-            try {
-                const countSnapshot = await getCountFromServer(bookingsRef);
-                courseData.currentParticipants = countSnapshot.data().count;
-            } catch (err) {
-                console.error("Nem sikerült lekérdezni a jelentkezők számát a kurzushoz: " + courseData.id, err);
-                courseData.currentParticipants = 0; // Hiba esetén feltételezzük, hogy 0
-            }
-
-            return courseData;
-        });
-
-        // Megvárjuk, amíg az összes kurzus létszáma betöltődik
-        Promise.all(coursesPromises).then(coursesWithCounts => {
-            // Csak akkor frissítjük a DOM-ot, ha ez a lekérdezés az utolsó snapshotból indult
-            if (myRenderId === currentRenderId) {
-                coursesContainer.innerHTML = ''; // Csak ekkor ürítjük ki, hogy elkerüljük a villogást és a versenyhelyzeteket
-                
-                // Rendereljük a kártyákat az eredeti sorrendben
-                coursesWithCounts.forEach(course => {
-                    renderCourseCard(course);
-                });
-            }
-        }).catch(err => {
-            if (myRenderId === currentRenderId) {
-                console.error("Kritikus hiba a kurzusok létszámának lekérdezésekor:", err);
-                globalLoader.innerHTML = '<p class="text-red-500">Hiba történt az adatok betöltésekor. Kérjük frissítsd az oldalt.</p>';
-            }
-        });
-
-    }, (error) => {
-        console.error("Hiba a kurzusok lekérdezésekor:", error);
-        globalLoader.innerHTML = '<p class="text-red-500">Hiba történt az adatok betöltésekor. Kérjük frissítsd az oldalt.</p>';
-    });
-}
-
-// --- Kurzus Kártya Megjelenítése ---
-function renderCourseCard(course) {
-    const card = document.createElement('div');
-    card.className = "bg-white rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-shadow duration-300";
-    
-    // Szép dátum formázás (YYYY-MM-DD -> ÉÉÉÉ. HH. NN.)
-    const dateParts = course.date.split('-');
-    const formattedDate = `${dateParts[0]}. ${dateParts[1]}. ${dateParts[2]}.`;
-
-    const isFull = course.currentParticipants >= course.maxParticipants;
-    const buttonClass = isFull 
-        ? "bg-gray-400 text-white font-medium py-2 px-4 rounded cursor-not-allowed" 
-        : "book-btn bg-mosoly-red hover:bg-red-700 text-white font-medium py-2 px-4 rounded transition-colors";
-    
-    card.innerHTML = `
-        <div class="p-6">
-            <div class="flex items-center justify-between mb-2">
-                <span class="text-sm font-semibold text-mosoly-red bg-red-50 px-3 py-1 rounded-full uppercase tracking-wide">${course.title}</span>
-                <span class="text-sm text-gray-500 font-medium">${formattedDate}</span>
-            </div>
-            
-            <div class="mt-4 flex items-center text-gray-700">
-                <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>${course.time}</span>
-            </div>
-
-            <div class="mt-2 flex items-center text-gray-700">
-                <svg class="h-5 w-5 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-                <span>${course.location}</span>
-            </div>
-            
-            <div class="mt-6 flex items-center justify-between">
-                <div class="text-sm text-gray-500">
-                    <span class="font-medium">Jelentkeztek:</span> ${course.currentParticipants} / ${course.maxParticipants} fő
-                </div>
-                <button type="button" class="${buttonClass}" ${isFull ? 'disabled' : ''} data-id="${course.id}" data-title="${course.title}" data-date="${formattedDate}" data-time="${course.time}">
-                    ${isFull ? 'Megtelt' : 'Jelentkezés'}
+    return html`
+        <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
+            <div className=${`${bgClass} text-white px-6 py-3 rounded shadow-lg flex items-center gap-3`}>
+                <span className="font-semibold">${message}</span>
+                <button onClick=${onClose} className="text-white hover:text-gray-200">
+                    <${Icons.XIcon} size=${16} />
                 </button>
             </div>
         </div>
     `;
+};
 
-    coursesContainer.appendChild(card);
+const BookingModal = ({ course, onClose, onBook, isTestView }) => {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [emailConfirm, setEmailConfirm] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
 
-    // Eseménykezelő a gombra
-    card.querySelector('.book-btn').addEventListener('click', (e) => {
-        const btn = e.target;
-        showModal(btn.dataset.id, btn.dataset.title, btn.dataset.date, btn.dataset.time);
-    });
-}
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        setError('');
 
-// --- Modal Kezelés ---
-function showModal(id, title, date, time) {
-    selectedCourse = { id, title, date, time };
-    modalCourseTitle.textContent = title;
-    modalCourseDetails.innerHTML = `<strong>Időpont:</strong> ${date} | ${time}`;
-    modalCourseId.value = id;
-    
-    // Alaphelyzetbe állítás
-    bookingForm.reset();
-    bookingError.classList.add('hidden');
-    bookingError.textContent = '';
-    submitBookingBtn.disabled = false;
-    submitBookingBtn.textContent = 'Jelentkezem';
-
-    bookingModal.classList.remove('hidden');
-    // Animate in
-    bookingModal.querySelector('.inline-block').classList.add('modal-enter-active');
-}
-
-function hideModal() {
-    bookingModal.classList.add('hidden');
-    const modalInner = bookingModal.querySelector('.inline-block');
-    if (modalInner) {
-        modalInner.classList.remove('modal-enter-active');
-    }
-    bookingForm.reset();
-    bookingError.classList.add('hidden');
-    bookingError.textContent = '';
-    selectedCourse = null;
-}
-
-// --- Foglalás Beküldése (Cloud Function) ---
-async function submitBooking(courseId, studentInfo) {
-    try {
-        submitBookingBtn.disabled = true;
-        submitBookingBtn.innerHTML = '<svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Foglalás...';
-        bookingError.classList.add('hidden');
-
-        const bookAppointmentFn = httpsCallable(functions, 'bookAppointment');
-        const response = await bookAppointmentFn({ 
-            courseId, 
-            studentInfo,
-            isTestMode: isTestModeLocal
-        });
-
-        if (response.data.success) {
-            hideModal();
-            showToast();
+        if (!firstName || !lastName || !email || !emailConfirm) {
+            setError('Kérjük, töltsön ki minden mezőt!');
+            return;
         }
 
-    } catch (error) {
-        console.error("Foglalási hiba:", error);
-        bookingError.textContent = error.message || "Ismeretlen hiba történt a foglalás során.";
-        bookingError.classList.remove('hidden');
-        submitBookingBtn.disabled = false;
-        submitBookingBtn.textContent = 'Jelentkezem';
+        if (email !== emailConfirm) {
+            setError('A két e-mail cím nem egyezik!');
+            return;
+        }
+
+        setIsSubmitting(true);
+        try {
+            await onBook({
+                courseId: course.id,
+                firstName,
+                lastName,
+                email,
+                isTestView
+            });
+        } catch (err) {
+            console.error("Booking error:", err);
+            setError(err.message || 'Hiba történt a jelentkezés során.');
+            setIsSubmitting(false);
+        }
+    };
+
+    return html`
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all" onClick=${e => e.stopPropagation()}>
+                <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                    <h3 className="text-xl font-bold text-gray-800">Jelentkezés</h3>
+                    <button onClick=${onClose} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
+                        <${Icons.XIcon} size=${24} />
+                    </button>
+                </header>
+                
+                <div className="p-4 sm:p-6 bg-indigo-50 border-b border-indigo-100">
+                    <p className="font-semibold text-indigo-900">${course.name}</p>
+                    <p className="text-sm text-indigo-700">${course.date} | ${course.startTime} - ${course.endTime}</p>
+                </div>
+
+                <main className="p-4 sm:p-6">
+                    ${error && html`<div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">${error}</div>`}
+                    
+                    <form onSubmit=${handleSubmit} className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Vezetéknév</label>
+                                <input 
+                                    type="text" 
+                                    value=${lastName} 
+                                    onChange=${e => setLastName(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Keresztnév</label>
+                                <input 
+                                    type="text" 
+                                    value=${firstName} 
+                                    onChange=${e => setFirstName(e.target.value)}
+                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                    required
+                                />
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail cím</label>
+                            <input 
+                                type="email" 
+                                value=${email} 
+                                onChange=${e => setEmail(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                        </div>
+                        
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">E-mail cím megerősítése</label>
+                            <input 
+                                type="email" 
+                                value=${emailConfirm} 
+                                onChange=${e => setEmailConfirm(e.target.value)}
+                                className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
+                                required
+                            />
+                        </div>
+
+                        <div className="pt-4 flex justify-end gap-3">
+                            <button 
+                                type="button" 
+                                onClick=${onClose}
+                                disabled=${isSubmitting}
+                                className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors"
+                            >
+                                Mégse
+                            </button>
+                            <button 
+                                type="submit"
+                                disabled=${isSubmitting}
+                                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition-colors disabled:opacity-50 flex items-center gap-2"
+                            >
+                                ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Küldés...` : 'Jelentkezem'}
+                            </button>
+                        </div>
+                    </form>
+                </main>
+            </div>
+        </div>
+    `;
+};
+
+const StudentAppointmentsApp = () => {
+    const [courses, setCourses] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isAuthReady, setIsAuthReady] = useState(false);
+    const [selectedCourse, setSelectedCourse] = useState(null);
+    const [toast, setToast] = useState(null);
+    
+    const urlParams = new URLSearchParams(window.location.search);
+    const isTestView = urlParams.get('test') === 'true';
+
+    const showToast = (message, type = 'info') => {
+        setToast({ message, type });
+    };
+
+    // 1. Setup Auth (Wait for initial state, sign in anonymously if no user)
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            try {
+                if (!user) {
+                    // Only sign in anonymously if there is truly no user after Firebase checks cache
+                    await signInAnonymously(auth);
+                } else {
+                    // User is already logged in (could be an admin testing the page)
+                    setIsAuthReady(true);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                showToast("Hiba a hitelesítés során.", "error");
+            }
+            // Once auth state is determined (either way), we are ready
+            setIsAuthReady(true);
+        });
+
+        // Cleanup listener on unmount
+        return () => unsubscribe();
+    }, []);
+
+    // 2. Fetch active courses
+    useEffect(() => {
+        if (!isAuthReady) return;
+
+        const collectionName = isTestView ? 'courses_test' : 'courses';
+        
+        // Only get courses from today onwards
+        const todayStr = new Date().toISOString().split('T')[0];
+        
+        const q = query(
+            collection(db, collectionName),
+            where('date', '>=', todayStr)
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            let coursesData = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            
+            // Sort locally
+            coursesData.sort((a, b) => {
+                if (a.date < b.date) return -1;
+                if (a.date > b.date) return 1;
+                if (a.startTime < b.startTime) return -1;
+                if (a.startTime > b.startTime) return 1;
+                return 0;
+            });
+            
+            setCourses(coursesData);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching courses:", error);
+            showToast("Nem sikerült betölteni az időpontokat.", "error");
+            setIsLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [isAuthReady, isTestView]);
+
+    const handleBookAppointment = async (bookingData) => {
+        try {
+            const bookAppointmentFn = httpsCallable(functions, 'bookAppointment');
+            await bookAppointmentFn(bookingData);
+            
+            showToast('Sikeres jelentkezés!', 'success');
+            setSelectedCourse(null); // Close modal
+        } catch (error) {
+            console.error("Error during booking:", error);
+            // Translate common error codes if possible
+            let msg = error.message;
+            if (msg.includes('already registered')) msg = 'Ezzel az e-mail címmel már jelentkeztél erre a foglalkozásra!';
+            if (msg.includes('is full')) msg = 'Sajnos ez a foglalkozás időközben betelt.';
+            
+            throw new Error(msg); // Let the modal handle the display
+        }
+    };
+
+    if (!isAuthReady || isLoading) {
+        return html`<${LoadingOverlay} text="Időpontok betöltése..." />`;
     }
-}
 
-function showToast() {
-    const toast = document.getElementById('toast');
-    toast.classList.remove('translate-y-20', 'opacity-0');
-    setTimeout(() => {
-        toast.classList.add('translate-y-20', 'opacity-0');
-    }, 4000);
-}
+    return html`
+        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+            ${isTestView && html`
+                <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
+                    <${Icons.AlertTriangleIcon} size=${20} />
+                    TESZT ÜZEMMÓD - Az adatok nem kerülnek mentésre az éles rendszerbe!
+                </div>
+            `}
 
-// Inicializálás
-loadCourses();
+            <header className="mb-8 text-center">
+                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Foglalkozások és Időpontok</h1>
+                <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+                    Válasszon a szabad időpontok közül és jelentkezzen be!
+                </p>
+            </header>
+
+            <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                <ul className="divide-y divide-gray-200">
+                    ${courses.length === 0 ? html`
+                        <li className="px-6 py-12 text-center text-gray-500">Jelenleg nincs aktív meghirdetett foglalkozás. Kérjük, nézzen vissza később!</li>
+                    ` : courses.map(course => {
+                        const isFull = course.bookingsCount >= course.capacity;
+                        const availableSeats = course.capacity - (course.bookingsCount || 0);
+
+                        return html`
+                            <li key=${course.id} className=${`hover:bg-gray-50 transition-colors ${isFull ? 'opacity-75' : ''}`}>
+                                <div className="px-4 py-4 sm:px-6 flex items-center justify-between flex-wrap gap-4">
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-3 mb-1">
+                                            <p className="text-lg font-bold text-indigo-600 truncate">${course.name}</p>
+                                            ${isFull ? html`
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
+                                                    Betelt
+                                                </span>
+                                            ` : html`
+                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                                                    ${availableSeats} szabad hely
+                                                </span>
+                                            `}
+                                        </div>
+                                        <div className="mt-2 flex items-center text-sm text-gray-500 gap-6">
+                                            <p className="flex items-center gap-1">
+                                                <${Icons.CalendarIcon} size=${16} className="text-gray-400" />
+                                                ${course.date}
+                                            </p>
+                                            <p className="flex items-center gap-1 font-medium">
+                                                ${course.startTime} - ${course.endTime}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="mt-4 sm:mt-0 ml-4">
+                                        <button 
+                                            onClick=${() => setSelectedCourse(course)}
+                                            disabled=${isFull}
+                                            className=${`inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${isFull ? 'bg-gray-400 cursor-not-allowed' : 'bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500'}`}
+                                        >
+                                            ${isFull ? 'Nincs több hely' : 'Jelentkezem'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </li>
+                        `;
+                    })}
+                </ul>
+            </div>
+
+            ${selectedCourse && html`
+                <${BookingModal} 
+                    course=${selectedCourse} 
+                    onClose=${() => setSelectedCourse(null)} 
+                    onBook=${handleBookAppointment}
+                    isTestView=${isTestView}
+                />
+            `}
+
+            ${toast && html`<${Toast} message=${toast.message} type=${toast.type} onClose=${() => setToast(null)} />`}
+        </div>
+    `;
+};
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(html`<${StudentAppointmentsApp} />`);

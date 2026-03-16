@@ -271,7 +271,7 @@ export default function DeadlineReports({ students, onShowDetails }) {
                             const hasShiftedDate = !!info.shiftedDate;
 
                             return html`
-                                <tr key="${student.id}" className="hover:bg-gray-50 transition-colors">
+                                <tr key=${student.id} className="hover:bg-gray-50 transition-colors">
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="flex items-center">
                                             <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold mr-3">

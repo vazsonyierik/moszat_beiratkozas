@@ -5,7 +5,8 @@ import {
     sendSignInLinkToEmail,
     isSignInWithEmailLink,
     signInWithEmailLink,
-    signOut
+    signOut,
+    signInAnonymously
 } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { 
     getFirestore, 
@@ -87,6 +88,7 @@ export {
     isSignInWithEmailLink,
     signInWithEmailLink,
     signOut,
+    signInAnonymously,
     Timestamp,
     isTestMode, // Exportáljuk, hogy más komponensek is használhassák
     getCollectionName // Exportáljuk a dinamikus kollekció választáshoz

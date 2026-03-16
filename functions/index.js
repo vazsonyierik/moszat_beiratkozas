@@ -8,9 +8,10 @@ const {initializeApp} = require("firebase-admin/app");
 const {getAuth} = require("firebase-admin/auth"); // getAuth importálása
 const {google} = require("googleapis");
 const templates = require("./emailTemplates");
-const {formatFullName, formatSingleTimestamp, isUnder18} = require("./utils");
+const {formatFullName, formatSingleTimestamp, isAdmin, sendEmail} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
 const {calculateDeadline} = require("./deadlineCalculator");
+const appointments = require("./appointments");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
@@ -43,17 +44,7 @@ const sanitizeInput = (input) => {
 };
 
 
-/**
- * Ellenőrzi, hogy egy adott e-mail cím adminisztrátor-e.
- * @param {string} email Az ellenőrizendő e-mail cím.
- * @return {Promise<boolean>} Igaz, ha a felhasználó admin.
- */
-const isAdmin = async (email) => {
-    if (!email) return false;
-    const adminRef = db.doc(`admins/${email}`);
-    const adminSnap = await adminRef.get();
-    return adminSnap.exists;
-};
+// isAdmin function moved to utils.js
 
 
 /**
@@ -273,59 +264,6 @@ const logToFarSheet = async (studentData) => {
     logger.info(`Successfully logged data to FAR sheet for student: ${viseltNev}`);
 };
 
-/**
- * E-mail küldése a 'mail' gyűjteménybe való írással.
- * @param {object} studentData A címzett adatai.
- * @param {object} template Az e-mail sablon.
- * @param {boolean} isTest Teszt üzemmód jelző.
- */
-const sendEmail = async (studentData, template, isTest = false) => {
-    if (!studentData.email) {
-        logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
-        return;
-    }
-    if (!template || !template.subject || !template.html) {
-        logger.error("Email template is invalid.", {studentId: studentData.id});
-        return;
-    }
-
-    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
-    if (isTest) {
-        try {
-            const configDoc = await db.collection("settings").doc("testConfig").get();
-            if (configDoc.exists) {
-                const config = configDoc.data();
-                if (config.emailsEnabled === false) {
-                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: studentData.email});
-                    return;
-                }
-            }
-        } catch (error) {
-            logger.warn("Failed to check test email settings. Proceeding with send.", {error: error.message});
-        }
-    }
-
-    const subjectPrefix = isTest ? "[TESZT] " : "";
-
-    const mailPayload = {
-        to: studentData.email,
-        from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
-        message: {
-            subject: `${subjectPrefix}${template.subject}`,
-            html: template.html,
-        },
-    };
-    if (isUnder18(studentData.birthDate) && studentData.guardian_email) {
-        mailPayload.cc = studentData.guardian_email;
-    }
-    try {
-        await db.collection("mail").add(mailPayload);
-        logger.info(`Email queued for sending to ${studentData.email}`, {cc: mailPayload.cc || "none", isTest});
-    } catch (error) {
-        logger.error(`Failed to queue email for ${studentData.email}`, {error: error.message});
-    }
-};
-
 // --- AUTOMATIZÁLÁSI FUNKCIÓ ---
 const runDailyChecks = async () => {
     logger.info("Starting daily checks with new logic...");
@@ -473,9 +411,9 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         newRegistrationData.hasMedicalCertificate = true;
 
         let kreszDateStr = formData.transferKreszDate;
-        if (!kreszDateStr || typeof kreszDateStr !== 'string') {
+        if (!kreszDateStr || typeof kreszDateStr !== "string") {
             // Fallback if empty, use current date
-            kreszDateStr = new Date().toISOString().split('T')[0];
+            kreszDateStr = new Date().toISOString().split("T")[0];
         }
 
         // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk,
@@ -489,7 +427,7 @@ exports.adminAddStudent = onCall({region: "europe-west1"}, async (request) => {
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
+            date: kreszDateStr.replace(/-/g, ".") + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -518,7 +456,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
     }
 
-    const { students, _isTest } = request.data;
+    const {students, _isTest} = request.data;
 
     if (!Array.isArray(students) || students.length === 0) {
         throw new HttpsError("invalid-argument", "A tanulók listája érvénytelen vagy üres.");
@@ -541,8 +479,8 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
 
         // KRESZ Date logic
         let kreszDateStr = newRegistrationData.transferKreszDate;
-        if (!kreszDateStr || typeof kreszDateStr !== 'string') {
-            kreszDateStr = new Date().toISOString().split('T')[0];
+        if (!kreszDateStr || typeof kreszDateStr !== "string") {
+            kreszDateStr = new Date().toISOString().split("T")[0];
         }
 
         // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátumot használunk
@@ -554,7 +492,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
         }
 
         newRegistrationData.examResults = [{
-            date: kreszDateStr.replace(/-/g, '.') + ". 12:00",
+            date: kreszDateStr.replace(/-/g, ".") + ". 12:00",
             subject: "Közlekedési alapismeretek",
             result: "Sikeres (M)",
             location: "Hozott adat (Átjelentkezés)",
@@ -571,7 +509,7 @@ exports.adminBulkAddTransferStudents = onCall({region: "europe-west1"}, async (r
     try {
         await batch.commit();
         logger.info(`Admin (${userEmail}) successfully bulk added ${count} transfer students to ${collectionName}.`);
-        return { success: true, count };
+        return {success: true, count};
     } catch (error) {
         logger.error(`Error bulk adding transfer students by admin ${userEmail}:`, error);
         throw new HttpsError("internal", "Hiba történt a tömeges importálás során.");
@@ -642,7 +580,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
     }
 
-    const { isTestView } = request.data;
+    const {isTestView} = request.data;
     const collectionName = isTestView ? "registrations_test" : "registrations";
 
     try {
@@ -657,7 +595,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
             const studentData = doc.data();
 
             // Skip archived records to save operations
-            if (studentData.status === 'archived') {
+            if (studentData.status === "archived") {
                 return;
             }
 
@@ -665,7 +603,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
 
             // Optimization: Only update if it actually changed
             if (JSON.stringify(studentData.deadlineInfo) !== JSON.stringify(newDeadlineInfo)) {
-                batch.update(doc.ref, { deadlineInfo: newDeadlineInfo });
+                batch.update(doc.ref, {deadlineInfo: newDeadlineInfo});
                 updatedCount++;
                 batchCount++;
 
@@ -684,7 +622,7 @@ exports.recalculateAllDeadlines = onCall({region: "europe-west1", timeoutSeconds
         }
 
         logger.info(`Bulk deadline recalculation complete for ${collectionName}. Updated ${updatedCount} records.`);
-        return { success: true, updatedCount };
+        return {success: true, updatedCount};
     } catch (error) {
         logger.error(`Error in recalculateAllDeadlines for ${collectionName}:`, error);
         throw new HttpsError("internal", "Hiba történt a tömeges újraszámítás során.");
@@ -953,4 +891,11 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
         logger.info(`TEST Registration updated for ${after.registrationNumber}. Emails sent if triggered. Sheet update SKIPPED.`);
     }
 );
+
+// --- Időpontfoglaló funkciók exportálása ---
+exports.createCourse = appointments.createCourse;
+exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
+exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
+exports.bookAppointment = appointments.bookAppointment;
+exports.cancelBookingByStudent = appointments.cancelBookingByStudent;
 
