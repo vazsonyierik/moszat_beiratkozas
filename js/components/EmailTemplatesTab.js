@@ -262,7 +262,7 @@ const EmailTemplatesTab = () => {
                         const isActive = activeTemplateId === key;
                         return html`
                             <button
-                                key=${key}
+                                key="${key}"
                                 onClick=${() => handleTabChange(key)}
                                 className=${`whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm rounded-t-lg transition-colors ${isActive ? 'border-indigo-500 text-indigo-600 bg-indigo-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                             >
