@@ -264,8 +264,8 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const allowDelete = (!reg.status_enrolled && !reg.courseCompletedAt) || isTransferTab;
 
                             return html`
-                            <${Fragment} key="${reg.id}">
-                                <tr className="${getRowBgClass(reg)} transition-colors">
+                            <${Fragment} key=${reg.id}>
+                                <tr key="${reg.id}-main" className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
                                         <div className="flex flex-col">
