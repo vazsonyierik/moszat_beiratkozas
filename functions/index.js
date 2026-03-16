@@ -8,7 +8,7 @@ const {initializeApp} = require("firebase-admin/app");
 const {getAuth} = require("firebase-admin/auth"); // getAuth importálása
 const {google} = require("googleapis");
 const templates = require("./emailTemplates");
-const {formatFullName, formatSingleTimestamp, isUnder18, isAdmin} = require("./utils");
+const {formatFullName, formatSingleTimestamp, isAdmin, sendEmail} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
 const {calculateDeadline} = require("./deadlineCalculator");
 const appointments = require("./appointments");
@@ -262,59 +262,6 @@ const logToFarSheet = async (studentData) => {
     ];
     await appendToSheet(SPREADSHEET_ID, SHEET_NAME, rowData);
     logger.info(`Successfully logged data to FAR sheet for student: ${viseltNev}`);
-};
-
-/**
- * E-mail küldése a 'mail' gyűjteménybe való írással.
- * @param {object} studentData A címzett adatai.
- * @param {object} template Az e-mail sablon.
- * @param {boolean} isTest Teszt üzemmód jelző.
- */
-const sendEmail = async (studentData, template, isTest = false) => {
-    if (!studentData.email) {
-        logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
-        return;
-    }
-    if (!template || !template.subject || !template.html) {
-        logger.error("Email template is invalid.", {studentId: studentData.id});
-        return;
-    }
-
-    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
-    if (isTest) {
-        try {
-            const configDoc = await db.collection("settings").doc("testConfig").get();
-            if (configDoc.exists) {
-                const config = configDoc.data();
-                if (config.emailsEnabled === false) {
-                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: studentData.email});
-                    return;
-                }
-            }
-        } catch (error) {
-            logger.warn("Failed to check test email settings. Proceeding with send.", {error: error.message});
-        }
-    }
-
-    const subjectPrefix = isTest ? "[TESZT] " : "";
-
-    const mailPayload = {
-        to: studentData.email,
-        from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
-        message: {
-            subject: `${subjectPrefix}${template.subject}`,
-            html: template.html,
-        },
-    };
-    if (isUnder18(studentData.birthDate) && studentData.guardian_email) {
-        mailPayload.cc = studentData.guardian_email;
-    }
-    try {
-        await db.collection("mail").add(mailPayload);
-        logger.info(`Email queued for sending to ${studentData.email}`, {cc: mailPayload.cc || "none", isTest});
-    } catch (error) {
-        logger.error(`Failed to queue email for ${studentData.email}`, {error: error.message});
-    }
 };
 
 // --- AUTOMATIZÁLÁSI FUNKCIÓ ---
@@ -950,3 +897,4 @@ exports.createCourse = appointments.createCourse;
 exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
 exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
 exports.bookAppointment = appointments.bookAppointment;
+exports.cancelBookingByStudent = appointments.cancelBookingByStudent;

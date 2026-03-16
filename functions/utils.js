@@ -52,6 +52,7 @@ const isUnder18 = (birthDateStr) => {
  * behúzzuk most ide is.
  */
 const {getFirestore} = require("firebase-admin/firestore");
+const logger = require("firebase-functions/logger");
 
 const isAdmin = async (email) => {
     if (!email) return false;
@@ -64,13 +65,63 @@ const isAdmin = async (email) => {
 const ensureIsAdmin = async (auth) => {
     const userEmail = auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
-        // A Cloud Functions onCall híváskor HttpsError-t dobunk,
-        // ehhez a hívónak is importálnia kell az osztályt.
-        // Mivel mi itt csak ellenőrizzük, de az importok eltérhetnek,
-        // így csak bedobjuk az error-t string üzenettel amit majd elkaphatnak,
-        // vagy ide is importáljuk a HttpsError-t.
         const {HttpsError} = require("firebase-functions/v2/https");
         throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+};
+
+/**
+ * Központi e-mail küldő segédfüggvény
+ * @param {object} studentData A címzett adatai.
+ * @param {object} template Az e-mail sablon.
+ * @param {boolean} isTest Teszt üzemmód jelző.
+ */
+const sendEmail = async (studentData, template, isTest = false) => {
+    const db = getFirestore();
+
+    if (!studentData.email) {
+        logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
+        return;
+    }
+    if (!template || !template.subject || !template.html) {
+        logger.error("Email template is invalid.", {studentId: studentData.id});
+        return;
+    }
+
+    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
+    if (isTest) {
+        try {
+            const configDoc = await db.collection("settings").doc("testConfig").get();
+            if (configDoc.exists) {
+                const config = configDoc.data();
+                if (config.emailsEnabled === false) {
+                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: studentData.email});
+                    return;
+                }
+            }
+        } catch (error) {
+            logger.warn("Failed to check test email settings. Proceeding with send.", {error: error.message});
+        }
+    }
+
+    const subjectPrefix = isTest ? "[TESZT] " : "";
+
+    const mailPayload = {
+        to: studentData.email,
+        from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
+        message: {
+            subject: `${subjectPrefix}${template.subject}`,
+            html: template.html,
+        },
+    };
+    if (isUnder18(studentData.birthDate) && studentData.guardian_email) {
+        mailPayload.cc = studentData.guardian_email;
+    }
+    try {
+        await db.collection("mail").add(mailPayload);
+        logger.info(`Email added to queue for ${studentData.email}. Template: ${template.subject}`);
+    } catch (error) {
+        logger.error(`Failed to queue email for ${studentData.email}. Error: ${error.message}`);
     }
 };
 
@@ -81,4 +132,5 @@ module.exports = {
     isUnder18,
     isAdmin,
     ensureIsAdmin,
+    sendEmail
 };

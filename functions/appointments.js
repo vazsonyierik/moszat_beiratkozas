@@ -1,7 +1,8 @@
 const {onCall, HttpsError} = require("firebase-functions/v2/https");
 const {getFirestore, FieldValue} = require("firebase-admin/firestore");
 const crypto = require("crypto");
-const {ensureIsAdmin} = require("./utils");
+const {ensureIsAdmin, sendEmail} = require("./utils");
+const templates = require("./emailTemplates");
 
 /**
  * createCourse
@@ -61,19 +62,50 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
     const courseRef = db.collection(collectionName).doc(courseId);
 
     try {
+        const bookingsToCancel = [];
+        let courseData = null;
+
         await db.runTransaction(async (transaction) => {
             const courseDoc = await transaction.get(courseRef);
             if (!courseDoc.exists) {
                 throw new HttpsError("not-found", "A foglalkozás nem található.");
             }
 
-            // TODO: In a later phase, handle deleting bookings subcollection
-            // and sending cancellation emails to students.
-            // For now, just delete the course document.
+            courseData = courseDoc.data();
+
+            // Fetch all bookings for this course outside the transaction constraints
+            // (or within, but we need to query them first).
+            // Actually, in Firebase Admin SDK v10+, transaction.get() supports queries!
+            const bookingsQuery = courseRef.collection("bookings");
+            const bookingsSnap = await transaction.get(bookingsQuery);
+
+            bookingsSnap.forEach((doc) => {
+                bookingsToCancel.push(doc.data());
+
+                // Delete from subcollection
+                transaction.delete(doc.ref);
+
+                // Delete from global collections
+                if (doc.data().allBookingId) {
+                    const globalRef = db.collection("allBookings").doc(doc.data().allBookingId);
+                    transaction.delete(globalRef);
+                }
+            });
+
+            // Delete the course document
             transaction.delete(courseRef);
         });
 
-        return {success: true, message: "Foglalkozás sikeresen törölve."};
+        // Send emails outside the transaction
+        if (courseData && bookingsToCancel.length > 0) {
+            const emailPromises = bookingsToCancel.map(booking => {
+                // Megmarad az isTestView flag átadása
+                return sendEmail(booking, templates.courseDeleted(booking), isTestView);
+            });
+            await Promise.allSettled(emailPromises);
+        }
+
+        return {success: true, message: "Foglalkozás sikeresen törölve, e-mailek kiküldve."};
     } catch (error) {
         console.error("Error deleting course:", error);
         throw new HttpsError("internal", "Hiba történt a foglalkozás törlésekor.", error);
@@ -104,11 +136,14 @@ exports.cancelBookingAsAdmin = onCall({region: "europe-west1"}, async (request) 
     const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
 
     try {
+        let bookingData = null;
+
         await db.runTransaction(async (transaction) => {
             const bookingDoc = await transaction.get(bookingDocRef);
             if (!bookingDoc.exists) {
                 throw new HttpsError("not-found", "A jelentkezés nem található.");
             }
+            bookingData = bookingDoc.data();
 
             // Delete subcollection document
             transaction.delete(bookingDocRef);
@@ -122,7 +157,11 @@ exports.cancelBookingAsAdmin = onCall({region: "europe-west1"}, async (request) 
             });
         });
 
-        return {success: true, message: "Jelentkezés sikeresen törölve."};
+        if (bookingData) {
+            await sendEmail(bookingData, templates.bookingCancelledByAdmin(bookingData), isTestView);
+        }
+
+        return {success: true, message: "Jelentkezés sikeresen törölve, e-mail kiküldve."};
     } catch (error) {
         console.error("Error cancelling booking:", error);
         if (error instanceof HttpsError) {
@@ -157,6 +196,8 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
     const bookingsSubcollection = courseRef.collection("bookings");
 
     try {
+        let bookingDataToEmail = null;
+
         await db.runTransaction(async (transaction) => {
             // 1. Get course to check capacity
             const courseDoc = await transaction.get(courseRef);
@@ -172,10 +213,6 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             }
 
             // 2. Check if this email is already registered for THIS course
-            // Note: Since we are inside a transaction, we can't do a query (.where) safely without locks or limitations.
-            // But we CAN read specific documents. However, we don't know the doc ID (it's auto-generated).
-            // A robust way in NoSQL is to use the email as the Document ID in the subcollection.
-            // E.g., bookingsSubcollection.doc(email.toLowerCase())
             const normalizedEmail = email.toLowerCase().trim();
             const bookingDocRef = bookingsSubcollection.doc(normalizedEmail);
             const existingBooking = await transaction.get(bookingDocRef);
@@ -217,9 +254,12 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 bookingsCount: FieldValue.increment(1)
             });
 
-            // Note: Email sending (Trigger Email) is intentionally omitted in this phase
-            // as per user request.
+            bookingDataToEmail = bookingData;
         });
+
+        if (bookingDataToEmail) {
+            await sendEmail(bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
+        }
 
         return {success: true};
     } catch (error) {
@@ -229,5 +269,80 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             throw error;
         }
         throw new HttpsError("internal", "Hiba történt a jelentkezés rögzítésekor.", error.message);
+    }
+});
+
+/**
+ * cancelBookingByStudent
+ * Student cancels their own booking using a token.
+ */
+exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request) => {
+    const data = request.data;
+    const {token} = data;
+
+    if (!token) {
+        throw new HttpsError("invalid-argument", "Érvénytelen vagy hiányzó azonosító (token).");
+    }
+
+    const db = getFirestore();
+
+    try {
+        let bookingData = null;
+        let courseRefToUpdate = null;
+        let bookingRefToDelete = null;
+        let globalRefToDelete = null;
+        let isTestView = false;
+
+        // Note: Since we don't know if the token is in 'allBookings' or 'allBookings_test',
+        // we have to query both. This is fine since it's an uncommon operation.
+        let querySnapshot = await db.collection("allBookings").where("cancellation_token", "==", token).limit(1).get();
+
+        if (!querySnapshot.empty) {
+            isTestView = false;
+        } else {
+            querySnapshot = await db.collection("allBookings_test").where("cancellation_token", "==", token).limit(1).get();
+            if (!querySnapshot.empty) {
+                isTestView = true;
+            }
+        }
+
+        if (querySnapshot.empty) {
+            throw new HttpsError("not-found", "A megadott azonosító nem található vagy a jelentkezés már törölve lett.");
+        }
+
+        const globalDoc = querySnapshot.docs[0];
+        bookingData = globalDoc.data();
+        globalRefToDelete = globalDoc.ref;
+
+        const coursesCollection = isTestView ? "courses_test" : "courses";
+        courseRefToUpdate = db.collection(coursesCollection).doc(bookingData.courseId);
+        bookingRefToDelete = courseRefToUpdate.collection("bookings").doc(bookingData.email);
+
+        // Perform the deletion in a transaction to safely decrement the count
+        await db.runTransaction(async (transaction) => {
+            const bookingDoc = await transaction.get(bookingRefToDelete);
+            if (!bookingDoc.exists) {
+                throw new HttpsError("not-found", "A jelentkezés (már) nem található a foglalkozásnál.");
+            }
+
+            transaction.delete(bookingRefToDelete);
+            transaction.delete(globalRefToDelete);
+
+            transaction.update(courseRefToUpdate, {
+                bookingsCount: FieldValue.increment(-1)
+            });
+        });
+
+        if (bookingData) {
+            await sendEmail(bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
+        }
+
+        return {success: true, message: "Jelentkezés sikeresen lemondva."};
+    } catch (error) {
+        console.error("Error during student cancellation:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Hiba történt a lemondás feldolgozásakor.", error.message);
     }
 });

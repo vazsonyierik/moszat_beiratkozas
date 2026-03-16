@@ -398,6 +398,88 @@ exports.elearningProgressReminderDay90 = (studentData) => {
     };
 };
 
+// --- Appointment Booking System Templates ---
+
+exports.bookingConfirmation = (bookingData) => {
+    return {
+        subject: "Időpontfoglalás visszaigazolása - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sikeresen jelentkeztél a következő foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Kérjük, hogy pontosan érkezz!</p>
+                <p>Amennyiben mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet, hogy másnak is legyen lehetősége részt venni:</p>
+                <p>
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.bookingCancelledByAdmin = (bookingData) => {
+    return {
+        subject: "Jelentkezés törölve - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Tájékoztatunk, hogy a következő foglalkozásra leadott jelentkezésed törlésre került a rendszerünkben:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.bookingCancelledByStudent = (bookingData) => {
+    return {
+        subject: "Időpont lemondva - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sikeresen lemondtad a jelentkezésedet a következő foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Köszönjük, hogy jelezted felénk!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.courseDeleted = (bookingData) => {
+    return {
+        subject: "Foglalkozás elmarad - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sajnálattal tájékoztatunk, hogy a következő foglalkozás, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
+                    <li><strong>Eredeti időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
+                <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
 // Sablon ID: T-7
 // E-learning haladási emlékeztetők (180 nap)
 exports.elearningProgressReminderDay180 = (studentData) => {
