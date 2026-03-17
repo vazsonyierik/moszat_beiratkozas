@@ -65,6 +65,14 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
         const bookingsToCancel = [];
         let courseData = null;
 
+        // 1. Lekérdezzük a foglalásokat a tranzakción kívül (mert a Node.js Admin SDK tranzakción belül query-t nem támogat stabilan)
+        const bookingsQuery = courseRef.collection("bookings");
+        const bookingsSnap = await bookingsQuery.get();
+        const bookingDocs = [];
+        bookingsSnap.forEach((doc) => {
+            bookingDocs.push(doc);
+        });
+
         await db.runTransaction(async (transaction) => {
             const courseDoc = await transaction.get(courseRef);
             if (!courseDoc.exists) {
@@ -73,13 +81,8 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
 
             courseData = courseDoc.data();
 
-            // Fetch all bookings for this course outside the transaction constraints
-            // (or within, but we need to query them first).
-            // Actually, in Firebase Admin SDK v10+, transaction.get() supports queries!
-            const bookingsQuery = courseRef.collection("bookings");
-            const bookingsSnap = await transaction.get(bookingsQuery);
-
-            bookingsSnap.forEach((doc) => {
+            // 2. Iterálunk az előzetesen lekérdezett dokumentumokon és töröljük a tranzakción belül
+            for (const doc of bookingDocs) {
                 bookingsToCancel.push(doc.data());
 
                 // Delete from subcollection
@@ -91,7 +94,7 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
                     const globalRef = db.collection(allBookingsCollection).doc(doc.data().allBookingId);
                     transaction.delete(globalRef);
                 }
-            });
+            }
 
             // Delete the course document
             transaction.delete(courseRef);
