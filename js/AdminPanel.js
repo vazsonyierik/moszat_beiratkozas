@@ -1374,6 +1374,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 </div>
 
                 ${isSearchActive ? html`
+                <${Fragment}>
                     <div className="mb-4 p-4 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800 flex items-center justify-between shadow-sm">
                         <div className="flex items-center gap-3">
                             <${Icons.InfoIcon} size=${24} className="text-yellow-600" />
