@@ -111,9 +111,9 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
                 <div className="hidden sm:flex sm:items-center sm:ml-4">
                     ${pageNumbers.map((number, index) => {
                         if (number === '...') {
-                            return html`<span key=${`ellipsis-${index}`} className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>`;
+                            return html`<span key="ellipsis-${index}" className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700">...</span>`;
                         }
-                        return html`<button key=${number} onClick=${() => onPageChange(number)} className=${`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}>${number}</button>`;
+                        return html`<button key="${number}" onClick=${() => onPageChange(number)} className=${`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === number ? 'z-10 bg-indigo-50 border-indigo-500 text-indigo-600' : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}>${number}</button>`;
                     })}
                 </div>
                 <button onClick=${() => onPageChange(currentPage + 1)} disabled=${currentPage === totalPages} className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50">Következő</button>
@@ -265,7 +265,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const allowDelete = (!reg.status_enrolled && !reg.courseCompletedAt) || isTransferTab;
 
                             return html`
-                            <${Fragment} key=${reg.id}>
+                            <${Fragment} key="${reg.id}">
                                 <tr key="${reg.id}-main" className="${getRowBgClass(reg)} transition-colors">
                                     
                                     <td className="px-6 py-4 text-sm text-gray-700">
@@ -1291,6 +1291,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 </div>
 
                 ${mainTab === 'registrations' ? html`
+                <${Fragment}>
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
@@ -1355,7 +1356,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     ${iconFilterOptions.map(({ key, Icon, title, color }) => {
                                         const isSelected = selectedIconFilters.includes(key);
                                         return html`
-                                            <div key=${key}>
+                                            <div key="${key}">
                                                 <button
                                                     onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
                                                     title=${title}
@@ -1404,6 +1405,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                         allowRestore=${true}
                         paginated=${true}
                     />
+                    </${Fragment}>
                 ` : html`
                 <${Fragment}>
                     <div className="border-b border-gray-200 mb-8">
@@ -1514,7 +1516,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
                         </div>
                     `}
-                </${React.Fragment}>`}
+                </${Fragment}>`}
+                </${Fragment}>
                 ` : mainTab === 'appointments' ? html`
                     <${AppointmentsTab} isTestView=${viewTestDataType} adminUser=${user} />
                 ` : html`

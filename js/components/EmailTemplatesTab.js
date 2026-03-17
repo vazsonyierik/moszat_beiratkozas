@@ -179,12 +179,12 @@ const EmailTemplatesTab = () => {
         // Frissítjük a szerkesztő tartalmát, ha a HTML változik (pl. tab váltáskor)
         // De csak akkor, ha nem mi magunk gépelünk bele épp
         if (quillRef.current.root.innerHTML !== htmlContent) {
-            // Egy egyszerű regex-el eltávolítjuk a felesleges style és osztály attribútumokat ha bemásoltunk valamit
-            // Ez itt opcionális, Quill megcsinálja a legtöbbet
-            quillRef.current.root.innerHTML = htmlContent;
+            // A Quill szerkesztő tartalmának beállítása biztonságosan API-n keresztül (innerHTML helyett)
+            const delta = quillRef.current.clipboard.convert(htmlContent);
+            quillRef.current.setContents(delta, 'silent');
         }
 
-    }, [isLoading, activeTemplateId]); // Csak ha váltunk aktív tab-ot, frissítsük a tartalmat teljesen
+    }, [isLoading, activeTemplateId, htmlContent]); // Frissítsük, ha a htmlContent kívülről változik
 
     const handleTabChange = (templateId) => {
         setActiveTemplateId(templateId);
@@ -230,7 +230,8 @@ const EmailTemplatesTab = () => {
                 setSubject(defaultTpl.subject);
                 setHtmlContent(defaultTpl.html);
                 if (quillRef.current) {
-                    quillRef.current.root.innerHTML = defaultTpl.html;
+                    const delta = quillRef.current.clipboard.convert(defaultTpl.html);
+                    quillRef.current.setContents(delta, 'silent');
                 }
                 
                 // Mentsük is el azonnal, így felülírja a DB-ben az egyedit
@@ -262,7 +263,7 @@ const EmailTemplatesTab = () => {
                         const isActive = activeTemplateId === key;
                         return html`
                             <button
-                                key=${key}
+                                key="${key}"
                                 onClick=${() => handleTabChange(key)}
                                 className=${`whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm rounded-t-lg transition-colors ${isActive ? 'border-indigo-500 text-indigo-600 bg-indigo-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
                             >
