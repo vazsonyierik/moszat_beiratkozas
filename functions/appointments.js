@@ -95,6 +95,107 @@ exports.createCourse = onCall({region: "europe-west1"}, async (request) => {
 });
 
 /**
+ * updateCourseAsAdmin
+ * Updates an existing course and notifies enrolled students of the changes.
+ */
+exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const {courseId, name, date, startTime, endTime, capacity, isTestView} = data;
+
+    if (!courseId || !name || !date || !startTime || !endTime || !capacity) {
+        throw new HttpsError("invalid-argument", "Minden kötelező mezőt ki kell tölteni a módosításhoz.");
+    }
+
+    if (capacity <= 0) {
+        throw new HttpsError("invalid-argument", "A kapacitásnak nagyobbnak kell lennie 0-nál.");
+    }
+
+    const db = getFirestore();
+    const collectionName = isTestView ? "courses_test" : "courses";
+    const courseRef = db.collection(collectionName).doc(courseId);
+
+    try {
+        let oldCourseData = null;
+        let activeBookings = [];
+
+        await db.runTransaction(async (transaction) => {
+            const courseDoc = await transaction.get(courseRef);
+            if (!courseDoc.exists) {
+                throw new HttpsError("not-found", "A módosítani kívánt foglalkozás nem található.");
+            }
+
+            oldCourseData = courseDoc.data();
+
+            // Kérjük le a foglalkozáshoz tartozó jelentkezőket, hogy értesíthessük őket
+            const bookingsQuery = courseRef.collection("bookings");
+            const bookingsSnap = await transaction.get(bookingsQuery);
+
+            bookingsSnap.forEach((doc) => {
+                activeBookings.push(doc.data());
+            });
+
+            // Frissítsük magát a kurzust
+            transaction.update(courseRef, {
+                name,
+                date,
+                startTime,
+                endTime,
+                capacity: parseInt(capacity, 10),
+                updatedAt: FieldValue.serverTimestamp()
+            });
+
+            // Frissítsük a jelentkezéseken is a kurzus adatait (mind a subcollection-ben, mind a global collection-ben)
+            bookingsSnap.forEach((doc) => {
+                transaction.update(doc.ref, {
+                    courseName: name,
+                    courseDate: date,
+                    startTime: startTime
+                });
+
+                if (doc.data().allBookingId) {
+                    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+                    const globalRef = db.collection(allBookingsCollection).doc(doc.data().allBookingId);
+                    transaction.update(globalRef, {
+                        courseName: name,
+                        courseDate: date,
+                        startTime: startTime
+                    });
+                }
+            });
+        });
+
+        // Ha voltak jelentkezők és a fontos adatok (dátum, idő, név) változtak, küldjünk e-mailt
+        const isMajorChange = oldCourseData.date !== date || oldCourseData.startTime !== startTime || oldCourseData.name !== name || oldCourseData.endTime !== endTime;
+
+        if (isMajorChange && activeBookings.length > 0) {
+            const newCourseData = { name, date, startTime, endTime };
+            const emailPromises = activeBookings.map(booking => {
+                const combinedData = {
+                    ...booking,
+                    oldCourseName: oldCourseData.name,
+                    oldCourseDate: oldCourseData.date,
+                    oldStartTime: oldCourseData.startTime,
+                    oldEndTime: oldCourseData.endTime,
+                    newCourseName: name,
+                    newCourseDate: date,
+                    newStartTime: startTime,
+                    newEndTime: endTime
+                };
+                return sendDynamicEmail("courseModified", combinedData, templates.courseModified(combinedData), isTestView);
+            });
+            await Promise.allSettled(emailPromises);
+        }
+
+        return {success: true, message: "Foglalkozás sikeresen módosítva."};
+    } catch (error) {
+        console.error("Error updating course:", error);
+        throw new HttpsError("internal", "Hiba történt a foglalkozás módosításakor.", error);
+    }
+});
+
+/**
  * deleteCourseAsAdmin
  * Deletes a course/appointment and handles related actions (e.g. notifications) if necessary.
  */

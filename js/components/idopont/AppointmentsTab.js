@@ -138,6 +138,11 @@ const AppointmentsTab = ({ isTestView }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [selectedCourseForBookings, setSelectedCourseForBookings] = useState(null);
     
+    // Edit course state
+    const [editingCourseId, setEditingCourseId] = useState(null);
+    const [editCourseData, setEditCourseData] = useState({});
+    const [isUpdating, setIsUpdating] = useState(false);
+
     // Form states
     const [courseName, setCourseName] = useState('');
     const [courseDate, setCourseDate] = useState('');
@@ -259,6 +264,66 @@ const AppointmentsTab = ({ isTestView }) => {
             message: `Biztosan törölni szeretnéd a(z) "${courseName}" foglalkozást? Ez a művelet nem vonható vissza.`,
             onConfirm: deleteAction
         });
+    };
+
+    const startEditingCourse = (course) => {
+        setEditingCourseId(course.id);
+        setEditCourseData({ ...course });
+    };
+
+    const cancelEditingCourse = () => {
+        setEditingCourseId(null);
+        setEditCourseData({});
+    };
+
+    const handleUpdateCourse = async (e) => {
+        e.preventDefault();
+
+        if (!editCourseData.name || !editCourseData.date || !editCourseData.startTime || !editCourseData.endTime || !editCourseData.capacity) {
+            showToast('Kérjük, töltsön ki minden mezőt a szerkesztéshez!', 'warning');
+            return;
+        }
+
+        if (editCourseData.startTime >= editCourseData.endTime) {
+            showToast('A befejezési időnek a kezdési idő után kell lennie!', 'warning');
+            return;
+        }
+
+        // Ütközésvizsgálat
+        const hasConflict = courses.some(course =>
+            course.id !== editingCourseId && // Saját magával ne ütközzön
+            course.date === editCourseData.date &&
+            course.startTime === editCourseData.startTime
+        );
+
+        if (hasConflict) {
+            showToast(`Ezen a napon (${editCourseData.date}) és időpontban (${editCourseData.startTime}) már van meghirdetve egy másik foglalkozás!`, 'error');
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            const updateCourseFn = httpsCallable(functions, 'updateCourseAsAdmin');
+            await updateCourseFn({
+                courseId: editingCourseId,
+                name: editCourseData.name,
+                date: editCourseData.date,
+                startTime: editCourseData.startTime,
+                endTime: editCourseData.endTime,
+                capacity: parseInt(editCourseData.capacity, 10),
+                isTestView: isTestView
+            });
+
+            showToast('Foglalkozás sikeresen frissítve! (A jelentkezők e-mailben értesültek a változásról, ha a dátum/idő/név módosult)', 'success');
+            setEditingCourseId(null);
+            setEditCourseData({});
+
+        } catch (error) {
+            console.error("Error updating course:", error);
+            showToast(`Hiba a frissítés során: ${error.message}`, 'error');
+        } finally {
+            setIsUpdating(false);
+        }
     };
 
     const handleGeneratePreview = () => {
@@ -724,36 +789,109 @@ const AppointmentsTab = ({ isTestView }) => {
                                 const isFull = course.bookingsCount >= course.capacity;
                                 return html`
                                     <tr key=${course.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">${course.name}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">${course.date}</div>
-                                            <div className="text-sm text-gray-500">${course.startTime} - ${course.endTime}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                    ${course.bookingsCount || 0} / ${course.capacity}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button 
-                                                onClick=${() => setSelectedCourseForBookings(course)}
-                                                className="text-indigo-600 hover:text-indigo-900 ml-4"
-                                                title="Jelentkezők megtekintése"
-                                            >
-                                                <${Icons.UsersIcon} size=${20} />
-                                            </button>
-                                            <button 
-                                                onClick=${() => handleDeleteCourse(course.id, course.name)}
-                                                className="text-red-600 hover:text-red-900 ml-4"
-                                                title="Foglalkozás törlése"
-                                            >
-                                                <${Icons.TrashIcon} size=${20} />
-                                            </button>
-                                        </td>
+                                        ${editingCourseId === course.id ? html`
+                                            <td colSpan="4" className="px-6 py-4">
+                                                <form onSubmit=${handleUpdateCourse} className="flex flex-wrap items-center gap-2">
+                                                    <select
+                                                        value=${editCourseData.name}
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, name: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                                                    >
+                                                        <option value="Elsősegély tanfolyam">Elsősegély tanfolyam</option>
+                                                        <option value="Orvosi alkalmassági vizsgálat">Orvosi alkalmassági vizsgálat</option>
+                                                        <option value="1. modul">1. modul</option>
+                                                        <option value="2. modul">2. modul</option>
+                                                        <option value="3. modul">3. modul</option>
+                                                        <option value="4. modul">4. modul</option>
+                                                        <option value="Konzultáció">Konzultáció</option>
+                                                    </select>
+
+                                                    <input
+                                                        type="date"
+                                                        value=${editCourseData.date}
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, date: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+
+                                                    <input
+                                                        type="time"
+                                                        value=${editCourseData.startTime}
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, startTime: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded w-24 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                    <span className="text-gray-500">-</span>
+                                                    <input
+                                                        type="time"
+                                                        value=${editCourseData.endTime}
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, endTime: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded w-24 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+
+                                                    <input
+                                                        type="number"
+                                                        min="1"
+                                                        value=${editCourseData.capacity}
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, capacity: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded w-16 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+
+                                                    <div className="ml-auto flex items-center gap-2">
+                                                        <button
+                                                            type="button"
+                                                            onClick=${cancelEditingCourse}
+                                                            className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                                                        >
+                                                            Mégse
+                                                        </button>
+                                                        <button
+                                                            type="submit"
+                                                            disabled=${isUpdating}
+                                                            className="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium disabled:opacity-50 transition-colors"
+                                                        >
+                                                            ${isUpdating ? 'Mentés...' : 'Mentés'}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        ` : html`
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-gray-900">${course.name}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">${course.date}</div>
+                                                <div className="text-sm text-gray-500">${course.startTime} - ${course.endTime}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                                                        ${course.bookingsCount || 0} / ${course.capacity}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button
+                                                    onClick=${() => setSelectedCourseForBookings(course)}
+                                                    className="text-indigo-600 hover:text-indigo-900 ml-4"
+                                                    title="Jelentkezők megtekintése"
+                                                >
+                                                    <${Icons.UsersIcon} size=${20} />
+                                                </button>
+                                                <button
+                                                    onClick=${() => startEditingCourse(course)}
+                                                    className="text-amber-600 hover:text-amber-900 ml-4"
+                                                    title="Foglalkozás szerkesztése"
+                                                >
+                                                    <${Icons.EditIcon} size=${20} />
+                                                </button>
+                                                <button
+                                                    onClick=${() => handleDeleteCourse(course.id, course.name)}
+                                                    className="text-red-600 hover:text-red-900 ml-4"
+                                                    title="Foglalkozás törlése"
+                                                >
+                                                    <${Icons.TrashIcon} size=${20} />
+                                                </button>
+                                            </td>
+                                        `}
                                     </tr>
                                 `;
                             })}
