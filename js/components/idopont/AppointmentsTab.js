@@ -202,6 +202,18 @@ const AppointmentsTab = ({ isTestView }) => {
             return;
         }
 
+        // Ütközésvizsgálat
+        const hasConflict = courses.some(course =>
+            course.date === courseDate &&
+            course.startTime === startTime &&
+            course.name === courseName
+        );
+
+        if (hasConflict) {
+            showToast(`Már létezik ${courseName} ezen a napon (${courseDate}) és időpontban (${startTime})!`, 'error');
+            return;
+        }
+
         setIsSaving(true);
         try {
             const createCourseFn = httpsCallable(functions, 'createCourse');
@@ -317,6 +329,19 @@ const AppointmentsTab = ({ isTestView }) => {
             dayCounter++;
         }
 
+        // Ütközésvizsgálat a meglévő aktív foglalkozásokkal
+        for (const preview of previews) {
+            const hasConflict = courses.some(course =>
+                course.date === preview.date &&
+                course.startTime === preview.startTime &&
+                course.name === preview.name
+            );
+            if (hasConflict) {
+                showToast(`Figyelem: A(z) ${preview.date} - ${preview.startTime} időpontra már létezik egy ${preview.name} a rendszerben. A generálás megszakítva. Kérjük válasszon másik kezdő dátumot!`, 'error');
+                return;
+            }
+        }
+
         setPreviewCourses(previews);
         showToast('Előnézet sikeresen legenerálva. A mentés előtt még szabadon módosíthatod az adatokat.', 'info');
     };
@@ -338,6 +363,30 @@ const AppointmentsTab = ({ isTestView }) => {
         if (previewCourses.length === 0) {
             showToast('Nincsenek menthető időpontok az előnézetben.', 'warning');
             return;
+        }
+
+        // Belső duplikáció ellenőrzése a szerkesztett listában
+        const uniqueKeys = new Set();
+        for (const preview of previewCourses) {
+            const key = `${preview.date}_${preview.startTime}_${preview.name}`;
+            if (uniqueKeys.has(key)) {
+                showToast(`Figyelem: Az előnézetben több azonos időpont is szerepel (${preview.date} - ${preview.startTime} - ${preview.name}). Kérjük javítsa a duplikációkat a mentés előtt!`, 'error');
+                return;
+            }
+            uniqueKeys.add(key);
+        }
+
+        // Végső ütközésvizsgálat a meglévő aktív foglalkozásokkal (ha időközben mást hoztak létre)
+        for (const preview of previewCourses) {
+            const hasConflict = courses.some(course =>
+                course.date === preview.date &&
+                course.startTime === preview.startTime &&
+                course.name === preview.name
+            );
+            if (hasConflict) {
+                showToast(`Figyelem: A(z) ${preview.date} - ${preview.startTime} időpontra időközben létrejött egy ${preview.name} a rendszerben. A tömeges mentés megszakítva.`, 'error');
+                return;
+            }
         }
 
         setIsBulkSaving(true);
