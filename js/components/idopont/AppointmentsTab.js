@@ -138,12 +138,27 @@ const AppointmentsTab = ({ isTestView }) => {
     const [isSaving, setIsSaving] = useState(false);
     const [selectedCourseForBookings, setSelectedCourseForBookings] = useState(null);
     
+    // Edit course state
+    const [editingCourseId, setEditingCourseId] = useState(null);
+    const [editCourseData, setEditCourseData] = useState({});
+    const [isUpdating, setIsUpdating] = useState(false);
+
     // Form states
     const [courseName, setCourseName] = useState('');
     const [courseDate, setCourseDate] = useState('');
     const [startTime, setStartTime] = useState('');
     const [endTime, setEndTime] = useState('');
     const [capacity, setCapacity] = useState('');
+    
+    // Bulk generator states
+    const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
+    const [genStartDate, setGenStartDate] = useState('');
+    const [genNumDays, setGenNumDays] = useState(4); // default 4 alkalom (2 hét)
+    const [genCapacity, setGenCapacity] = useState(20);
+    const [genMorningModule, setGenMorningModule] = useState(1);
+    const [genAfternoonModule, setGenAfternoonModule] = useState(3);
+    const [previewCourses, setPreviewCourses] = useState([]);
+    const [isBulkSaving, setIsBulkSaving] = useState(false);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -189,6 +204,17 @@ const AppointmentsTab = ({ isTestView }) => {
 
         if (startTime >= endTime) {
             showToast('A befejezési időnek a kezdési idő után kell lennie!', 'warning');
+            return;
+        }
+
+        // Ütközésvizsgálat
+        const hasConflict = courses.some(course => 
+            course.date === courseDate && 
+            course.startTime === startTime
+        );
+
+        if (hasConflict) {
+            showToast(`Ezen a napon (${courseDate}) és időpontban (${startTime}) már van meghirdetve egy foglalkozás!`, 'error');
             return;
         }
 
@@ -240,6 +266,217 @@ const AppointmentsTab = ({ isTestView }) => {
         });
     };
 
+    const startEditingCourse = (course) => {
+        setEditingCourseId(course.id);
+        setEditCourseData({ ...course });
+    };
+
+    const cancelEditingCourse = () => {
+        setEditingCourseId(null);
+        setEditCourseData({});
+    };
+
+    const handleUpdateCourse = async (e) => {
+        e.preventDefault();
+
+        if (!editCourseData.name || !editCourseData.date || !editCourseData.startTime || !editCourseData.endTime || !editCourseData.capacity) {
+            showToast('Kérjük, töltsön ki minden mezőt a szerkesztéshez!', 'warning');
+            return;
+        }
+
+        if (editCourseData.startTime >= editCourseData.endTime) {
+            showToast('A befejezési időnek a kezdési idő után kell lennie!', 'warning');
+            return;
+        }
+
+        // Ütközésvizsgálat
+        const hasConflict = courses.some(course => 
+            course.id !== editingCourseId && // Saját magával ne ütközzön
+            course.date === editCourseData.date && 
+            course.startTime === editCourseData.startTime
+        );
+
+        if (hasConflict) {
+            showToast(`Ezen a napon (${editCourseData.date}) és időpontban (${editCourseData.startTime}) már van meghirdetve egy másik foglalkozás!`, 'error');
+            return;
+        }
+
+        setIsUpdating(true);
+        try {
+            const updateCourseFn = httpsCallable(functions, 'updateCourseAsAdmin');
+            await updateCourseFn({
+                courseId: editingCourseId,
+                name: editCourseData.name,
+                date: editCourseData.date,
+                startTime: editCourseData.startTime,
+                endTime: editCourseData.endTime,
+                capacity: parseInt(editCourseData.capacity, 10),
+                isTestView: isTestView
+            });
+
+            showToast('Foglalkozás sikeresen frissítve! (A jelentkezők e-mailben értesültek a változásról, ha a dátum/idő/név módosult)', 'success');
+            setEditingCourseId(null);
+            setEditCourseData({});
+            
+        } catch (error) {
+            console.error("Error updating course:", error);
+            showToast(`Hiba a frissítés során: ${error.message}`, 'error');
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleGeneratePreview = () => {
+        if (!genStartDate || !genNumDays || !genCapacity) {
+            showToast('Kérjük, töltsön ki minden mezőt a generátorhoz!', 'warning');
+            return;
+        }
+
+        let currentMorningModule = parseInt(genMorningModule, 10);
+        let currentAfternoonModule = parseInt(genAfternoonModule, 10);
+        let currentBaseDate = new Date(genStartDate);
+        
+        const previews = [];
+        let generatedDays = 0;
+        let dayCounter = 0; // Biztonsági limit, hogy ne fusson végtelenül
+        
+        while (generatedDays < parseInt(genNumDays, 10) && dayCounter < 100) {
+            const dayOfWeek = currentBaseDate.getDay();
+            
+            // Kedd (2) vagy Csütörtök (4)
+            if (dayOfWeek === 2 || dayOfWeek === 4) {
+                // Determine if this is a "teaching week"
+                // The pattern is: Tuesday, Thursday, then skip a week.
+                // We'll consider the first Tuesday/Thursday encountered as part of the first week.
+                // To do this simply, we will just jump forward by appropriate days.
+                
+                const dateStr = currentBaseDate.toISOString().split('T')[0];
+                
+                // Délelőtt
+                previews.push({
+                    id: `preview_${Date.now()}_${generatedDays}_m`,
+                    name: `${currentMorningModule}. modul`,
+                    date: dateStr,
+                    startTime: '09:00',
+                    endTime: '12:15',
+                    capacity: parseInt(genCapacity, 10)
+                });
+                
+                // Délután
+                previews.push({
+                    id: `preview_${Date.now()}_${generatedDays}_a`,
+                    name: `${currentAfternoonModule}. modul`,
+                    date: dateStr,
+                    startTime: '17:30',
+                    endTime: '20:15',
+                    capacity: parseInt(genCapacity, 10)
+                });
+                
+                // Ciklus léptetése 1-2-3-4
+                currentMorningModule = currentMorningModule === 4 ? 1 : currentMorningModule + 1;
+                currentAfternoonModule = currentAfternoonModule === 4 ? 1 : currentAfternoonModule + 1;
+                
+                generatedDays++;
+                
+                // Ha csütörtökön vagyunk, a következő alkalom a jövő hét utáni kedd (+12 nap)
+                if (dayOfWeek === 4) {
+                    currentBaseDate.setDate(currentBaseDate.getDate() + 12);
+                } else {
+                    // Ha kedden vagyunk, a következő alkalom ezen a héten csütörtök (+2 nap)
+                    currentBaseDate.setDate(currentBaseDate.getDate() + 2);
+                }
+            } else {
+                // Ha nem kedd vagy csütörtök, lépjünk egy napot
+                currentBaseDate.setDate(currentBaseDate.getDate() + 1);
+            }
+            
+            dayCounter++;
+        }
+        
+        // Ütközésvizsgálat a meglévő aktív foglalkozásokkal
+        for (const preview of previews) {
+            const hasConflict = courses.some(course => 
+                course.date === preview.date && 
+                course.startTime === preview.startTime
+            );
+            if (hasConflict) {
+                showToast(`Figyelem: A(z) ${preview.date} - ${preview.startTime} időpontra már van meghirdetve egy foglalkozás a rendszerben. A generálás megszakítva. Kérjük válasszon másik kezdő dátumot!`, 'error');
+                return;
+            }
+        }
+
+        setPreviewCourses(previews);
+        showToast('Előnézet sikeresen legenerálva. A mentés előtt még szabadon módosíthatod az adatokat.', 'info');
+    };
+
+    const handlePreviewChange = (id, field, value) => {
+        setPreviewCourses(prev => prev.map(course => {
+            if (course.id === id) {
+                return { ...course, [field]: value };
+            }
+            return course;
+        }));
+    };
+
+    const handleRemovePreview = (id) => {
+        setPreviewCourses(prev => prev.filter(course => course.id !== id));
+    };
+
+    const handleBulkSave = async () => {
+        if (previewCourses.length === 0) {
+            showToast('Nincsenek menthető időpontok az előnézetben.', 'warning');
+            return;
+        }
+
+        // Belső duplikáció ellenőrzése a szerkesztett listában
+        const uniqueKeys = new Set();
+        for (const preview of previewCourses) {
+            const key = `${preview.date}_${preview.startTime}`;
+            if (uniqueKeys.has(key)) {
+                showToast(`Figyelem: Az előnézetben több azonos időpont is szerepel (${preview.date} - ${preview.startTime}). Kérjük javítsa a duplikációkat a mentés előtt!`, 'error');
+                return;
+            }
+            uniqueKeys.add(key);
+        }
+
+        // Végső ütközésvizsgálat a meglévő aktív foglalkozásokkal (ha időközben mást hoztak létre)
+        for (const preview of previewCourses) {
+            const hasConflict = courses.some(course => 
+                course.date === preview.date && 
+                course.startTime === preview.startTime
+            );
+            if (hasConflict) {
+                showToast(`Figyelem: A(z) ${preview.date} - ${preview.startTime} időpontra időközben létrejött egy foglalkozás a rendszerben. A tömeges mentés megszakítva.`, 'error');
+                return;
+            }
+        }
+
+        setIsBulkSaving(true);
+        try {
+            const createMultipleCoursesFn = httpsCallable(functions, 'createMultipleCourses');
+            
+            // Távolítsuk el az 'id'-t, mert az csak a frontendnek kellett a listához
+            const coursesToSave = previewCourses.map(({id, ...rest}) => rest);
+            
+            await createMultipleCoursesFn({
+                courses: coursesToSave,
+                isTestView: isTestView
+            });
+
+            showToast(`${coursesToSave.length} foglalkozás sikeresen létrehozva!`, 'success');
+            
+            // Töröljük a listát és csukjuk be a generátort
+            setPreviewCourses([]);
+            setIsGeneratorOpen(false);
+            
+        } catch (error) {
+            console.error("Error bulk creating courses:", error);
+            showToast(`Hiba a tömeges mentés során: ${error.message}`, 'error');
+        } finally {
+            setIsBulkSaving(false);
+        }
+    };
+
     if (isLoading) {
         return html`<div className="text-center p-8 text-gray-500">Foglalkozások betöltése...</div>`;
     }
@@ -247,10 +484,207 @@ const AppointmentsTab = ({ isTestView }) => {
     return html`
         <div className="space-y-8">
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
-                <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                    <${Icons.PlusCircleIcon} size=${20} className="text-indigo-600" />
-                    Új foglalkozás meghirdetése
-                </h3>
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <${Icons.PlusCircleIcon} size=${20} className="text-indigo-600" />
+                        Új foglalkozás meghirdetése
+                    </h3>
+                    <button 
+                        onClick=${() => setIsGeneratorOpen(!isGeneratorOpen)}
+                        className="text-sm font-semibold flex items-center gap-2 bg-slate-100 text-slate-700 hover:bg-slate-200 py-1.5 px-3 rounded-md transition-colors border border-slate-300"
+                    >
+                        <${Icons.RefreshIcon} size=${16} />
+                        ${isGeneratorOpen ? 'Generátor bezárása' : 'Tömeges modul generáló (4 modul)'}
+                    </button>
+                </div>
+                
+                ${isGeneratorOpen ? html`
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-5 mb-6">
+                        <div className="flex items-start gap-3 mb-4 text-slate-700">
+                            <${Icons.InfoIcon} size=${20} className="text-blue-500 flex-shrink-0 mt-0.5" />
+                            <p className="text-sm leading-tight">
+                                Ez a generátor kifejezetten a 4 modul elcsúsztatott kiírására szolgál. Kéthetente Kedden és Csütörtökön fog időpontokat készíteni a megadott kezdődátumtól. Az elkészült listában az egyes napokat a végleges mentés előtt még szabadon módosíthatod (pl. ha a Csütörtök ünnepnap, átrakhatod Péntekre).
+                            </p>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end bg-white p-4 rounded-md shadow-sm border border-slate-200">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Első tanfolyami nap</label>
+                                <input 
+                                    type="date" 
+                                    value=${genStartDate}
+                                    onChange=${(e) => setGenStartDate(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                    required
+                                />
+                                <span className="text-xs text-slate-500 block mt-1">(Ideális esetben egy Kedd)</span>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Hány alkalom?</label>
+                                <select 
+                                    value=${genNumDays}
+                                    onChange=${(e) => setGenNumDays(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                >
+                                    <option value="2">2 alkalom (1 oktatási hét)</option>
+                                    <option value="4">4 alkalom (2 oktatási hét)</option>
+                                    <option value="6">6 alkalom (3 oktatási hét)</option>
+                                    <option value="8">8 alkalom (4 oktatási hét)</option>
+                                </select>
+                                <span className="text-xs text-slate-500 block mt-1">(1 alkalom = 1 nap = De + Du)</span>
+                            </div>
+                            
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Létszám (kapacitás)</label>
+                                <input 
+                                    type="number" 
+                                    min="1"
+                                    value=${genCapacity}
+                                    onChange=${(e) => setGenCapacity(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                                />
+                            </div>
+                            
+                            <div className="lg:col-span-2 grid grid-cols-2 gap-2 p-2 bg-slate-50 rounded border border-slate-200">
+                                <div className="col-span-2 text-xs font-bold text-slate-600 text-center uppercase border-b pb-1 mb-1">
+                                    Első napi modulok (0. ciklus)
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1 text-center">Délelőtt</label>
+                                    <select 
+                                        value=${genMorningModule}
+                                        onChange=${(e) => setGenMorningModule(e.target.value)}
+                                        className="w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-1"
+                                    >
+                                        <option value="1">1. modul</option>
+                                        <option value="2">2. modul</option>
+                                        <option value="3">3. modul</option>
+                                        <option value="4">4. modul</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-medium text-gray-700 mb-1 text-center">Délután</label>
+                                    <select 
+                                        value=${genAfternoonModule}
+                                        onChange=${(e) => setGenAfternoonModule(e.target.value)}
+                                        className="w-full rounded border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-1"
+                                    >
+                                        <option value="1">1. modul</option>
+                                        <option value="2">2. modul</option>
+                                        <option value="3">3. modul</option>
+                                        <option value="4">4. modul</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div className="lg:col-span-5 flex justify-end mt-2 border-t pt-4">
+                                <button 
+                                    type="button" 
+                                    onClick=${handleGeneratePreview}
+                                    className="bg-blue-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-blue-700 shadow-sm flex items-center gap-2 transition-colors"
+                                >
+                                    <${Icons.EyeIcon} size=${18} />
+                                    Előnézet Generálása
+                                </button>
+                            </div>
+                        </div>
+                        
+                        ${previewCourses.length > 0 && html`
+                            <div className="mt-6 border-t pt-6">
+                                <h4 className="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                                    <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-sm uppercase tracking-wide">Előnézet</span>
+                                    Generált időpontok ellenőrzése
+                                </h4>
+                                <div className="bg-white rounded-md shadow-sm border border-gray-300 overflow-hidden">
+                                    <div className="max-h-96 overflow-y-auto">
+                                        <table className="min-w-full divide-y divide-gray-200">
+                                            <thead className="bg-gray-100 sticky top-0 z-10 shadow-sm">
+                                                <tr>
+                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Dátum</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Idősáv</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Foglalkozás (Modul)</th>
+                                                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Létszám</th>
+                                                    <th className="px-4 py-3 text-right text-xs font-bold text-gray-600 uppercase">Művelet</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="bg-white divide-y divide-gray-200">
+                                                ${previewCourses.map((course, index) => html`
+                                                    <tr key=${course.id} className=${index % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                                                        <td className="px-4 py-2">
+                                                            <input 
+                                                                type="date" 
+                                                                value=${course.date}
+                                                                onChange=${(e) => handlePreviewChange(course.id, 'date', e.target.value)}
+                                                                className="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2 flex items-center gap-1">
+                                                            <input 
+                                                                type="time" 
+                                                                value=${course.startTime}
+                                                                onChange=${(e) => handlePreviewChange(course.id, 'startTime', e.target.value)}
+                                                                className="w-24 text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                            />
+                                                            <span className="text-gray-400">-</span>
+                                                            <input 
+                                                                type="time" 
+                                                                value=${course.endTime}
+                                                                onChange=${(e) => handlePreviewChange(course.id, 'endTime', e.target.value)}
+                                                                className="w-24 text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <select 
+                                                                value=${course.name}
+                                                                onChange=${(e) => handlePreviewChange(course.id, 'name', e.target.value)}
+                                                                className="w-full text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                            >
+                                                                <option value="1. modul">1. modul</option>
+                                                                <option value="2. modul">2. modul</option>
+                                                                <option value="3. modul">3. modul</option>
+                                                                <option value="4. modul">4. modul</option>
+                                                            </select>
+                                                        </td>
+                                                        <td className="px-4 py-2">
+                                                            <input 
+                                                                type="number" 
+                                                                value=${course.capacity}
+                                                                onChange=${(e) => handlePreviewChange(course.id, 'capacity', parseInt(e.target.value, 10))}
+                                                                className="w-20 text-sm border-gray-300 rounded focus:ring-blue-500 focus:border-blue-500"
+                                                            />
+                                                        </td>
+                                                        <td className="px-4 py-2 text-right">
+                                                            <button 
+                                                                onClick=${() => handleRemovePreview(course.id)}
+                                                                className="text-red-500 hover:text-red-700 p-1.5 hover:bg-red-50 rounded"
+                                                                title="Eltávolítás a listából"
+                                                            >
+                                                                <${Icons.TrashIcon} size=${18} />
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                `)}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div className="bg-slate-50 border-t border-gray-200 p-4 flex justify-between items-center">
+                                        <div className="text-sm font-medium text-gray-700">
+                                            Összesen generálva: <span className="font-bold text-indigo-600">${previewCourses.length}</span> db időpont.
+                                        </div>
+                                        <button 
+                                            onClick=${handleBulkSave}
+                                            disabled=${isBulkSaving}
+                                            className="bg-green-600 text-white font-bold py-2.5 px-6 rounded-md hover:bg-green-700 shadow flex items-center gap-2 transition-transform active:scale-95 disabled:opacity-50"
+                                        >
+                                            ${isBulkSaving ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Mentés...` : html`<${Icons.CheckIcon} size=${20} /> Tervezet Véglegesítése és Mentése`}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+                ` : html`
                 <form onSubmit=${handleCreateCourse} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
                     <div className="lg:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Foglalkozás neve</label>
@@ -326,6 +760,7 @@ const AppointmentsTab = ({ isTestView }) => {
                         </button>
                     </div>
                 </form>
+                `}
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
@@ -354,36 +789,109 @@ const AppointmentsTab = ({ isTestView }) => {
                                 const isFull = course.bookingsCount >= course.capacity;
                                 return html`
                                     <tr key=${course.id} className="hover:bg-gray-50">
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm font-medium text-gray-900">${course.name}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="text-sm text-gray-900">${course.date}</div>
-                                            <div className="text-sm text-gray-500">${course.startTime} - ${course.endTime}</div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex items-center">
-                                                <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                                                    ${course.bookingsCount || 0} / ${course.capacity}
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <button 
-                                                onClick=${() => setSelectedCourseForBookings(course)}
-                                                className="text-indigo-600 hover:text-indigo-900 ml-4"
-                                                title="Jelentkezők megtekintése"
-                                            >
-                                                <${Icons.UsersIcon} size=${20} />
-                                            </button>
-                                            <button 
-                                                onClick=${() => handleDeleteCourse(course.id, course.name)}
-                                                className="text-red-600 hover:text-red-900 ml-4"
-                                                title="Foglalkozás törlése"
-                                            >
-                                                <${Icons.TrashIcon} size=${20} />
-                                            </button>
-                                        </td>
+                                        ${editingCourseId === course.id ? html`
+                                            <td colSpan="4" className="px-6 py-4">
+                                                <form onSubmit=${handleUpdateCourse} className="flex flex-wrap items-center gap-2">
+                                                    <select 
+                                                        value=${editCourseData.name} 
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, name: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                                                    >
+                                                        <option value="Elsősegély tanfolyam">Elsősegély tanfolyam</option>
+                                                        <option value="Orvosi alkalmassági vizsgálat">Orvosi alkalmassági vizsgálat</option>
+                                                        <option value="1. modul">1. modul</option>
+                                                        <option value="2. modul">2. modul</option>
+                                                        <option value="3. modul">3. modul</option>
+                                                        <option value="4. modul">4. modul</option>
+                                                        <option value="Konzultáció">Konzultáció</option>
+                                                    </select>
+                                                    
+                                                    <input 
+                                                        type="date" 
+                                                        value=${editCourseData.date} 
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, date: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                    
+                                                    <input 
+                                                        type="time" 
+                                                        value=${editCourseData.startTime} 
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, startTime: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded w-24 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                    <span className="text-gray-500">-</span>
+                                                    <input 
+                                                        type="time" 
+                                                        value=${editCourseData.endTime} 
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, endTime: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded w-24 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                    
+                                                    <input 
+                                                        type="number" 
+                                                        min="1"
+                                                        value=${editCourseData.capacity} 
+                                                        onChange=${(e) => setEditCourseData({...editCourseData, capacity: e.target.value})}
+                                                        className="text-sm border-gray-300 rounded w-16 focus:ring-indigo-500 focus:border-indigo-500"
+                                                    />
+                                                    
+                                                    <div className="ml-auto flex items-center gap-2">
+                                                        <button 
+                                                            type="button" 
+                                                            onClick=${cancelEditingCourse}
+                                                            className="text-gray-500 hover:text-gray-700 bg-gray-100 hover:bg-gray-200 px-3 py-1.5 rounded-md text-sm font-medium transition-colors"
+                                                        >
+                                                            Mégse
+                                                        </button>
+                                                        <button 
+                                                            type="submit" 
+                                                            disabled=${isUpdating}
+                                                            className="text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-1.5 rounded-md text-sm font-medium disabled:opacity-50 transition-colors"
+                                                        >
+                                                            ${isUpdating ? 'Mentés...' : 'Mentés'}
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </td>
+                                        ` : html`
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm font-medium text-gray-900">${course.name}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="text-sm text-gray-900">${course.date}</div>
+                                                <div className="text-sm text-gray-500">${course.startTime} - ${course.endTime}</div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap">
+                                                <div className="flex items-center">
+                                                    <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
+                                                        ${course.bookingsCount || 0} / ${course.capacity}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                                <button 
+                                                    onClick=${() => setSelectedCourseForBookings(course)}
+                                                    className="text-indigo-600 hover:text-indigo-900 ml-4"
+                                                    title="Jelentkezők megtekintése"
+                                                >
+                                                    <${Icons.UsersIcon} size=${20} />
+                                                </button>
+                                                <button 
+                                                    onClick=${() => startEditingCourse(course)}
+                                                    className="text-amber-600 hover:text-amber-900 ml-4"
+                                                    title="Foglalkozás szerkesztése"
+                                                >
+                                                    <${Icons.EditIcon} size=${20} />
+                                                </button>
+                                                <button 
+                                                    onClick=${() => handleDeleteCourse(course.id, course.name)}
+                                                    className="text-red-600 hover:text-red-900 ml-4"
+                                                    title="Foglalkozás törlése"
+                                                >
+                                                    <${Icons.TrashIcon} size=${20} />
+                                                </button>
+                                            </td>
+                                        `}
                                     </tr>
                                 `;
                             })}
