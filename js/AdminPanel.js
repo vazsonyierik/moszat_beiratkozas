@@ -1291,6 +1291,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 </div>
 
                 ${mainTab === 'registrations' ? html`
+                <${Fragment}>
                 <div className="bg-white rounded-lg border shadow-sm mb-8 overflow-hidden">
                     <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className="w-full p-4 text-left font-semibold text-gray-700 flex justify-between items-center hover:bg-gray-50 focus:outline-none">
                         <span>Szűrés és Keresés</span>
@@ -1404,6 +1405,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                         allowRestore=${true}
                         paginated=${true}
                     />
+                    </${Fragment}>
                 ` : html`
                 <${Fragment}>
                     <div className="border-b border-gray-200 mb-8">
@@ -1514,7 +1516,8 @@ const AdminPanel = ({ user, handleLogout }) => {
                             <${EmailImportLog} onStudentClick=${handleLogStudentClick} />
                         </div>
                     `}
-                </${React.Fragment}>`}
+                </${Fragment}>`}
+                </${Fragment}>
                 ` : mainTab === 'appointments' ? html`
                     <${AppointmentsTab} isTestView=${viewTestDataType} adminUser=${user} />
                 ` : html`
