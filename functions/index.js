@@ -894,6 +894,7 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
 
 // --- Időpontfoglaló funkciók exportálása ---
 exports.createCourse = appointments.createCourse;
+exports.createMultipleCourses = appointments.createMultipleCourses;
 exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
 exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
 exports.bookAppointment = appointments.bookAppointment;

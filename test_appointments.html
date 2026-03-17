@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="module">
+        import { html } from './js/UI.js';
+        import AppointmentsTab from './js/components/idopont/AppointmentsTab.js';
+
+        // Mock UI components that rely on AppContext
+        window.React.useState = React.useState;
+        window.React.useEffect = React.useEffect;
+
+        const App = () => html`<${AppointmentsTab} isTestView=${true} />`;
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(html`<${App} />`);
+    </script>
+</body>
+</html>

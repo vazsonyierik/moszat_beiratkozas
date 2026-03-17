@@ -5,6 +5,57 @@ const {ensureIsAdmin, sendDynamicEmail} = require("./utils");
 const templates = require("./emailTemplates");
 
 /**
+ * createMultipleCourses
+ * Creates multiple courses/appointments in a single batch.
+ */
+exports.createMultipleCourses = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const {courses, isTestView} = data;
+
+    if (!Array.isArray(courses) || courses.length === 0) {
+        throw new HttpsError("invalid-argument", "A foglalkozások listája érvénytelen vagy üres.");
+    }
+
+    const db = getFirestore();
+    const collectionName = isTestView ? "courses_test" : "courses";
+    const batch = db.batch();
+    const collectionRef = db.collection(collectionName);
+
+    try {
+        for (const course of courses) {
+            const {name, date, startTime, endTime, capacity} = course;
+
+            if (!name || !date || !startTime || !endTime || !capacity) {
+                throw new HttpsError("invalid-argument", "Minden kötelező mezőt ki kell tölteni a generált időpontoknál.");
+            }
+
+            if (capacity <= 0) {
+                throw new HttpsError("invalid-argument", "A kapacitásnak nagyobbnak kell lennie 0-nál.");
+            }
+
+            const newDocRef = collectionRef.doc();
+            batch.set(newDocRef, {
+                name,
+                date,
+                startTime,
+                endTime,
+                capacity: parseInt(capacity, 10),
+                bookingsCount: 0,
+                createdAt: FieldValue.serverTimestamp()
+            });
+        }
+
+        await batch.commit();
+        return {success: true, message: `${courses.length} foglalkozás sikeresen létrehozva.`};
+    } catch (error) {
+        console.error("Error creating multiple courses:", error);
+        throw new HttpsError("internal", "Hiba történt a foglalkozások tömeges létrehozásakor.", error);
+    }
+});
+
+/**
  * createCourse
  * Creates a new course/appointment.
  */
