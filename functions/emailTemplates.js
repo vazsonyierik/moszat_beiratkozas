@@ -37,7 +37,7 @@ const isUnder18 = (birthDateStr) => {
 
 // Sablon ID: E-1
 // 1. New Registration Confirmation
-exports.registrationConfirmation = (...args) => ({
+exports.registrationConfirmation = (studentData) => ({
     id: 'registrationConfirmation',
     subject: "Sikeres jelentkezés! Már csak egy lépés van hátra",
     html: `
@@ -94,7 +94,7 @@ exports.registrationConfirmation = (...args) => ({
 
 // Sablon ID: E-2
 // 2. Enrolled Student Information
-exports.enrolledConfirmation = (...args) => ({
+exports.enrolledConfirmation = (studentData) => ({
     id: 'enrolledConfirmation',
     subject: "Fontos információk a KRESZ-tanfolyamodról!",
     html: `
@@ -281,7 +281,7 @@ exports.courseCompletedReadyToSign = (studentData) => {
 
 // Sablon ID: E-5
 // 5. Medical Certificate Received
-exports.medicalCertificateReceived = (...args) => ({
+exports.medicalCertificateReceived = (studentData) => ({
     id: 'medicalCertificateReceived',
     subject: "Orvosi alkalmassági vélemény rögzítve",
     html: `
@@ -298,7 +298,7 @@ exports.medicalCertificateReceived = (...args) => ({
 
 // Sablon ID: T-1
 // Jelentkezés utáni 4. nap
-exports.paymentReminderDay4 = (...args) => ({
+exports.paymentReminderDay4 = (studentData) => ({
     id: 'paymentReminderDay4',
     subject: "Emlékeztető a befejezetlen regisztrációdról",
     html: `
@@ -313,7 +313,7 @@ exports.paymentReminderDay4 = (...args) => ({
 
 // Sablon ID: T-2
 // Jelentkezés utáni 10. nap
-exports.paymentReminderDay10 = (...args) => ({
+exports.paymentReminderDay10 = (studentData) => ({
     id: 'paymentReminderDay10',
     subject: "Fontos: a regisztrációddal kapcsolatban",
     html: `
@@ -333,7 +333,7 @@ exports.paymentReminderDay10 = (...args) => ({
 
 // Sablon ID: T-3
 // Tanfolyamkezdési emlékeztetők (30 nap)
-exports.courseStartReminderDay30 = (...args) => ({
+exports.courseStartReminderDay30 = (studentData) => ({
     id: 'courseStartReminderDay30',
     subject: "Emlékeztető: Aktiváld a KRESZ-hozzáférésedet!",
     html: `
@@ -350,7 +350,7 @@ exports.courseStartReminderDay30 = (...args) => ({
 
 // Sablon ID: T-4
 // Tanfolyamkezdési emlékeztetők (60 nap)
-exports.courseStartReminderDay60 = (...args) => ({
+exports.courseStartReminderDay60 = (studentData) => ({
     id: 'courseStartReminderDay60',
     subject: "Figyelmeztetés: a regisztrációd 30 napon belül lejár!",
     html: `
@@ -367,7 +367,7 @@ exports.courseStartReminderDay60 = (...args) => ({
 
 // Sablon ID: T-5
 // Tanfolyamkezdési emlékeztetők (85 nap)
-exports.courseStartReminderDay85 = (...args) => ({
+exports.courseStartReminderDay85 = (studentData) => ({
     id: 'courseStartReminderDay85',
     subject: "Fontos! Már csak 5 napod maradt elkezdeni a KRESZ tanfolyamot!",
     html: `
