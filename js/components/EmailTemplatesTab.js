@@ -23,6 +23,12 @@ const EmailTemplatesTab = () => {
     const quillRef = useRef(null);
     const editorContainerRef = useRef(null);
 
+    // Test Modal States
+    const [showTestModal, setShowTestModal] = useState(false);
+    const [testVariables, setTestVariables] = useState({});
+    const [isSendingTest, setIsSendingTest] = useState(false);
+    const [extractedVars, setExtractedVars] = useState([]);
+
     // 1. Betöltjük a külső Quill library-t dinamikusan, ha még nincs
     useEffect(() => {
         if (!window.Quill) {
