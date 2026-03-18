@@ -241,7 +241,7 @@ const EmailTemplatesTab = () => {
     return html`
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row min-h-[600px]">
 
-            {/* Bal oldali lista (Sidebar) */}
+
             <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50 overflow-y-auto" style=${{ maxHeight: '800px' }}>
                 <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
                     <h3 className="font-semibold text-gray-800">E-mail Sablonok</h3>
@@ -283,7 +283,7 @@ const EmailTemplatesTab = () => {
                 </div>
             </div>
 
-            {/* Jobb oldali szerkesztő (Detail view) */}
+
             <div className="w-full md:w-2/3 p-6 flex flex-col h-full">
 
                 <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
