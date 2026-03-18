@@ -116,13 +116,20 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
         const templateDoc = await db.collection("email_templates").doc(templateId).get();
         if (templateDoc.exists) {
             const dynamicTemplate = templateDoc.data();
+
+            // Ha a sablon ki van kapcsolva, megszakítjuk a küldést
+            if (dynamicTemplate.enabled === false) {
+                logger.info(`Template ${templateId} is disabled. Skipping email send for ${templateData.email}.`);
+                return;
+            }
+
             if (dynamicTemplate.subject && dynamicTemplate.html) {
                 // Behelyettesítjük a változókat a Firestore-ból jött sablonba
                 finalSubject = replaceTemplateVariables(dynamicTemplate.subject, templateData);
                 finalHtml = replaceTemplateVariables(dynamicTemplate.html, templateData);
                 logger.info(`Using dynamic template from DB for ${templateId}`);
             } else {
-                logger.warn(`Dynamic template ${templateId} is missing subject or html, using fallback.`);
+                logger.warn(`DynamicTemplate ${templateId} is missing subject or html, using fallback.`);
             }
         }
     } catch (error) {
@@ -174,56 +181,20 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
 /**
  * Központi e-mail küldő segédfüggvény (Visszafelé kompatibilitás a régi sablonokhoz)
  * @param {object} studentData A címzett adatai.
- * @param {object} template Az e-mail sablon.
+ * @param {object|string} template Az e-mail sablon objektum (vagy sablon azonosító string a fallback-hez).
  * @param {boolean} isTest Teszt üzemmód jelző.
  */
 const sendEmail = async (studentData, template, isTest = false) => {
-    const db = getFirestore();
+    // If the template is passed as an object containing an 'id' (which our new templates have)
+    // or if the caller passes the templateId as a third parameter (which we don't, we just pass the object)
+    // We should ideally use sendDynamicEmail for everything to respect the toggles
 
-    if (!studentData.email) {
-        logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
-        return;
-    }
-    if (!template || !template.subject || !template.html) {
-        logger.error("Email template is invalid.", {studentId: studentData.id});
-        return;
-    }
+    // Extracted from templates, we need the templateId. Assuming template.id exists, or we try to find it
+    const templateId = template.id || "unknown";
 
-    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
-    if (isTest) {
-        try {
-            const configDoc = await db.collection("settings").doc("testConfig").get();
-            if (configDoc.exists) {
-                const config = configDoc.data();
-                if (config.emailsEnabled === false) {
-                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: studentData.email});
-                    return;
-                }
-            }
-        } catch (error) {
-            logger.warn("Failed to check test email settings. Proceeding with send.", {error: error.message});
-        }
-    }
-
-    const subjectPrefix = isTest ? "[TESZT] " : "";
-
-    const mailPayload = {
-        to: studentData.email,
-        from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
-        message: {
-            subject: `${subjectPrefix}${template.subject}`,
-            html: template.html,
-        },
-    };
-    if (isUnder18(studentData.birthDate) && studentData.guardian_email) {
-        mailPayload.cc = studentData.guardian_email;
-    }
-    try {
-        await db.collection("mail").add(mailPayload);
-        logger.info(`Email added to queue for ${studentData.email}. Template: ${template.subject}`);
-    } catch (error) {
-        logger.error(`Failed to queue email for ${studentData.email}. Error: ${error.message}`);
-    }
+    // Call sendDynamicEmail directly to handle toggle logic and DB fallback
+    // This allows legacy `sendEmail` calls to benefit from DB toggles
+    return sendDynamicEmail(templateId, studentData, template, isTest);
 };
 
 // A függvények exportálása CommonJS szintaxissal.
