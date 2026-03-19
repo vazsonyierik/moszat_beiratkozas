@@ -326,19 +326,18 @@ const runDailyChecks = async () => {
         }
     });
     await Promise.all(studentPromises);
-    // --- VÁRÓLISTA EMLÉKEZTETŐK (3 NAPOS) ---
-    // Lekérdezzük a "courses" kollekciót azokra a foglalkozásokra, amelyek pont 3 nap múlva kezdődnek
-    const targetDateObj = new Date(today);
-    targetDateObj.setDate(today.getDate() + 3);
-    const targetDateStr = targetDateObj.toISOString().split("T")[0]; // YYYY-MM-DD formátum
+    // --- IDŐPONT EMLÉKEZTETŐK (3 NAPOS ÉS 1 NAPOS) ---
 
-    const coursesSnapshot = await db.collection("courses").where("date", "==", targetDateStr).get();
+    // 3 napos emlékeztető
+    const targetDateObj3 = new Date(today);
+    targetDateObj3.setDate(today.getDate() + 3);
+    const targetDateStr3 = targetDateObj3.toISOString().split("T")[0]; // YYYY-MM-DD formátum
 
-    for (const courseDoc of coursesSnapshot.docs) {
+    const coursesSnapshot3 = await db.collection("courses").where("date", "==", targetDateStr3).get();
+
+    for (const courseDoc of coursesSnapshot3.docs) {
         const courseData = courseDoc.data();
-        const courseId = courseDoc.id;
 
-        // Csak akkor küldünk, ha vannak rendes jelentkezők
         if (courseData.bookingsCount > 0) {
             const bookingsSnap = await courseDoc.ref.collection("bookings").get();
             bookingsSnap.forEach((bookingDoc) => {
@@ -347,6 +346,29 @@ const runDailyChecks = async () => {
                 automationLogs.push({
                     student: `${bookingData.lastName} ${bookingData.firstName}`,
                     action: `3 napos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                });
+            });
+        }
+    }
+
+    // 1 napos emlékeztető
+    const targetDateObj1 = new Date(today);
+    targetDateObj1.setDate(today.getDate() + 1);
+    const targetDateStr1 = targetDateObj1.toISOString().split("T")[0];
+
+    const coursesSnapshot1 = await db.collection("courses").where("date", "==", targetDateStr1).get();
+
+    for (const courseDoc of coursesSnapshot1.docs) {
+        const courseData = courseDoc.data();
+
+        if (courseData.bookingsCount > 0) {
+            const bookingsSnap = await courseDoc.ref.collection("bookings").get();
+            bookingsSnap.forEach((bookingDoc) => {
+                const bookingData = bookingDoc.data();
+                studentPromises.push(sendEmail(bookingData, templates.courseReminder1Day(bookingData)));
+                automationLogs.push({
+                    student: `${bookingData.lastName} ${bookingData.firstName}`,
+                    action: `1 napos emlékeztető küldve (${courseData.name} - ${courseData.date})`
                 });
             });
         }

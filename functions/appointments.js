@@ -43,6 +43,7 @@ exports.createMultipleCourses = onCall({region: "europe-west1"}, async (request)
                 endTime,
                 capacity: parseInt(capacity, 10),
                 bookingsCount: 0,
+                waitlistCount: 0,
                 createdAt: FieldValue.serverTimestamp()
             });
         }
@@ -84,6 +85,7 @@ exports.createCourse = onCall({region: "europe-west1"}, async (request) => {
             endTime,
             capacity: parseInt(capacity, 10),
             bookingsCount: 0,
+            waitlistCount: 0,
             createdAt: FieldValue.serverTimestamp()
         });
 
@@ -565,7 +567,6 @@ async function processWaitlist(courseId, isTestView) {
                 firstName: waitlistData.firstName,
                 lastName: waitlistData.lastName,
                 email: normalizedEmail,
-                phoneNumber: waitlistData.phoneNumber || "",
                 bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.name,
@@ -594,9 +595,10 @@ async function processWaitlist(courseId, isTestView) {
                 // Törlés a várólistáról
                 transaction.delete(firstWaitlistUserDoc.ref);
 
-                // Létszám növelése
+                // Létszám növelése és várólista csökkentése
                 transaction.update(courseRef, {
-                    bookingsCount: FieldValue.increment(1)
+                    bookingsCount: FieldValue.increment(1),
+                    waitlistCount: FieldValue.increment(-1)
                 });
             });
 
@@ -655,7 +657,7 @@ async function processWaitlist(courseId, isTestView) {
  */
 exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
     const data = request.data;
-    const {courseId, firstName, lastName, email, phoneNumber, isTestView} = data;
+    const {courseId, firstName, lastName, email, isTestView} = data;
 
     if (!courseId || !firstName || !lastName || !email) {
         throw new HttpsError("invalid-argument", "Minden kötelező mezőt ki kell tölteni.");
@@ -690,9 +692,27 @@ exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             email: normalizedEmail,
-            phoneNumber: phoneNumber ? phoneNumber.trim() : "",
             joinedAt: FieldValue.serverTimestamp()
         });
+
+        // Növeljük a várólista számlálót
+        await courseRef.update({
+            waitlistCount: FieldValue.increment(1)
+        });
+
+        const courseData = courseDoc.data();
+        const waitlistEmailData = {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: normalizedEmail,
+            courseName: courseData.name,
+            courseDate: courseData.date,
+            startTime: courseData.startTime,
+            endTime: courseData.endTime || "ismeretlen"
+        };
+
+        // Küldünk egy megerősítő e-mailt a feliratkozásról
+        await sendDynamicEmail("waitlistJoined", waitlistEmailData, templates.waitlistJoined(waitlistEmailData), isTestView);
 
         return {success: true, message: "Sikeresen feliratkoztál a várólistára!"};
     } catch (error) {
@@ -770,7 +790,6 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
                 firstName: waitlistData.firstName,
                 lastName: waitlistData.lastName,
                 email: normalizedEmail,
-                phoneNumber: waitlistData.phoneNumber || "",
                 bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.name,
@@ -791,9 +810,10 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
             // Törlés várólistáról
             transaction.delete(waitlistDocRef);
 
-            // Kurzus létszám növelése
+            // Kurzus létszám növelése és várólista csökkentése
             transaction.update(courseRef, {
-                bookingsCount: FieldValue.increment(1)
+                bookingsCount: FieldValue.increment(1),
+                waitlistCount: FieldValue.increment(-1)
             });
 
             // Lezárjuk a Claim dokumentumot, hogy más már ne kattinthasson sikeresen!
@@ -841,8 +861,18 @@ exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (req
     const normalizedEmail = email.toLowerCase().trim();
 
     try {
-        const waitlistDocRef = db.collection(coursesCollection).doc(courseId).collection("waitlist").doc(normalizedEmail);
-        await waitlistDocRef.delete();
+        const courseRef = db.collection(coursesCollection).doc(courseId);
+        const waitlistDocRef = courseRef.collection("waitlist").doc(normalizedEmail);
+
+        await db.runTransaction(async (transaction) => {
+            const docSnap = await transaction.get(waitlistDocRef);
+            if (docSnap.exists) {
+                transaction.delete(waitlistDocRef);
+                transaction.update(courseRef, {
+                    waitlistCount: FieldValue.increment(-1)
+                });
+            }
+        });
 
         return {success: true, message: "Tanuló eltávolítva a várólistáról."};
     } catch (error) {

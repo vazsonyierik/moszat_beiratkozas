@@ -37,7 +37,6 @@ const BookingModal = ({ course, onClose, onBook, isTestView, isWaitlist }) => {
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
     const [emailConfirm, setEmailConfirm] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState(''); // Új: Telefonszám várólistához
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
 
@@ -62,7 +61,6 @@ const BookingModal = ({ course, onClose, onBook, isTestView, isWaitlist }) => {
                 firstName,
                 lastName,
                 email,
-                phoneNumber, // Várólista esetén átadjuk
                 isTestView,
                 isWaitlist
             });
@@ -141,20 +139,6 @@ const BookingModal = ({ course, onClose, onBook, isTestView, isWaitlist }) => {
                                 required
                             />
                         </div>
-
-                        ${isWaitlist && html`
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Telefonszám (Opcionális de javasolt)</label>
-                                <input
-                                    type="tel"
-                                    value=${phoneNumber}
-                                    onChange=${e => setPhoneNumber(e.target.value)}
-                                    placeholder="+36 30 123 4567"
-                                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-indigo-500 focus:border-indigo-500"
-                                />
-                                <p className="text-xs text-gray-500 mt-1">Hogy szükség esetén gyorsan el tudjunk érni, ha felszabadul egy hely.</p>
-                            </div>
-                        `}
 
                         <div className="pt-4 flex justify-end gap-3">
                             <button 

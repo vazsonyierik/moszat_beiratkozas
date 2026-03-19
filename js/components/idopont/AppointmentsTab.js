@@ -182,7 +182,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                     </div>
                                                     <div>
                                                         <p className="text-sm font-medium text-gray-900 truncate">${entry.lastName} ${entry.firstName}</p>
-                                                        <p className="text-sm text-gray-500 truncate">${entry.email} ${entry.phoneNumber ? `| ${entry.phoneNumber}` : ''}</p>
+                                                        <p className="text-sm text-gray-500 truncate">${entry.email}</p>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-4">
@@ -858,7 +858,7 @@ const AppointmentsTab = ({ isTestView }) => {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Foglalkozás</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Időpont</th>
-                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Létszám</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Létszám (Várólista)</th>
                                 <th className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Műveletek</th>
                             </tr>
                         </thead>
@@ -946,10 +946,15 @@ const AppointmentsTab = ({ isTestView }) => {
                                                 <div className="text-sm text-gray-500">${course.startTime} - ${course.endTime}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
+                                                <div className="flex items-center gap-2">
                                                     <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                                         ${course.bookingsCount || 0} / ${course.capacity}
                                                     </span>
+                                                    ${(course.waitlistCount > 0) && html`
+                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" title="Várólistán lévők száma">
+                                                            V: ${course.waitlistCount}
+                                                        </span>
+                                                    `}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

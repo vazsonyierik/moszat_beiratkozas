@@ -231,6 +231,32 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
     };
 };
 
+exports.courseReminder1Day = (bookingData) => {
+    return {
+        id: 'courseReminder1Day',
+        subject: "Holnap találkozunk! Emlékeztető a KRESZ foglalkozásról",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy holnap várunk a következő foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Kérjük, hogy pontosan érkezz!</p>
+                <p>Kérjük, ha váratlanul közbejött valami, és mégsem tudsz részt venni, az alábbi gombra kattintva haladéktalanul mondd le az időpontot!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
 exports.courseReminder3Days = (bookingData) => {
     return {
         id: 'courseReminder3Days',
@@ -277,6 +303,25 @@ exports.waitlistPromoted = (bookingData) => {
                        Időpont lemondása
                     </a>
                 </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.waitlistJoined = (bookingData) => {
+    return {
+        id: 'waitlistJoined',
+        subject: "Sikeres feliratkozás a várólistára - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sikeresen feliratkoztál a várólistára az alábbi foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Amint felszabadul egy hely, e-mailben fogunk értesíteni a részletekről.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
         `

@@ -186,6 +186,31 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    courseReminder1Day: {
+        id: 'courseReminder1Day',
+        name: 'Időpont emlékeztető 1 nap (T-9)', category: 'Emlékeztetők',
+        subject: `Holnap találkozunk! Emlékeztető a KRESZ foglalkozásról`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy holnap várunk a következő foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Kérjük, hogy pontosan érkezz!</p>
+                <p>Kérjük, ha váratlanul közbejött valami, és mégsem tudsz részt venni, az alábbi gombra kattintva haladéktalanul mondd le az időpontot!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
     courseCompletedReadyToSign: {
         id: 'courseCompletedReadyToSign',
         name: 'Tanfolyam elvégezve - Aláírásra kész (E-4)', category: 'Beiratkozás és Tanfolyam',
@@ -514,6 +539,24 @@ const DEFAULT_TEMPLATES = {
                        Időpont lemondása
                     </a>
                 </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    waitlistJoined: {
+        id: 'waitlistJoined',
+        name: 'Várólista: Sikeres feliratkozás', category: 'Időpontfoglalás',
+        subject: `Sikeres feliratkozás a várólistára - Mosolyzóna Autósiskola`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Sikeresen feliratkoztál a várólistára az alábbi foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Amint felszabadul egy hely, e-mailben fogunk értesíteni a részletekről.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
         `,
