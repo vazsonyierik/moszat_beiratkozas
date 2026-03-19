@@ -57,9 +57,10 @@ const TestEmailModal = ({ templateId, savedTemplate, isOpen, onClose }) => {
         e.preventDefault();
 
         // Biztos ami biztos, ellenőrizzük, hogy minden kötelező mező ki van-e töltve
-        const missingVars = variables.filter(v => !testData[v] || testData[v].trim() === '');
+        // Kivétel: a secondName (második keresztnév) nem kötelező, mert sokaknak nincs.
+        const missingVars = variables.filter(v => v !== 'secondName' && (!testData[v] || testData[v].trim() === ''));
         if (missingVars.length > 0) {
-            showToast('Kérjük, tölts ki minden változóhoz tartozó mezőt!', 'warning');
+            showToast('Kérjük, tölts ki minden kötelező változóhoz tartozó mezőt (a 2. keresztnév opcionális)!', 'warning');
             return;
         }
 
@@ -124,11 +125,11 @@ const TestEmailModal = ({ templateId, savedTemplate, isOpen, onClose }) => {
                                                 ${variables.map(v => html`
                                                     <div key=${v}>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
-                                                            {{${v}}}
+                                                            {{${v}}} ${v === 'secondName' ? '(Opcionális)' : ''}
                                                         </label>
                                                         <input
                                                             type="text"
-                                                            required
+                                                            required=${v !== 'secondName'}
                                                             value=${testData[v] || ''}
                                                             onChange=${(e) => handleInputChange(e, v)}
                                                             className="shadow-sm focus:ring-blue-500 focus:border-blue-500 block w-full sm:text-sm border-gray-300 rounded-md p-2 border"

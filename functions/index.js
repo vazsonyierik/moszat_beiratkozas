@@ -931,9 +931,28 @@ exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {
         if (!finalSubject || !finalHtml) {
             // Ellenőrizzük, hogy a template létezik-e az emailTemplates.js fájlban
             if (templates[templateId]) {
-                const fallbackTemplate = templates[templateId](testData);
+                // A beégetett sablonok (emailTemplates.js) gyakran a current_lastName, current_firstName
+                // mezőkből generálják a teljes nevet a getFullName() függvénnyel.
+                // Viszont a teszt modal csak a {{lastName}} típusú változókat kéri be a defaultTemplates.js alapján.
+                // Ezért leképezzük a teszt adatokat a beégetett sablonok által várt formátumra.
+                const mappedTestData = {
+                    ...testData,
+                    current_lastName: testData.lastName || "",
+                    current_firstName: testData.firstName || "",
+                    current_secondName: testData.secondName || "",
+                    // Ha a tesztben csak firstName lett megadva (pl. időpontfoglalás), azt is továbbítjuk
+                };
+
+                const fallbackTemplate = templates[templateId](mappedTestData);
                 finalSubject = fallbackTemplate.subject;
                 finalHtml = fallbackTemplate.html;
+
+                // Extra biztonság: ha a fallback template még mindig tartalmaz {{valtozo}} tagokat,
+                // azokat is lecseréljük a teszt adatokkal.
+                const { replaceTemplateVariables } = require('./utils');
+                finalSubject = replaceTemplateVariables(finalSubject, mappedTestData);
+                finalHtml = replaceTemplateVariables(finalHtml, mappedTestData);
+
             } else {
                 throw new HttpsError("not-found", "A sablon nem található sem az adatbázisban, sem az alapértelmezések között.");
             }
