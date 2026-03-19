@@ -11,7 +11,9 @@ const { useState, useEffect } = React;
  */
 const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     const [bookings, setBookings] = useState([]);
+    const [waitlist, setWaitlist] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [isWaitlistLoading, setIsWaitlistLoading] = useState(true);
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
@@ -19,13 +21,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         if (!course) return;
 
         const collectionName = isTestView ? 'courses_test' : 'courses';
-        // Subcollection is 'bookings'
-        const q = query(
+        
+        // Fetch Bookings
+        const qBookings = query(
             collection(db, collectionName, course.id, 'bookings'),
             orderBy('bookingDate', 'asc')
         );
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+        const unsubscribeBookings = onSnapshot(qBookings, (snapshot) => {
             const data = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
@@ -38,7 +41,28 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
             setIsLoading(false);
         });
 
-        return () => unsubscribe();
+        // Fetch Waitlist
+        const qWaitlist = query(
+            collection(db, collectionName, course.id, 'waitlist'),
+            orderBy('joinedAt', 'asc')
+        );
+
+        const unsubscribeWaitlist = onSnapshot(qWaitlist, (snapshot) => {
+            const data = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setWaitlist(data);
+            setIsWaitlistLoading(false);
+        }, (error) => {
+            console.error("Error fetching waitlist:", error);
+            setIsWaitlistLoading(false);
+        });
+
+        return () => {
+            unsubscribeBookings();
+            unsubscribeWaitlist();
+        };
     }, [course, isTestView, showToast]);
 
     const handleCancelBooking = (booking) => {
@@ -55,6 +79,26 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     showToast('Jelentkezés sikeresen törölve.', 'success');
                 } catch (error) {
                     console.error("Error cancelling booking:", error);
+                    showToast(`Hiba a törlés során: ${error.message}`, 'error');
+                }
+            }
+        });
+    };
+
+    const handleRemoveWaitlist = (entry) => {
+        showConfirmation({
+            message: `Biztosan törölni szeretnéd ${entry.firstName} ${entry.lastName} tanulót a várólistáról?`,
+            onConfirm: async () => {
+                try {
+                    const removeWaitlistFn = httpsCallable(functions, 'removeWaitlistEntryAsAdmin');
+                    await removeWaitlistFn({
+                        courseId: course.id,
+                        email: entry.email,
+                        isTestView
+                    });
+                    showToast('Sikeresen eltávolítva a várólistáról.', 'success');
+                } catch (error) {
+                    console.error("Error removing from waitlist:", error);
                     showToast(`Hiba a törlés során: ${error.message}`, 'error');
                 }
             }
@@ -118,6 +162,46 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                     </li>
                                 `)}
                             </ul>
+                        </div>
+                    `}
+
+                    ${!isWaitlistLoading && waitlist.length > 0 && html`
+                        <div className="mt-8">
+                            <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
+                                Várólista (${waitlist.length})
+                            </h4>
+                            <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                                <ul className="divide-y divide-gray-200">
+                                    ${waitlist.map((entry, index) => html`
+                                        <li key=${entry.id} className="hover:bg-gray-50">
+                                            <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                                <div className="flex items-center gap-4">
+                                                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">
+                                                        V-${index + 1}.
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-medium text-gray-900 truncate">${entry.lastName} ${entry.firstName}</p>
+                                                        <p className="text-sm text-gray-500 truncate">${entry.email}</p>
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="text-sm text-gray-500 hidden sm:block">
+                                                        Feliratkozott: ${entry.joinedAt ? new Date(entry.joinedAt.seconds * 1000).toLocaleString('hu-HU') : '...'}
+                                                    </div>
+                                                    <button 
+                                                        onClick=${() => handleRemoveWaitlist(entry)}
+                                                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                        title="Eltávolítás a várólistáról"
+                                                    >
+                                                        <${Icons.TrashIcon} size=${16} />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    `)}
+                                </ul>
+                            </div>
                         </div>
                     `}
                 </div>
@@ -774,7 +858,7 @@ const AppointmentsTab = ({ isTestView }) => {
                             <tr>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Foglalkozás</th>
                                 <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Időpont</th>
-                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Létszám</th>
+                                <th className="px-6 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wider">Létszám (Várólista)</th>
                                 <th className="px-6 py-3 text-right text-xs font-bold text-gray-600 uppercase tracking-wider">Műveletek</th>
                             </tr>
                         </thead>
@@ -862,10 +946,15 @@ const AppointmentsTab = ({ isTestView }) => {
                                                 <div className="text-sm text-gray-500">${course.startTime} - ${course.endTime}</div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
+                                                <div className="flex items-center gap-2">
                                                     <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                                         ${course.bookingsCount || 0} / ${course.capacity}
                                                     </span>
+                                                    ${(course.waitlistCount > 0) && html`
+                                                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" title="Várólistán lévők száma">
+                                                            V: ${course.waitlistCount}
+                                                        </span>
+                                                    `}
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

@@ -43,6 +43,7 @@ exports.createMultipleCourses = onCall({region: "europe-west1"}, async (request)
                 endTime,
                 capacity: parseInt(capacity, 10),
                 bookingsCount: 0,
+                waitlistCount: 0,
                 createdAt: FieldValue.serverTimestamp()
             });
         }
@@ -84,6 +85,7 @@ exports.createCourse = onCall({region: "europe-west1"}, async (request) => {
             endTime,
             capacity: parseInt(capacity, 10),
             bookingsCount: 0,
+            waitlistCount: 0,
             createdAt: FieldValue.serverTimestamp()
         });
 
@@ -312,6 +314,8 @@ exports.cancelBookingAsAdmin = onCall({region: "europe-west1"}, async (request) 
 
         if (bookingData) {
             await sendDynamicEmail("bookingCancelledByAdmin", bookingData, templates.bookingCancelledByAdmin(bookingData), isTestView);
+            // Várólista logika meghívása
+            await processWaitlist(courseId, isTestView);
         }
 
         return {success: true, message: "Jelentkezés sikeresen törölve, e-mail kiküldve."};
@@ -489,6 +493,8 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
 
         if (bookingData) {
             await sendDynamicEmail("bookingCancelledByStudent", bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
+            // Várólista logika meghívása
+            await processWaitlist(bookingData.courseId, isTestView);
         }
 
         return {success: true, message: "Jelentkezés sikeresen lemondva."};
@@ -498,5 +504,396 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
             throw error;
         }
         throw new HttpsError("internal", "Hiba történt a lemondás feldolgozásakor.", error.message);
+    }
+});
+
+// --- Várólista (Waitlist) funkciók ---
+
+/**
+ * processWaitlist
+ * Belső segédfüggvény, amely lemondáskor meghívódik a várólista kezelésére.
+ */
+async function processWaitlist(courseId, isTestView) {
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const courseRef = db.collection(coursesCollection).doc(courseId);
+
+    try {
+        const courseDoc = await courseRef.get();
+        if (!courseDoc.exists) return;
+        const courseData = courseDoc.data();
+
+        // 1. Van-e egyáltalán szabad hely?
+        if (courseData.bookingsCount >= courseData.capacity) {
+            return; // Nincs szabad hely, nincs mit tenni
+        }
+
+        // 2. Van-e valaki a várólistán?
+        const waitlistRef = courseRef.collection("waitlist");
+        const waitlistSnap = await waitlistRef.orderBy("joinedAt", "asc").get();
+        if (waitlistSnap.empty) {
+            return; // Üres a várólista
+        }
+
+        // 3. Mennyi idő van hátra a kurzus kezdetéig?
+        // A courseData.date formátuma "YYYY-MM-DD", a startTime "HH:mm"
+        // Felépítjük a dátumot explicitly a budapesti időzónában.
+        // Mivel a Cloud Functions UTC-n fut, a sima `new Date(Y, M, D, H, m)` UTC-ként lesz értelmezve.
+        // Beállítjuk a helyes stringet: "2024-10-25T14:30:00.000+01:00" vagy "+02:00" attól függően,
+        // hogy nyári vagy téli időszámítás van. Az Intl.DateTimeFormat megmondja az eltolódást.
+        
+        // Először készítünk egy hozzávetőleges (UTC) dátumot a keresett napra
+        const approximateDate = new Date(`${courseData.date}T12:00:00Z`);
+        
+        // Kiszámítjuk, hogy a kért napon Magyarországon mennyi volt az UTC-től való eltérés
+        // Egy formatter Europe/Budapest timezone-nal
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Europe/Budapest',
+            timeZoneName: 'longOffset' // pl: "GMT+02:00" vagy "GMT+01:00"
+        });
+        const parts = formatter.formatToParts(approximateDate);
+        const offsetPart = parts.find(p => p.type === 'timeZoneName').value; // "GMT+02:00"
+        const offsetString = offsetPart.replace('GMT', ''); // "+02:00" vagy "+01:00" (ha csak 'GMT', az 'Z')
+        const finalOffset = offsetString === '' ? 'Z' : offsetString;
+
+        // Most már pontos ISO stringet tudunk építeni
+        const exactCourseDateTimeString = `${courseData.date}T${courseData.startTime}:00.000${finalOffset}`;
+        const courseStartDate = new Date(exactCourseDateTimeString);
+        
+        const now = new Date(); // Mostani időpillanat (UTC, de az epoch millisec abszolút)
+        const hoursUntilStart = (courseStartDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+
+        if (hoursUntilStart > 24) {
+            // TÖBB MINT 24 ÓRA: Automatikus bekerülés (1. opció)
+            const firstWaitlistUserDoc = waitlistSnap.docs[0];
+            const waitlistData = firstWaitlistUserDoc.data();
+
+            // Beírjuk a bookings-ba
+            const bookingsSubcollection = courseRef.collection("bookings");
+            const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+            
+            const normalizedEmail = waitlistData.email.toLowerCase().trim();
+            const bookingDocRef = bookingsSubcollection.doc(normalizedEmail);
+            const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+            const cancellationToken = crypto.randomUUID();
+
+            const bookingData = {
+                firstName: waitlistData.firstName,
+                lastName: waitlistData.lastName,
+                email: normalizedEmail,
+                bookingDate: FieldValue.serverTimestamp(),
+                courseId: courseId,
+                courseName: courseData.name,
+                courseDate: courseData.date,
+                startTime: courseData.startTime,
+                endTime: courseData.endTime || "ismeretlen",
+                cancellation_token: cancellationToken,
+                isPresent: null,
+                feePaid: false,
+                allBookingId: globalBookingRef.id,
+                promotedFromWaitlist: true
+            };
+
+            await db.runTransaction(async (transaction) => {
+                // Ellenőrizzük megint a kapacitást tranzakcióban
+                const tCourseDoc = await transaction.get(courseRef);
+                const tCourseData = tCourseDoc.data();
+                if (tCourseData.bookingsCount >= tCourseData.capacity) {
+                    throw new Error("Közben betelt.");
+                }
+
+                // Hozzáadás
+                transaction.set(bookingDocRef, bookingData);
+                transaction.set(globalBookingRef, bookingData);
+                
+                // Törlés a várólistáról
+                transaction.delete(firstWaitlistUserDoc.ref);
+
+                // Létszám növelése és várólista csökkentése
+                transaction.update(courseRef, {
+                    bookingsCount: FieldValue.increment(1),
+                    waitlistCount: FieldValue.increment(-1)
+                });
+            });
+
+            // Értesítő e-mail küldése
+            await sendDynamicEmail("waitlistPromoted", bookingData, templates.waitlistPromoted(bookingData), isTestView);
+            console.log(`Waitlist auto-promotion successful for ${normalizedEmail}`);
+
+        } else if (hoursUntilStart >= 3) {
+            // KEVESEBB MINT 24 ÓRA, DE TÖBB MINT 3 ÓRA: Gyorsasági Broadcast (3. opció)
+            // Létrehozunk egy claim dokumentumot, hogy nyomon kövessük a "versenyt"
+            const claimRef = db.collection(isTestView ? "claims_test" : "claims").doc(courseId);
+            
+            // Ha már van aktív claim ehhez a kurzushoz, ami még nyitott, akkor ne spameljünk újat
+            const claimDoc = await claimRef.get();
+            if (claimDoc.exists && claimDoc.data().isOpen) {
+                 return; // Már kiküldtük az értesítést a korábbi lemondásnál erre a szabad helyre
+            }
+
+            await claimRef.set({
+                courseId: courseId,
+                courseName: courseData.name,
+                isOpen: true,
+                createdAt: FieldValue.serverTimestamp()
+            });
+
+            // E-mail küldése mindenkinek
+            const emailsPromises = waitlistSnap.docs.map(doc => {
+                const waitlistData = doc.data();
+                const encodedEmail = encodeURIComponent(waitlistData.email.toLowerCase().trim());
+                
+                const emailData = {
+                    ...waitlistData,
+                    courseId: courseId,
+                    courseName: courseData.name,
+                    courseDate: courseData.date,
+                    startTime: courseData.startTime,
+                    endTime: courseData.endTime || "ismeretlen",
+                    encodedEmail: encodedEmail
+                };
+                
+                return sendDynamicEmail("lastMinuteSpot", emailData, templates.lastMinuteSpot(emailData), isTestView);
+            });
+
+            await Promise.allSettled(emailsPromises);
+            console.log(`Sent ${waitlistSnap.size} last-minute broadcast emails for course ${courseId}`);
+        } else {
+            // KEVESEBB MINT 3 ÓRA VAN HÁTRA: Már nem küldünk semmilyen értesítést a várólistásoknak
+            console.log(`Course ${courseId} is starting in less than 3 hours (${hoursUntilStart.toFixed(2)} hours). No waitlist emails sent.`);
+        }
+
+    } catch (error) {
+        console.error("Error processing waitlist:", error);
+    }
+}
+
+/**
+ * joinWaitlist
+ * Tanuló feliratkozása a várólistára.
+ */
+exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
+    const data = request.data;
+    const {courseId, firstName, lastName, email, isTestView} = data;
+
+    if (!courseId || !firstName || !lastName || !email) {
+        throw new HttpsError("invalid-argument", "Minden kötelező mezőt ki kell tölteni.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const normalizedEmail = email.toLowerCase().trim();
+
+    try {
+        const courseRef = db.collection(coursesCollection).doc(courseId);
+        const courseDoc = await courseRef.get();
+
+        if (!courseDoc.exists) {
+            throw new HttpsError("not-found", "A foglalkozás nem található.");
+        }
+
+        // Ellenőrizzük, hogy nincs-e már a rendes jelentkezők között
+        const bookingDoc = await courseRef.collection("bookings").doc(normalizedEmail).get();
+        if (bookingDoc.exists) {
+            throw new HttpsError("already-exists", "Már van rendes (sikeres) jelentkezésed erre a foglalkozásra!");
+        }
+
+        // Ellenőrizzük, hogy nincs-e már a várólistán
+        const waitlistRef = courseRef.collection("waitlist").doc(normalizedEmail);
+        const waitlistDoc = await waitlistRef.get();
+        if (waitlistDoc.exists) {
+            throw new HttpsError("already-exists", "Ezzel az e-mail címmel már feliratkoztál a várólistára!");
+        }
+
+        await waitlistRef.set({
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: normalizedEmail,
+            joinedAt: FieldValue.serverTimestamp()
+        });
+
+        // Növeljük a várólista számlálót
+        await courseRef.update({
+            waitlistCount: FieldValue.increment(1)
+        });
+
+        const courseData = courseDoc.data();
+        const waitlistEmailData = {
+            firstName: firstName.trim(),
+            lastName: lastName.trim(),
+            email: normalizedEmail,
+            courseName: courseData.name,
+            courseDate: courseData.date,
+            startTime: courseData.startTime,
+            endTime: courseData.endTime || "ismeretlen"
+        };
+
+        // Küldünk egy megerősítő e-mailt a feliratkozásról
+        await sendDynamicEmail("waitlistJoined", waitlistEmailData, templates.waitlistJoined(waitlistEmailData), isTestView);
+
+        return {success: true, message: "Sikeresen feliratkoztál a várólistára!"};
+    } catch (error) {
+        console.error("Error joining waitlist:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Hiba történt a várólistára való feliratkozáskor.");
+    }
+});
+
+/**
+ * claimLastMinuteSpot
+ * Versenyhelyzet kezelése: A diák kattint az e-mailben lévő gombra, hogy megszerezze a felszabadult helyet.
+ */
+exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) => {
+    const data = request.data;
+    const {courseId, email, isTestView} = data;
+
+    if (!courseId || !email) {
+        throw new HttpsError("invalid-argument", "Érvénytelen kérés.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const claimRef = db.collection(isTestView ? "claims_test" : "claims").doc(courseId);
+    const courseRef = db.collection(coursesCollection).doc(courseId);
+    const normalizedEmail = email.toLowerCase().trim();
+
+    try {
+        let bookingDataToEmail = null;
+
+        await db.runTransaction(async (transaction) => {
+            // 1. Megnézzük a claim dokumentumot (Hogy nyitott-e még a verseny)
+            const claimDoc = await transaction.get(claimRef);
+            if (!claimDoc.exists || !claimDoc.data().isOpen) {
+                throw new HttpsError("resource-exhausted", "Sajnos valaki más már gyorsabb volt, és lefoglalta ezt a helyet.");
+            }
+
+            // 2. Megnézzük a kurzust, hogy TÉNYLEG van-e hely (biztonsági duplázás)
+            const courseDoc = await transaction.get(courseRef);
+            if (!courseDoc.exists) {
+                throw new HttpsError("not-found", "A foglalkozás nem található.");
+            }
+            const courseData = courseDoc.data();
+            if (courseData.bookingsCount >= courseData.capacity) {
+                // Ha valahogy betelt (pl. admin beírt valakit kézzel), lezárjuk a claim-et
+                transaction.update(claimRef, { isOpen: false });
+                throw new HttpsError("resource-exhausted", "Sajnos a hely időközben már betelt.");
+            }
+
+            // 3. Kivesszük az embert a várólistáról (ha ott van, és ki kell olvasni a nevét/adatait)
+            const waitlistDocRef = courseRef.collection("waitlist").doc(normalizedEmail);
+            const waitlistDoc = await transaction.get(waitlistDocRef);
+            if (!waitlistDoc.exists) {
+                throw new HttpsError("not-found", "Nem találunk a várólistán ezzel az e-mail címmel.");
+            }
+            const waitlistData = waitlistDoc.data();
+
+            // 4. Létrehozzuk a jelentkezést (bookings)
+            const bookingsSubcollection = courseRef.collection("bookings");
+            const bookingDocRef = bookingsSubcollection.doc(normalizedEmail);
+            
+            // Ellenőrizzük, hátha már valahogy jelentkezett
+            const existingBooking = await transaction.get(bookingDocRef);
+            if (existingBooking.exists) {
+                throw new HttpsError("already-exists", "Már van rendes jelentkezésed erre a foglalkozásra.");
+            }
+
+            const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+            const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+            const cancellationToken = crypto.randomUUID();
+
+            const bookingData = {
+                firstName: waitlistData.firstName,
+                lastName: waitlistData.lastName,
+                email: normalizedEmail,
+                bookingDate: FieldValue.serverTimestamp(),
+                courseId: courseId,
+                courseName: courseData.name,
+                courseDate: courseData.date,
+                startTime: courseData.startTime,
+                endTime: courseData.endTime || "ismeretlen",
+                cancellation_token: cancellationToken,
+                isPresent: null,
+                feePaid: false,
+                allBookingId: globalBookingRef.id,
+                claimedLastMinute: true
+            };
+
+            // Mentések tranzakcióban
+            transaction.set(bookingDocRef, bookingData);
+            transaction.set(globalBookingRef, bookingData);
+            
+            // Törlés várólistáról
+            transaction.delete(waitlistDocRef);
+
+            // Kurzus létszám növelése és várólista csökkentése
+            transaction.update(courseRef, {
+                bookingsCount: FieldValue.increment(1),
+                waitlistCount: FieldValue.increment(-1)
+            });
+
+            // Lezárjuk a Claim dokumentumot, hogy más már ne kattinthasson sikeresen!
+            transaction.update(claimRef, {
+                isOpen: false,
+                claimedBy: normalizedEmail,
+                claimedAt: FieldValue.serverTimestamp()
+            });
+
+            bookingDataToEmail = bookingData;
+        });
+
+        // E-mail küldése a sikeres foglalásról (Ugyanaz a template, mint a normál foglalásnál, vagy a waitlistPromoted)
+        if (bookingDataToEmail) {
+            await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
+        }
+
+        return {success: true, message: "Sikeresen lefoglaltad a last-minute helyet!"};
+
+    } catch (error) {
+        console.error("Last minute claim failed:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Hiba történt a hely lefoglalásakor.");
+    }
+});
+
+/**
+ * removeWaitlistEntryAsAdmin
+ * Admin törölhet valakit a várólistáról.
+ */
+exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const {courseId, email, isTestView} = data;
+
+    if (!courseId || !email) {
+        throw new HttpsError("invalid-argument", "Hiányzó adatok.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const normalizedEmail = email.toLowerCase().trim();
+
+    try {
+        const courseRef = db.collection(coursesCollection).doc(courseId);
+        const waitlistDocRef = courseRef.collection("waitlist").doc(normalizedEmail);
+        
+        await db.runTransaction(async (transaction) => {
+            const docSnap = await transaction.get(waitlistDocRef);
+            if (docSnap.exists) {
+                transaction.delete(waitlistDocRef);
+                transaction.update(courseRef, {
+                    waitlistCount: FieldValue.increment(-1)
+                });
+            }
+        });
+        
+        return {success: true, message: "Tanuló eltávolítva a várólistáról."};
+    } catch (error) {
+        console.error("Error removing waitlist entry:", error);
+        throw new HttpsError("internal", "Hiba történt a törléskor.");
     }
 });

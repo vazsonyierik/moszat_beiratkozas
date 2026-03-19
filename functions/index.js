@@ -325,7 +325,57 @@ const runDailyChecks = async () => {
             }
         }
     });
-    await Promise.all(studentPromises);
+
+    // --- IDŐPONT EMLÉKEZTETŐK (3 NAPOS ÉS 1 NAPOS) ---
+    
+    // 3 napos emlékeztető
+    const targetDateObj3 = new Date(today);
+    targetDateObj3.setDate(today.getDate() + 3);
+    const targetDateStr3 = targetDateObj3.toISOString().split("T")[0]; // YYYY-MM-DD formátum
+    
+    const coursesSnapshot3 = await db.collection("courses").where("date", "==", targetDateStr3).get();
+    
+    for (const courseDoc of coursesSnapshot3.docs) {
+        const courseData = courseDoc.data();
+        
+        if (courseData.bookingsCount > 0) {
+            const bookingsSnap = await courseDoc.ref.collection("bookings").get();
+            bookingsSnap.forEach((bookingDoc) => {
+                const bookingData = bookingDoc.data();
+                studentPromises.push(sendEmail(bookingData, templates.courseReminder3Days(bookingData)));
+                automationLogs.push({
+                    student: `${bookingData.lastName} ${bookingData.firstName}`, 
+                    action: `3 napos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                });
+            });
+        }
+    }
+
+    // 1 napos emlékeztető
+    const targetDateObj1 = new Date(today);
+    targetDateObj1.setDate(today.getDate() + 1);
+    const targetDateStr1 = targetDateObj1.toISOString().split("T")[0];
+    
+    const coursesSnapshot1 = await db.collection("courses").where("date", "==", targetDateStr1).get();
+    
+    for (const courseDoc of coursesSnapshot1.docs) {
+        const courseData = courseDoc.data();
+        
+        if (courseData.bookingsCount > 0) {
+            const bookingsSnap = await courseDoc.ref.collection("bookings").get();
+            bookingsSnap.forEach((bookingDoc) => {
+                const bookingData = bookingDoc.data();
+                studentPromises.push(sendEmail(bookingData, templates.courseReminder1Day(bookingData)));
+                automationLogs.push({
+                    student: `${bookingData.lastName} ${bookingData.firstName}`, 
+                    action: `1 napos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                });
+            });
+        }
+    }
+
+    await Promise.allSettled(studentPromises); // Use allSettled here to catch all, just in case
+
     if (automationLogs.length > 0) {
         const logDocRef = db.collection("automation_logs").doc(today.toISOString().split("T")[0]);
         await logDocRef.set({
@@ -900,4 +950,89 @@ exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
 exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
 exports.bookAppointment = appointments.bookAppointment;
 exports.cancelBookingByStudent = appointments.cancelBookingByStudent;
+exports.joinWaitlist = appointments.joinWaitlist;
+exports.claimLastMinuteSpot = appointments.claimLastMinuteSpot;
+exports.removeWaitlistEntryAsAdmin = appointments.removeWaitlistEntryAsAdmin;
+
+// ÚJ FUNKCIÓ: Teszt e-mail küldése az admin felületről
+exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { templateId, testData } = request.data;
+    if (!templateId || !testData) {
+        throw new HttpsError("invalid-argument", "A sablon azonosító és a teszt adatok megadása kötelező.");
+    }
+
+    try {
+        let finalSubject = "";
+        let finalHtml = "";
+
+        // Próbáljuk meg betölteni a sablont a Firestore-ból
+        const templateDoc = await db.collection("email_templates").doc(templateId).get();
+        if (templateDoc.exists) {
+            const dynamicTemplate = templateDoc.data();
+            if (dynamicTemplate.subject && dynamicTemplate.html) {
+                finalSubject = dynamicTemplate.subject;
+                finalHtml = dynamicTemplate.html;
+            }
+        }
+
+        // Ha nincs adatbázisban, használjuk a fallbacket (emailTemplates.js)
+        if (!finalSubject || !finalHtml) {
+            // Ellenőrizzük, hogy a template létezik-e az emailTemplates.js fájlban
+            if (templates[templateId]) {
+                // A beégetett sablonok (emailTemplates.js) gyakran a current_lastName, current_firstName
+                // mezőkből generálják a teljes nevet a getFullName() függvénnyel.
+                // Viszont a teszt modal csak a {{lastName}} típusú változókat kéri be a defaultTemplates.js alapján.
+                // Ezért leképezzük a teszt adatokat a beégetett sablonok által várt formátumra.
+                const mappedTestData = {
+                    ...testData,
+                    current_lastName: testData.lastName || "",
+                    current_firstName: testData.firstName || "",
+                    current_secondName: testData.secondName || "",
+                    // Ha a tesztben csak firstName lett megadva (pl. időpontfoglalás), azt is továbbítjuk
+                };
+                
+                const fallbackTemplate = templates[templateId](mappedTestData);
+                finalSubject = fallbackTemplate.subject;
+                finalHtml = fallbackTemplate.html;
+                
+                // Extra biztonság: ha a fallback template még mindig tartalmaz {{valtozo}} tagokat,
+                // azokat is lecseréljük a teszt adatokkal.
+                const { replaceTemplateVariables } = require('./utils');
+                finalSubject = replaceTemplateVariables(finalSubject, mappedTestData);
+                finalHtml = replaceTemplateVariables(finalHtml, mappedTestData);
+                
+            } else {
+                throw new HttpsError("not-found", "A sablon nem található sem az adatbázisban, sem az alapértelmezések között.");
+            }
+        } else {
+             // Ha az adatbázisból jött, behelyettesítjük az értékeket
+             const { replaceTemplateVariables } = require('./utils');
+             finalSubject = replaceTemplateVariables(finalSubject, testData);
+             finalHtml = replaceTemplateVariables(finalHtml, testData);
+        }
+
+        const mailPayload = {
+            to: "iroda@mosolyzona.hu",
+            from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
+            message: {
+                subject: `[TESZT SABLON] ${finalSubject}`,
+                html: finalHtml,
+            },
+        };
+
+        await db.collection("mail").add(mailPayload);
+        logger.info(`Test email sent for template ${templateId} by admin ${userEmail}`);
+        
+        return { success: true };
+
+    } catch (error) {
+        logger.error(`Error sending test email for template ${templateId}:`, error);
+        throw new HttpsError("internal", "Hiba történt a teszt e-mail küldése során.");
+    }
+});
 
