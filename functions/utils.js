@@ -22,19 +22,22 @@ const formatSingleTimestamp = (timestamp) => {
         day: "2-digit",
         hour: "2-digit",
         minute: "2-digit",
+        second: "2-digit",
         timeZone: "Europe/Budapest"
     });
 };
 
-// Ellenőrzi, hogy a tanuló 18 év alatti-e a születési dátuma alapján.
+// Ellenőrzi, hogy a tanuló 18 év alatti-e a megadott születési dátum alapján.
 const isUnder18 = (birthDateStr) => {
     if (!birthDateStr) return false;
+    // ...
     const cleanedDateStr = birthDateStr.endsWith(".") ? birthDateStr.slice(0, -1) : birthDateStr;
     const parts = cleanedDateStr.split(".").map(p => parseInt(p.trim(), 10));
     if (parts.length < 3 || parts.some(isNaN)) return false;
     const [year, month, day] = parts;
     const birthDate = new Date(year, month - 1, day);
     if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day) return false;
+    
     const today = new Date();
     let age = today.getFullYear() - birthDate.getFullYear();
     const m = today.getMonth() - birthDate.getMonth();
@@ -45,8 +48,6 @@ const isUnder18 = (birthDateStr) => {
 };
 
 /**
- * Ellenőrzi, hogy egy adott e-mail cím adminisztrátor-e.
- * Ezt úgy végzi el, hogy megkeresi a doc-ot az admins kollekcióban.
  * Mivel a functions könyvtár használja a getFirestore-t a utils-ban, azt itt is be kell húzni,
  * vagy átadni az adatbázist. Mivel a `utils` még nem húzza be a firestore-t,
  * behúzzuk most ide is.
@@ -71,10 +72,8 @@ const ensureIsAdmin = async (auth) => {
 };
 
 /**
- * Helyettesíti a változókat a sablonban (pl. {{firstName}} -> studentData.firstName)
- * @param {string} templateString Az eredeti sablon string, helyőrzőkkel.
- * @param {object} data Az adatok objektuma.
- * @return {string} A behelyettesített sablon string.
+ * A beégetett sablon változóit is cserélni tudó függvény.
+ * Csak az adatbázisból betöltött sablonokhoz használjuk.
  */
 const replaceTemplateVariables = (templateString, data) => {
     if (!templateString) return "";
@@ -110,23 +109,38 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
 
     let finalSubject = fallbackTemplate?.subject || "";
     let finalHtml = fallbackTemplate?.html || "";
+    let isEnabled = true;
 
     try {
         // Próbáljuk meg betölteni a sablont a Firestore-ból
         const templateDoc = await db.collection("email_templates").doc(templateId).get();
         if (templateDoc.exists) {
             const dynamicTemplate = templateDoc.data();
+            
+            // Mindig figyeljük a kapcsolót, függetlenül attól, hogy van-e szöveg elmentve
+            if (dynamicTemplate.enabled !== undefined) {
+                isEnabled = dynamicTemplate.enabled;
+            }
+
+            // Csak akkor cseréljük le a beégetett sablont a db-s sablonra,
+            // ha a db-ben ténylegesen VAN is elmentve valamilyen szöveg
             if (dynamicTemplate.subject && dynamicTemplate.html) {
                 // Behelyettesítjük a változókat a Firestore-ból jött sablonba
                 finalSubject = replaceTemplateVariables(dynamicTemplate.subject, templateData);
                 finalHtml = replaceTemplateVariables(dynamicTemplate.html, templateData);
                 logger.info(`Using dynamic template from DB for ${templateId}`);
             } else {
-                logger.warn(`Dynamic template ${templateId} is missing subject or html, using fallback.`);
+                logger.warn(`DynamicTemplate ${templateId} exists but is missing subject or html, using fallback content. Enabled state: ${isEnabled}`);
             }
         }
     } catch (error) {
         logger.error(`Error loading dynamic template ${templateId}, using fallback.`, error);
+    }
+    
+    // Ha a sablon ki van kapcsolva az adatbázisban, megszakítjuk a küldést
+    if (isEnabled === false) {
+        logger.info(`Template ${templateId} is disabled. Skipping email send for ${templateData.email}.`);
+        return;
     }
 
     if (!finalSubject || !finalHtml) {
@@ -171,59 +185,15 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
     }
 };
 
-/**
- * Központi e-mail küldő segédfüggvény (Visszafelé kompatibilitás a régi sablonokhoz)
- * @param {object} studentData A címzett adatai.
- * @param {object} template Az e-mail sablon.
- * @param {boolean} isTest Teszt üzemmód jelző.
- */
 const sendEmail = async (studentData, template, isTest = false) => {
-    const db = getFirestore();
+    // We should ideally use sendDynamicEmail for everything to respect the toggles
+    
+    // Extracted from templates, we need the templateId. Assuming template.id exists, or we try to find it
+    const templateId = template.id || "unknown";
 
-    if (!studentData.email) {
-        logger.error("Student data is missing email, cannot send.", {studentId: studentData.id});
-        return;
-    }
-    if (!template || !template.subject || !template.html) {
-        logger.error("Email template is invalid.", {studentId: studentData.id});
-        return;
-    }
-
-    // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
-    if (isTest) {
-        try {
-            const configDoc = await db.collection("settings").doc("testConfig").get();
-            if (configDoc.exists) {
-                const config = configDoc.data();
-                if (config.emailsEnabled === false) {
-                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: studentData.email});
-                    return;
-                }
-            }
-        } catch (error) {
-            logger.warn("Failed to check test email settings. Proceeding with send.", {error: error.message});
-        }
-    }
-
-    const subjectPrefix = isTest ? "[TESZT] " : "";
-
-    const mailPayload = {
-        to: studentData.email,
-        from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
-        message: {
-            subject: `${subjectPrefix}${template.subject}`,
-            html: template.html,
-        },
-    };
-    if (isUnder18(studentData.birthDate) && studentData.guardian_email) {
-        mailPayload.cc = studentData.guardian_email;
-    }
-    try {
-        await db.collection("mail").add(mailPayload);
-        logger.info(`Email added to queue for ${studentData.email}. Template: ${template.subject}`);
-    } catch (error) {
-        logger.error(`Failed to queue email for ${studentData.email}. Error: ${error.message}`);
-    }
+    // Call sendDynamicEmail directly to handle toggle logic and DB fallback
+    // This allows legacy `sendEmail` calls to benefit from DB toggles
+    return sendDynamicEmail(templateId, studentData, template, isTest);
 };
 
 // A függvények exportálása CommonJS szintaxissal.
@@ -234,5 +204,6 @@ module.exports = {
     isAdmin,
     ensureIsAdmin,
     sendEmail,
-    sendDynamicEmail
+    sendDynamicEmail,
+    replaceTemplateVariables // Exporting this for testing just in case
 };

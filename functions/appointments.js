@@ -387,6 +387,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 courseName: courseData.name,
                 courseDate: courseData.date,
                 startTime: courseData.startTime,
+                endTime: courseData.endTime || "ismeretlen",
                 cancellation_token: cancellationToken,
                 isPresent: null,
                 feePaid: false,

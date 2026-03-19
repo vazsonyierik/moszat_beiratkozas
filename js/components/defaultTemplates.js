@@ -1,48 +1,11 @@
-/**
- * functions/emailTemplates.js
- * This file contains templates for the automated emails sent by the system.
- * MÓDOSÍTÁS: Az időzített emlékeztető e-mailek szövege és formázása frissítve a kérések alapján.
- * MÓDOSÍTÁS 2: A fix betűméretek eltávolítva, hogy a kliens alapértelmezett beállításai érvényesüljenek.
- * MÓDOSÍTÁS 3: Sablonok azonosítóval ellátva a könnyebb kezelhetőség érdekében.
- * MÓDOSÍTÁS 4: A tanfolyamot befejező e-mailek (E-3, E-4) mostantól ellenőrzik a tanuló életkorát,
- * és csak akkor jelenítik meg a 18 év alattiakra vonatkozó figyelmeztetést, ha az releváns.
- * MÓDOSÍTÁS 5: A 90 és 180 napos emlékeztető e-mailek (T-6, T-7) mostantól ellenőrzik, hogy a tanuló
- * leadta-e már az orvosi igazolását, és csak annak hiányában jelenítik meg az erre vonatkozó felhívást.
- */
-
-// Helper function to format full name
-const getFullName = (studentData) => {
-    return [studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
-};
-
-// Helper function to check if student is under 18
-const isUnder18 = (birthDateStr) => {
-    if (!birthDateStr) return false;
-    const cleanedDateStr = birthDateStr.endsWith(".") ? birthDateStr.slice(0, -1) : birthDateStr;
-    const parts = cleanedDateStr.split(".").map(p => parseInt(p.trim(), 10));
-    if (parts.length < 3 || parts.some(isNaN)) return false;
-    const [year, month, day] = parts;
-    const birthDate = new Date(year, month - 1, day);
-    if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day) return false;
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-    }
-    return age < 18;
-};
-
-// --- Eseményvezérelt sablonok ---
-
-// Sablon ID: E-1
-// 1. New Registration Confirmation
-exports.registrationConfirmation = (studentData) => ({
-    id: 'registrationConfirmation',
-    subject: "Sikeres jelentkezés! Már csak egy lépés van hátra",
-    html: `
+const DEFAULT_TEMPLATES = {
+    registrationConfirmation: {
+        id: 'registrationConfirmation',
+        name: 'Sikeres jelentkezés (E-1)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Sikeres jelentkezés! Már csak egy lépés van hátra`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Először is szeretnénk megköszönni, hogy minket választottál a jogosítványod megszerzéséhez!</p>
             <p>A beiratkozásod véglegesítéséhez és az online elméleti tananyaghoz való hozzáféréshez már csak egy lépés van hátra: a tandíj legalább első részletének befizetése.</p>
             
@@ -89,17 +52,16 @@ exports.registrationConfirmation = (studentData) => ({
             <p style="margin-top: 1.2em;">Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-// Sablon ID: E-2
-// 2. Enrolled Student Information
-exports.enrolledConfirmation = (studentData) => ({
-    id: 'enrolledConfirmation',
-    subject: "Fontos információk a KRESZ-tanfolyamodról!",
-    html: `
+    `,
+        enabled: true
+    },
+    enrolledConfirmation: {
+        id: 'enrolledConfirmation',
+        name: 'Beiratkozás visszaigazolása (E-2)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Fontos információk a KRESZ-tanfolyamodról!`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Örülünk, hogy nálunk kezdted meg a KRESZ-vizsgára való felkészülést!</p>
             <p>Ebben az e-mailben minden fontos tudnivalót összegyűjtöttünk, amelyek segítenek abban, hogy a tanulásod gördülékeny és sikeres legyen. <strong>Kérünk, őrizd meg ezt a levelet, akár a kedvencek közé mentve, akár kinyomtatva – a tanfolyam során bármikor szükséged lehet rá!</strong></p>
             
@@ -172,22 +134,16 @@ exports.enrolledConfirmation = (studentData) => ({
             <p style="margin-top: 1.5em;">Sok sikert kívánunk a tanuláshoz és a vizsgákhoz! Mi itt vagyunk, ha segítségre van szükséged – bátran keress minket!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-// Sablon ID: E-3
-// 3. Course Completed - Medical Needed
-exports.courseCompletedMedicalNeeded = (studentData) => {
-    const under18WarningHtml = isUnder18(studentData.birthDate)
-        ? `<p>⚠️ <b>Figyelem, ha még nem múltál el 18!</b> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <b>ő is jöjjön veled!</b> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>`
-        : "";
-
-    return {
+    `,
+        enabled: true
+    },
+    courseCompletedMedicalNeeded: {
         id: 'courseCompletedMedicalNeeded',
-        subject: "Következő lépések a KRESZ-vizsgád felé",
+        name: 'Tanfolyam elvégezve - Orvosi hiányzik (E-3)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Következő lépések a KRESZ-vizsgád felé`,
         html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez! Már csak néhány lépés választ el attól, hogy jelentkezhess a KRESZ-vizsgára. Segítünk, hogy minden simán menjen!</p>
             <p>Kérjük, kövesd az alábbi <b>két egyszerű lépést</b> a megadott sorrendben:</p>
             <p><b>1. LÉPÉS: Orvosi alkalmassági elküldése</b></p>
@@ -217,7 +173,7 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
                     </ul>
                 </li>
             </ul>
-            ${under18WarningHtml}
+            
             <p><b>Hogyan tovább, miután aláírtad a lapot?</b></p>
             <ol>
                 <li>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</li>
@@ -227,23 +183,16 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
             <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
         </div>
-        `
-    };
-};
-
-// Sablon ID: E-4
-// 4. Course Completed - Ready to Sign
-exports.courseCompletedReadyToSign = (studentData) => {
-    const under18WarningHtml = isUnder18(studentData.birthDate)
-        ? `<p>⚠️ <strong>Figyelem, ha még nem múltál el 18!</strong> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <strong>ő is jöjjön veled!</strong> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>`
-        : "";
-
-    return {
+        `,
+        enabled: true
+    },
+    courseCompletedReadyToSign: {
         id: 'courseCompletedReadyToSign',
-        subject: "Következő lépés a KRESZ-vizsgád felé",
+        name: 'Tanfolyam elvégezve - Aláírásra kész (E-4)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Következő lépés a KRESZ-vizsgád felé`,
         html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez!</p>
             <p>Mivel az orvosi alkalmassági véleményed már megvan, csak egyetlen lépés van hátra, hogy jelentkezhess a KRESZ-vizsgára: a jelentkezési lap aláírása.</p>
             <p><strong>Teendőd: Személyes ügyintézés az irodában</strong></p>
@@ -265,7 +214,7 @@ exports.courseCompletedReadyToSign = (studentData) => {
                     </ul>
                 </li>
             </ul>
-            ${under18WarningHtml}
+            
             <p><strong>Hogyan tovább, miután aláírtad a lapot?</strong></p>
             <ol>
                 <li><p>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</p></li>
@@ -275,285 +224,250 @@ exports.courseCompletedReadyToSign = (studentData) => {
             <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
         </div>
-        `
-    };
-};
-
-// Sablon ID: E-5
-// 5. Medical Certificate Received
-exports.medicalCertificateReceived = (studentData) => ({
-    id: 'medicalCertificateReceived',
-    subject: "Orvosi alkalmassági vélemény rögzítve",
-    html: `
+        `,
+        enabled: true
+    },
+    medicalCertificateReceived: {
+        id: 'medicalCertificateReceived',
+        name: 'Orvosi alkalmassági rögzítve (E-5)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Orvosi alkalmassági vélemény rögzítve`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Értesítünk, hogy az orvosi alkalmassági vélemény feltöltésre került a vizsgáztató szerv elektronikus nyilvántartó rendszerébe (KVAR).</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
         </div>
-    `
-});
-
-
-// --- IDŐZÍTETT SABLONOK ---
-
-// Sablon ID: T-1
-// Jelentkezés utáni 4. nap
-exports.paymentReminderDay4 = (studentData) => ({
-    id: 'paymentReminderDay4',
-    subject: "Emlékeztető a befejezetlen regisztrációdról",
-    html: `
+    `,
+        enabled: true
+    },
+    paymentReminderDay4: {
+        id: 'paymentReminderDay4',
+        name: 'Fizetési emlékeztető 4. nap (T-1)', category: 'Emlékeztetők',
+        subject: `Emlékeztető a befejezetlen regisztrációdról`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Ez egy emlékeztető a pár nappal ezelőtt megkezdett beiratkozásodról. A folyamat véglegesítéséhez már csak a tandíj befizetése van hátra, melyhez továbbra is felhasználhatod az 5000 Ft értékű kedvezményedet.</p>
             <p>Amennyiben nem találod a korábbi, részleteket tartalmazó e-mailünket, kérjük, jelezd nekünk egy válaszlevélben, és örömmel elküldjük újra a szükséges információkat.</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-// Sablon ID: T-2
-// Jelentkezés utáni 10. nap
-exports.paymentReminderDay10 = (studentData) => ({
-    id: 'paymentReminderDay10',
-    subject: "Fontos: a regisztrációddal kapcsolatban",
-    html: `
+    `,
+        enabled: true
+    },
+    paymentReminderDay10: {
+        id: 'paymentReminderDay10',
+        name: 'Fizetési emlékeztető 10. nap (T-2)', category: 'Emlékeztetők',
+        subject: `Fontos: a regisztrációddal kapcsolatban`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>A 10 nappal ezelőtti online regisztrációddal kapcsolatban írunk.</p>
             <p>Szeretnénk emlékeztetni, hogy a beiratkozásod véglegesítéséhez már csak a tandíj befizetése van hátra, melyhez továbbra is felhasználhatod az 5000 Ft értékű kedvezményedet.</p>
             <p>Kérjük, vedd figyelembe, hogy amennyiben pár napon belül nem kapunk visszajelzést tőled, ezt tekintjük az utolsó értesítésünknek, és adatvédelmi irányelveinknek megfelelően töröljük a befejezetlen regisztrációdat a rendszerünkből.</p>
             <p>Ha a fizetési információkat tartalmazó korábbi e-mailünket nem találod, jelezd nekünk egy válasszal, és örömmel elküldjük újra.</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-
-// --- MÓDOSÍTOTT IDŐZÍTETT SABLONOK ---
-
-// Sablon ID: T-3
-// Tanfolyamkezdési emlékeztetők (30 nap)
-exports.courseStartReminderDay30 = (studentData) => ({
-    id: 'courseStartReminderDay30',
-    subject: "Emlékeztető: Aktiváld a KRESZ-hozzáférésedet!",
-    html: `
+    `,
+        enabled: true
+    },
+    courseStartReminderDay30: {
+        id: 'courseStartReminderDay30',
+        name: 'Tanfolyamkezdési emlékeztető 30. nap (T-3)', category: 'Emlékeztetők',
+        subject: `Emlékeztető: Aktiváld a KRESZ-hozzáférésedet!`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Látjuk a rendszerünkben, hogy bár már 30 napja beiratkoztál hozzánk, még nem nyitottad meg az online KRESZ-tananyagot.</p>
             <p><strong>Fontos:</strong> Az e-learning regisztráció önmagában nem elég! Ahhoz, hogy hivatalosan is elinduljon a tanfolyam, legalább egyszer meg kell nyitnod a tananyagot.</p>
             <p>Kérünk, hogy ezt tedd meg minél hamarabb!</p>
             <p>Ha ezzel kapcsolatban technikai problémába ütköztél, vagy egyszerűen csak kérdésed van, kérjük, jelezd nekünk egy válasz e-mailben, és örömmel segítünk!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-// Sablon ID: T-4
-// Tanfolyamkezdési emlékeztetők (60 nap)
-exports.courseStartReminderDay60 = (studentData) => ({
-    id: 'courseStartReminderDay60',
-    subject: "Figyelmeztetés: a regisztrációd 30 napon belül lejár!",
-    html: `
+    `,
+        enabled: true
+    },
+    courseStartReminderDay60: {
+        id: 'courseStartReminderDay60',
+        name: 'Tanfolyamkezdési emlékeztető 60. nap (T-4)', category: 'Emlékeztetők',
+        subject: `Figyelmeztetés: a regisztrációd 30 napon belül lejár!`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Sajnos még mindig azt látjuk a rendszerünkben, hogy nem kezdted el az e-learning tanfolyamot, pedig már 60 napja beiratkoztál.</p>
             <p>Szeretnénk megbizonyosdni róla, hogy minden rendben van-e. Gyakori hiba, hogy a tanulók csak belépnek a felületre, de nem indítják el ténylegesen a tananyagot. Kérünk, ellenőrizd, hogy ez nálad megtörtént-e!</p>
             <p><strong>A tanfolyam elindítására 30 napod maradt.</strong></p>
             <p>Ha ezzel kapcsolatban technikai problémába ütköztél, vagy egyszerűen csak kérdésed van, kérjük, jelezd nekünk egy válasz e-mailben, és örömmel segítünk!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-// Sablon ID: T-5
-// Tanfolyamkezdési emlékeztetők (85 nap)
-exports.courseStartReminderDay85 = (studentData) => ({
-    id: 'courseStartReminderDay85',
-    subject: "Fontos! Már csak 5 napod maradt elkezdeni a KRESZ tanfolyamot!",
-    html: `
+    `,
+        enabled: true
+    },
+    courseStartReminderDay85: {
+        id: 'courseStartReminderDay85',
+        name: 'Tanfolyamkezdési emlékeztető 85. nap (T-5)', category: 'Emlékeztetők',
+        subject: `Fontos! Már csak 5 napod maradt elkezdeni a KRESZ tanfolyamot!`,
+        html: `
         <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Látjuk, hogy már csak 5 napod van elkezdeni az online KRESZ tanfolyamodat.</p>
             <p>Szeretnénk egyértelművé tenni a következőt: <strong>már csak 5 napod van elindítani a tananyagot.</strong> Bizonyosodj meg róla, hogy a tananyagot magát nyitod meg, nem csak belépsz az oldalra.</p>
             <p><strong>Ne feledd</strong>, a határidő lejárta után a folytatás csak egy új, <strong>30 000 Ft-os regisztrációval lehetséges.</strong></p>
             <p>Ha ezzel kapcsolatban technikai problémába ütköztél, írj egy választ erre az e-mailre, és azonnal segítünk. Ne várd meg az utolsó pillanatot!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
         </div>
-    `
-});
-
-// Sablon ID: T-6
-// E-learning haladási emlékeztetők (90 nap)
-exports.elearningProgressReminderDay90 = (studentData) => {
-    const medicalReminderHtml = !studentData.hasMedicalCertificate
-        ? `<p>A sikeres felkészülés mellett fontos, hogy a vizsgára jelentkezésnek se legyen akadálya. Ehhez szeretnénk felhívni a figyelmedet, hogy a <strong>KRESZ vizsga foglalásának két feltétele van:</strong> az online tanfolyam elvégzése és egy érvényes <strong>orvosi alkalmassági vélemény.</strong></p>
-            <ul style="list-style-type: disc; padding-left: 20px;">
-                <li><strong>Már megszerezted az orvosi igazolást?</strong> Kérjük, küldd el nekünk a <a href="mailto:iroda@mosolyzona.hu">iroda@mosolyzona.hu</a> címre, hogy rögzíthessük.</li>
-                <li><strong>Ha még nincs orvosi alkalmassági véleményed,</strong> semmi gond! Írj nekünk egy e-mailt, és örömmel elküldjük a tudnivalókat, hogy hogyan tudod a legegyszerűbben beszerezni.</li>
-            </ul>`
-        : "";
-
-    return {
+    `,
+        enabled: true
+    },
+    elearningProgressReminderDay90: {
         id: 'elearningProgressReminderDay90',
-        subject: "Fontos információk az e-learninges KRESZ tanfolyamodhoz",
+        name: 'E-learning haladási emlékeztető 90. nap (T-6)', category: 'Emlékeztetők',
+        subject: `Fontos információk az e-learninges KRESZ tanfolyamodhoz`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
                 <p>Ez egy emlékeztető, hogy 3 hónapja kezdted el az online KRESZ tanfolyamot, ezért egy rövid helyzetjelentéssel és néhány fontos információval szeretnénk segíteni a haladásodat.</p>
                 <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong> Ehhez kérjük, keress minket elérhetőségeinken!</p>
-                ${medicalReminderHtml}
+                
                 <p>Kérdés esetén ne habozz keresni minket! Sikeres tanulást kívánunk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
-};
-
-// --- Appointment Booking System Templates ---
-
-exports.bookingConfirmation = (bookingData) => {
-    return {
+        `,
+        enabled: true
+    },
+    bookingConfirmation: {
         id: 'bookingConfirmation',
-        subject: "Időpontfoglalás visszaigazolása - Mosolyzóna Autósiskola",
+        name: 'Időpontfoglalás visszaigazolása', category: 'Időpontfoglalás',
+        subject: `Időpontfoglalás visszaigazolása - Mosolyzóna Autósiskola`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen jelentkeztél a következő foglalkozásra:</p>
                 <ul>
-                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
-                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p>Kérjük, hogy pontosan érkezz!</p>
                 <p>Amennyiben mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet, hogy másnak is legyen lehetősége részt venni:</p>
                 <p>
-                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}" 
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
                        style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
                        Időpont lemondása
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
-};
-
-exports.bookingCancelledByAdmin = (bookingData) => {
-    return {
+        `,
+        enabled: true
+    },
+    bookingCancelledByAdmin: {
         id: 'bookingCancelledByAdmin',
-        subject: "Jelentkezés törölve - Mosolyzóna Autósiskola",
+        name: 'Jelentkezés törölve (Admin)', category: 'Időpontfoglalás',
+        subject: `Jelentkezés törölve - Mosolyzóna Autósiskola`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy a következő foglalkozásra leadott jelentkezésed törlésre került a rendszerünkben:</p>
                 <ul>
-                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
-                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
-};
-
-exports.bookingCancelledByStudent = (bookingData) => {
-    return {
+        `,
+        enabled: true
+    },
+    bookingCancelledByStudent: {
         id: 'bookingCancelledByStudent',
-        subject: "Időpont lemondva - Mosolyzóna Autósiskola",
+        name: 'Jelentkezés lemondva (Diák)', category: 'Időpontfoglalás',
+        subject: `Időpont lemondva - Mosolyzóna Autósiskola`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen lemondtad a jelentkezésedet a következő foglalkozásra:</p>
                 <ul>
-                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
-                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p>Köszönjük, hogy jelezted felénk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
-};
-
-exports.courseModified = (combinedData) => {
-    return {
+        `,
+        enabled: true
+    },
+    courseModified: {
         id: 'courseModified',
-        subject: "Időpont változás - Mosolyzóna Autósiskola",
+        name: 'Időpont változás', category: 'Időpontfoglalás',
+        subject: `Időpont változás - Mosolyzóna Autósiskola`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${combinedData.firstName}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az alábbi foglalkozásod, amire jelentkeztél, <strong>megváltozott:</strong></p>
                 
                 <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
                     <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
                     <ul style="margin: 0; padding-left: 20px; color: #666;">
-                        <li>Foglalkozás: ${combinedData.oldCourseName}</li>
-                        <li>Időpont: ${combinedData.oldCourseDate} (${combinedData.oldStartTime} - ${combinedData.oldEndTime})</li>
+                        <li>Foglalkozás: {{oldCourseName}}</li>
+                        <li>Időpont: {{oldCourseDate}} ({{oldStartTime}} - {{oldEndTime}})</li>
                     </ul>
                 </div>
 
                 <div style="margin-bottom: 2em; padding: 1em; background-color: #eef2ff; border-left: 4px solid #4f46e5;">
                     <p style="margin: 0 0 0.5em 0;"><strong>Új adatok:</strong></p>
                     <ul style="margin: 0; padding-left: 20px;">
-                        <li><strong>Foglalkozás:</strong> ${combinedData.newCourseName}</li>
-                        <li><strong>Időpont:</strong> ${combinedData.newCourseDate} (${combinedData.newStartTime} - ${combinedData.newEndTime})</li>
+                        <li><strong>Foglalkozás:</strong> {{newCourseName}}</li>
+                        <li><strong>Időpont:</strong> {{newCourseDate}} ({{newStartTime}} - {{newEndTime}})</li>
                     </ul>
                 </div>
 
                 <p>A jelentkezésed automatikusan átkerült az új időpontra, nincs további teendőd.</p>
                 <p>Amennyiben az új időpont nem megfelelő számodra, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet:</p>
                 <p style="margin: 1.5em 0;">
-                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${combinedData.cancellation_token}" 
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
                        style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
                        Időpont lemondása
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
-};
-
-exports.courseDeleted = (bookingData) => {
-    return {
+        `,
+        enabled: true
+    },
+    courseDeleted: {
         id: 'courseDeleted',
-        subject: "Foglalkozás elmarad - Mosolyzóna Autósiskola",
+        name: 'Foglalkozás elmarad', category: 'Időpontfoglalás',
+        subject: `Foglalkozás elmarad - Mosolyzóna Autósiskola`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sajnálattal tájékoztatunk, hogy a következő foglalkozás, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
                 <ul>
-                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
-                    <li><strong>Eredeti időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Eredeti időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
                 <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
-};
-
-// Sablon ID: T-7
-// E-learning haladási emlékeztetők (180 nap)
-exports.elearningProgressReminderDay180 = (studentData) => {
-    const medicalReminderHtml = !studentData.hasMedicalCertificate
-        ? `<p>Végül, de nem utolsósorban, szeretnénk emlékeztetni <strong>a vizsgára jelentkezés másik fontos feltételére, az orvosi alkalmassági véleményre.</strong><br>A már meglévő orvosi igazolásodat kérjük, küldd el a <strong><a href="mailto:iroda@mosolyzona.hu" target="_blank">iroda@mosolyzona.hu</a></strong> címre, hogy rögzíteni tudjuk. Annak hiányában pedig írj nekünk egy e-mailt, és örömmel elküldjük a beszerzéséhez szükséges tudnivalókat.</p>`
-        : "";
-
-    return {
+        `,
+        enabled: true
+    },
+    elearningProgressReminderDay180: {
         id: 'elearningProgressReminderDay180',
-        subject: "Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről",
+        name: 'E-learning haladási emlékeztető 180. nap (T-7)', category: 'Emlékeztetők',
+        subject: `Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről`,
         html: `
             <div dir="ltr" style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
                 <p>Egy fontos határidőre szeretnénk emlékeztetni a KRESZ tanfolyamoddal kapcsolatban.</p>
                 <p>A jogszabályok értelmében a tanfolyam megkezdésétől számítva 9 hónapod van, hogy részt vegyél egy KRESZ vizsgán. A te esetedben ebből <strong>már csak 3 hónap van hátra.</strong></p>
                 <p>A KRESZ vizsgára való felkészüléshez elengedhetetlen a tananyaghoz való hozzáférés.<br>Amennyiben a hozzáférési időd időközben lejárt, kérjük, jelezd felénk e-mailben. A tandíjad ugyanis tartalmaz egy egyszeri, díjmentes hosszabbítást, <strong>ami plusz 30 napot és 10 óra gyakorlási időt biztosít a számodra.</strong></p>
-                ${medicalReminderHtml}
+                
                 <p>Ha a határidőkkel vagy a képzéssel kapcsolatban bármilyen kérdésed van, válasz e-mailben keress minket!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
-        `
-    };
+        `,
+        enabled: true
+    },
 };
+export default DEFAULT_TEMPLATES;

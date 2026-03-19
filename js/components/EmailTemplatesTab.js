@@ -2,93 +2,21 @@ import { html } from '../UI.js';
 import { db, doc, getDoc, setDoc, collection, getDocs } from '../firebase.js';
 import * as Icons from '../Icons.js';
 import { useToast, useConfirmation } from '../context/AppContext.js';
+import DEFAULT_TEMPLATES from './defaultTemplates.js';
 
 const React = window.React;
-const { useState, useEffect, useRef } = React;
-
-/**
- * Alapértelmezett sablonok (fallback a Firestore feltöltéshez)
- */
-const DEFAULT_TEMPLATES = {
-    bookingConfirmation: {
-        id: 'bookingConfirmation',
-        name: 'Időpontfoglalás visszaigazolása',
-        subject: 'Időpontfoglalás visszaigazolása - Mosolyzóna Autósiskola',
-        html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-    <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-    <p>Sikeresen jelentkeztél a következő foglalkozásra:</p>
-    <ul>
-        <li><strong>Foglalkozás:</strong> {{courseName}}</li>
-        <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-    </ul>
-    <p>Kérjük, hogy pontosan érkezz!</p>
-    <p>Amennyiben mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet, hogy másnak is legyen lehetősége részt venni:</p>
-    <p>
-        <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
-           style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
-           Időpont lemondása
-        </a>
-    </p>
-    <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-</div>`
-    },
-    bookingCancelledByAdmin: {
-        id: 'bookingCancelledByAdmin',
-        name: 'Jelentkezés törölve (Admin által)',
-        subject: 'Jelentkezés törölve - Mosolyzóna Autósiskola',
-        html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-    <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-    <p>Tájékoztatunk, hogy a következő foglalkozásra leadott jelentkezésed törlésre került a rendszerünkben:</p>
-    <ul>
-        <li><strong>Foglalkozás:</strong> {{courseName}}</li>
-        <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-    </ul>
-    <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
-    <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-</div>`
-    },
-    bookingCancelledByStudent: {
-        id: 'bookingCancelledByStudent',
-        name: 'Jelentkezés lemondva (Diák által)',
-        subject: 'Időpont lemondva - Mosolyzóna Autósiskola',
-        html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-    <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-    <p>Sikeresen lemondtad a jelentkezésedet a következő foglalkozásra:</p>
-    <ul>
-        <li><strong>Foglalkozás:</strong> {{courseName}}</li>
-        <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-    </ul>
-    <p>Köszönjük, hogy jelezted felénk!</p>
-    <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-</div>`
-    },
-    courseDeleted: {
-        id: 'courseDeleted',
-        name: 'Foglalkozás elmarad',
-        subject: 'Foglalkozás elmarad - Mosolyzóna Autósiskola',
-        html: `<div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-    <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-    <p>Sajnálattal tájékoztatunk, hogy a következő foglalkozás, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
-    <ul>
-        <li><strong>Foglalkozás:</strong> {{courseName}}</li>
-        <li><strong>Eredeti időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-    </ul>
-    <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
-    <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
-    <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-</div>`
-    }
-};
+const { useState, useEffect, useRef, Fragment } = React;
 
 const EmailTemplatesTab = () => {
     const [templates, setTemplates] = useState({});
-    const [activeTemplateId, setActiveTemplateId] = useState('bookingConfirmation');
+    const [activeTemplateId, setActiveTemplateId] = useState('registrationConfirmation');
     const [isLoading, setIsLoading] = useState(true);
     const [isSaving, setIsSaving] = useState(false);
     
     // Form state
     const [subject, setSubject] = useState('');
     const [htmlContent, setHtmlContent] = useState('');
+    const [isEnabled, setIsEnabled] = useState(true);
     
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -130,6 +58,11 @@ const EmailTemplatesTab = () => {
                     ...DEFAULT_TEMPLATES[key],
                     ...loadedData[key] // DB data overwrites default if it exists
                 };
+                
+                // Ha az adatbázisban nincs enabled mező, alapból true
+                if (mergedTemplates[key].enabled === undefined) {
+                    mergedTemplates[key].enabled = true;
+                }
             });
 
             setTemplates(mergedTemplates);
@@ -137,6 +70,7 @@ const EmailTemplatesTab = () => {
             // Set initial form state for the active tab
             setSubject(mergedTemplates[activeTemplateId].subject);
             setHtmlContent(mergedTemplates[activeTemplateId].html);
+            setIsEnabled(mergedTemplates[activeTemplateId].enabled);
 
         } catch (error) {
             console.error("Error loading templates:", error);
@@ -146,12 +80,13 @@ const EmailTemplatesTab = () => {
             setTemplates({...DEFAULT_TEMPLATES});
             setSubject(DEFAULT_TEMPLATES[activeTemplateId].subject);
             setHtmlContent(DEFAULT_TEMPLATES[activeTemplateId].html);
+            setIsEnabled(DEFAULT_TEMPLATES[activeTemplateId].enabled !== false);
         } finally {
             setIsLoading(false);
         }
     };
 
-    // 3. Quill editor inicializálása vagy tartalmának frissítése amikor váltunk a fülek között
+    // 3. Quill editor inicializálása vagy tartalmának frissítése amikor váltunk a sablonok között
     useEffect(() => {
         if (isLoading || !window.Quill || !editorContainerRef.current) return;
 
@@ -176,20 +111,18 @@ const EmailTemplatesTab = () => {
             });
         }
 
-        // Frissítjük a szerkesztő tartalmát, ha a HTML változik (pl. tab váltáskor)
-        // De csak akkor, ha nem mi magunk gépelünk bele épp
         if (quillRef.current.root.innerHTML !== htmlContent) {
-            // A Quill szerkesztő tartalmának beállítása biztonságosan API-n keresztül (innerHTML helyett)
             const delta = quillRef.current.clipboard.convert(htmlContent);
             quillRef.current.setContents(delta, 'silent');
         }
 
-    }, [isLoading, activeTemplateId, htmlContent]); // Frissítsük, ha a htmlContent kívülről változik
+    }, [isLoading, activeTemplateId, htmlContent]);
 
-    const handleTabChange = (templateId) => {
+    const handleTemplateSelect = (templateId) => {
         setActiveTemplateId(templateId);
         setSubject(templates[templateId].subject);
         setHtmlContent(templates[templateId].html);
+        setIsEnabled(templates[templateId].enabled !== false);
     };
 
     const handleSave = async () => {
@@ -199,17 +132,18 @@ const EmailTemplatesTab = () => {
             await setDoc(templateRef, {
                 subject,
                 html: htmlContent,
-                name: DEFAULT_TEMPLATES[activeTemplateId].name, // Keep the human readable name
+                name: DEFAULT_TEMPLATES[activeTemplateId].name,
+                enabled: isEnabled,
                 updatedAt: new Date().toISOString()
             }, { merge: true });
 
-            // Update local state
             setTemplates(prev => ({
                 ...prev,
                 [activeTemplateId]: {
                     ...prev[activeTemplateId],
                     subject,
-                    html: htmlContent
+                    html: htmlContent,
+                    enabled: isEnabled
                 }
             }));
 
@@ -219,6 +153,46 @@ const EmailTemplatesTab = () => {
             showToast("Hiba történt a mentés során.", "error");
         } finally {
             setIsSaving(false);
+        }
+    };
+    
+    const handleToggleEnable = async (templateId, newEnabledState) => {
+        try {
+            // Optimistic update
+            setTemplates(prev => ({
+                ...prev,
+                [templateId]: {
+                    ...prev[templateId],
+                    enabled: newEnabledState
+                }
+            }));
+            
+            if (activeTemplateId === templateId) {
+                setIsEnabled(newEnabledState);
+            }
+
+            const templateRef = doc(db, "email_templates", templateId);
+            await setDoc(templateRef, {
+                enabled: newEnabledState,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+
+            showToast(`A(z) "${DEFAULT_TEMPLATES[templateId].name}" sablon ${newEnabledState ? 'engedélyezve' : 'kikapcsolva'}.`, "success");
+        } catch (error) {
+            console.error("Hiba a kapcsolás során:", error);
+            showToast("Hiba történt a státusz módosításakor.", "error");
+            
+            // Revert optimistic update
+            setTemplates(prev => ({
+                ...prev,
+                [templateId]: {
+                    ...prev[templateId],
+                    enabled: !newEnabledState
+                }
+            }));
+            if (activeTemplateId === templateId) {
+                setIsEnabled(!newEnabledState);
+            }
         }
     };
 
@@ -234,12 +208,12 @@ const EmailTemplatesTab = () => {
                     quillRef.current.setContents(delta, 'silent');
                 }
                 
-                // Mentsük is el azonnal, így felülírja a DB-ben az egyedit
                 try {
                     await setDoc(doc(db, "email_templates", activeTemplateId), {
                         subject: defaultTpl.subject,
                         html: defaultTpl.html,
                         name: defaultTpl.name,
+                        enabled: isEnabled, // Keep current enabled state
                         updatedAt: new Date().toISOString()
                     }, { merge: true });
                     showToast("Alapértelmezett sablon visszaállítva.", "success");
@@ -254,62 +228,111 @@ const EmailTemplatesTab = () => {
         return html`<div className="text-center p-12 text-gray-500">Sablonok betöltése...</div>`;
     }
 
+    // Csoportosítás kategóriák szerint
+    const groupedTemplates = {};
+    Object.keys(DEFAULT_TEMPLATES).forEach(key => {
+        const category = DEFAULT_TEMPLATES[key].category || 'Egyéb';
+        if (!groupedTemplates[category]) {
+            groupedTemplates[category] = [];
+        }
+        groupedTemplates[category].push(key);
+    });
+
     return html`
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-            <div className="border-b border-gray-200">
-                <nav className="flex space-x-2 p-4 pb-0 overflow-x-auto" aria-label="Tabs">
-                    ${Object.keys(DEFAULT_TEMPLATES).map((key) => {
-                        const tpl = templates[key];
-                        const isActive = activeTemplateId === key;
-                        return html`
-                            <button
-                                key="${key}"
-                                onClick=${() => handleTabChange(key)}
-                                className=${`whitespace-nowrap py-3 px-4 border-b-2 font-medium text-sm rounded-t-lg transition-colors ${isActive ? 'border-indigo-500 text-indigo-600 bg-indigo-50/50' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-                            >
-                                ${tpl.name}
-                            </button>
-                        `;
-                    })}
-                </nav>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row min-h-[600px]">
+            
+            
+            <div className="w-full md:w-1/3 border-b md:border-b-0 md:border-r border-gray-200 bg-gray-50 overflow-y-auto" style=${{ maxHeight: '800px' }}>
+                <div className="p-4 border-b border-gray-200 bg-white sticky top-0 z-10">
+                    <h3 className="font-semibold text-gray-800">E-mail Sablonok</h3>
+                    <p className="text-xs text-gray-500 mt-1">Válaszd ki a szerkeszteni kívánt e-mailt.</p>
+                </div>
+                
+                <div className="p-2 space-y-4">
+                    ${Object.keys(groupedTemplates).map(category => html`
+                        <div key=${category} className="mb-2">
+                            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-4">${category}</h4>
+                            <ul className="space-y-1">
+                                ${groupedTemplates[category].map(key => {
+                                    const tpl = templates[key] || DEFAULT_TEMPLATES[key];
+                                    const isActive = activeTemplateId === key;
+                                    const isTemplateEnabled = tpl.enabled !== false;
+                                    
+                                    return html`
+                                        <li key=${key}>
+                                            <div className=${`group flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 border-l-4 border-indigo-500 text-indigo-700' : 'hover:bg-gray-100 text-gray-700 border-l-4 border-transparent'}`}
+                                                 onClick=${() => handleTemplateSelect(key)}>
+                                                <div className="flex-1 min-w-0 pr-2">
+                                                    <span className=${`block truncate text-sm font-medium ${isActive ? 'text-indigo-700' : 'text-gray-700'} ${!isTemplateEnabled && !isActive ? 'opacity-50' : ''}`}>
+                                                        ${DEFAULT_TEMPLATES[key].name}
+                                                    </span>
+                                                </div>
+                                                <div className="flex-shrink-0 ml-2" onClick=${(e) => e.stopPropagation()}>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                      <input type="checkbox" className="sr-only peer" checked=${isTemplateEnabled} onChange=${(e) => handleToggleEnable(key, e.target.checked)} />
+                                                      <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    `;
+                                })}
+                            </ul>
+                        </div>
+                    `)}
+                </div>
             </div>
 
-            <div className="p-6 space-y-6">
-                <div className="bg-blue-50 border border-blue-200 p-4 rounded-md text-blue-800 text-sm">
-                    <p className="font-bold mb-1 flex items-center gap-2"><${Icons.InfoIcon} size=${16} /> Dinamikus változók használata</p>
-                    <p className="mb-2">A szövegben lévő dupla kapcsos zárójelek közötti szavakat a rendszer küldéskor automatikusan kicseréli a tanuló adataira. <strong>Kérlek ezeket ne töröld ki!</strong></p>
-                    <ul className="list-disc pl-5 font-mono text-xs">
-                        <li>{{firstName}} - Tanuló keresztneve</li>
-                        <li>{{lastName}} - Tanuló vezetékneve</li>
-                        <li>{{courseName}} - Foglalkozás neve</li>
-                        <li>{{courseDate}} - Foglalkozás dátuma</li>
-                        <li>{{startTime}} - Kezdés időpontja</li>
-                        <li>{{cancellation_token}} - Egyedi azonosító a lemondó linkhez</li>
-                    </ul>
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">E-mail tárgya</label>
-                    <input 
-                        type="text" 
-                        value=${subject}
-                        onChange=${(e) => setSubject(e.target.value)}
-                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-medium p-2 border"
-                    />
-                </div>
-
-                <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1 flex justify-between">
-                        <span>E-mail HTML törzse (Tartalom)</span>
-                    </label>
-                    
-                    <div className="mt-1 rounded-md overflow-hidden border border-gray-300" style=${{ minHeight: '300px' }}>
-                        <div ref=${editorContainerRef} style=${{ minHeight: '250px', backgroundColor: 'white' }}></div>
+            
+            <div className="w-full md:w-2/3 p-6 flex flex-col h-full">
+                
+                <div className="flex justify-between items-start mb-6 border-b border-gray-100 pb-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-gray-800">${DEFAULT_TEMPLATES[activeTemplateId].name}</h2>
+                        <div className="mt-2 flex items-center">
+                            <span className="text-sm text-gray-500 mr-3">Állapot:</span>
+                            <label className="relative inline-flex items-center cursor-pointer">
+                              <input type="checkbox" className="sr-only peer" checked=${isEnabled} onChange=${(e) => handleToggleEnable(activeTemplateId, e.target.checked)} />
+                              <div className="w-11 h-6 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-600"></div>
+                              <span className=${`ml-3 text-sm font-medium ${isEnabled ? 'text-indigo-600' : 'text-gray-500'}`}>
+                                  ${isEnabled ? 'Aktív (Kiküldésre kerül)' : 'Kikapcsolva (Nem küldi ki)'}
+                              </span>
+                            </label>
+                        </div>
                     </div>
-                    <p className="mt-2 text-xs text-gray-500">A Quill szerkesztő tiszta HTML kódot generál, ami bekerül az e-mail sablonba.</p>
                 </div>
 
-                <div className="pt-4 border-t border-gray-200 flex justify-between items-center">
+                <div className="space-y-6 flex-grow">
+                    <div className="bg-blue-50 border border-blue-200 p-4 rounded-md text-blue-800 text-sm">
+                        <p className="font-bold mb-1 flex items-center gap-2"><${Icons.InfoIcon} size=${16} /> Dinamikus változók használata</p>
+                        <p className="mb-2">A szövegben lévő dupla kapcsos zárójelek közötti szavakat a rendszer küldéskor automatikusan kicseréli a tanuló adataira. <strong>Kérlek ezeket ne töröld ki!</strong></p>
+                        <p className="text-xs mt-1 italic">Általános változók: {{firstName}}, {{lastName}}, {{email}}</p>
+                        <p className="text-xs mt-1 italic">Időpontfoglalás változói: {{courseName}}, {{courseDate}}, {{startTime}}, {{endTime}}, {{cancellation_token}}</p>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">E-mail tárgya</label>
+                        <input 
+                            type="text" 
+                            value=${subject}
+                            onChange=${(e) => setSubject(e.target.value)}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-medium p-2 border"
+                            disabled=${!isEnabled}
+                        />
+                    </div>
+
+                    <div className=${!isEnabled ? 'opacity-60 pointer-events-none' : ''}>
+                        <label className="block text-sm font-medium text-gray-700 mb-1 flex justify-between">
+                            <span>E-mail HTML törzse (Tartalom)</span>
+                        </label>
+                        
+                        <div className="mt-1 rounded-md overflow-hidden border border-gray-300" style=${{ minHeight: '300px' }}>
+                            <div ref=${editorContainerRef} style=${{ minHeight: '250px', backgroundColor: 'white' }}></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div className="pt-6 mt-6 border-t border-gray-200 flex justify-between items-center">
                     <button 
                         onClick=${handleRestoreDefault}
                         className="text-gray-500 hover:text-red-600 text-sm font-medium flex items-center gap-1 transition-colors"
