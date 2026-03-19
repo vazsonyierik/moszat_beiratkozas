@@ -245,6 +245,7 @@ const EmailTemplatesTab = () => {
     });
 
     return html`
+        <${Fragment}>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row min-h-[600px]">
 
 
@@ -347,18 +348,135 @@ const EmailTemplatesTab = () => {
                         Alapértelmezett visszaállítása
                     </button>
                     
-                    <button 
-                        onClick=${handleSave}
-                        disabled=${isSaving}
-                        className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
-                    >
-                        <${Icons.SaveIcon} size=${18} />
-                        ${isSaving ? 'Mentés folyamatban...' : 'Sablon mentése az adatbázisba'}
-                    </button>
+                    <div className="flex space-x-3">
+                        <button
+                            onClick=${() => {
+                                // Extract variables from subject and html content
+                                const vars = new Set();
+                                const regex = /\{\{([^}]+)\}\}/g;
+                                let match;
+                                while ((match = regex.exec(subject)) !== null) vars.add(match[1].trim());
+                                while ((match = regex.exec(htmlContent)) !== null) vars.add(match[1].trim());
+
+                                const varArray = Array.from(vars);
+                                setExtractedVars(varArray);
+
+                                // Pre-fill with common dummy data
+                                const initialVars = {};
+                                varArray.forEach(v => {
+                                    if (v === 'firstName') initialVars[v] = 'Teszt';
+                                    else if (v === 'lastName') initialVars[v] = 'Elek';
+                                    else if (v === 'email') initialVars[v] = 'teszt@mosolyzona.hu';
+                                    else if (v === 'courseName') initialVars[v] = 'B kategóriás KRESZ tanfolyam';
+                                    else if (v === 'courseDate') initialVars[v] = '2024.12.31.';
+                                    else if (v === 'startTime') initialVars[v] = '14:00';
+                                    else if (v === 'endTime') initialVars[v] = '16:00';
+                                    else initialVars[v] = 'TesztAdat';
+                                });
+                                setTestVariables(initialVars);
+                                setShowTestModal(true);
+                            }}
+                            className="bg-white text-indigo-600 font-semibold py-2 px-4 rounded-md border border-indigo-600 hover:bg-indigo-50 transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <${Icons.SendIcon} size=${18} />
+                            Teszt küldése
+                        </button>
+
+                        <button
+                            onClick=${handleSave}
+                            disabled=${isSaving}
+                            className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <${Icons.SaveIcon} size=${18} />
+                            ${isSaving ? 'Mentés folyamatban...' : 'Sablon mentése az adatbázisba'}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    `;
+
+        ${showTestModal ? html`
+            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center p-4">
+                <div className="relative mx-auto p-6 border w-full max-w-lg shadow-xl rounded-lg bg-white">
+                    <div className="flex justify-between items-start mb-4 border-b pb-4">
+                        <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <${Icons.SendIcon} size=${20} className="text-indigo-600" />
+                            Teszt e-mail küldése
+                        </h3>
+                        <button
+                            onClick=${() => setShowTestModal(false)}
+                            className="text-gray-400 hover:text-gray-600 transition-colors"
+                            title="Bezárás"
+                        >
+                            <${Icons.CloseIcon} size=${24} />
+                        </button>
+                    </div>
+
+                    <div className="mt-2 text-sm text-gray-600 mb-6 bg-blue-50 p-3 rounded-md border border-blue-100">
+                        <p>A teszt e-mail erre a címre fog kimenni: <strong className="text-gray-900">iroda@mosolyzona.hu</strong></p>
+                        <p className="mt-1">Kérlek add meg a sablonban található dinamikus változók ({{változó}}) teszt értékeit!</p>
+                    </div>
+
+                    <div className="space-y-4 max-h-64 overflow-y-auto pr-2 mb-6">
+                        ${extractedVars.length === 0 ? html`
+                            <p className="text-gray-500 italic text-center py-4">Nem található dinamikus változó a sablonban.</p>
+                        ` : extractedVars.map(v => html`
+                            <div key=${v}>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    {{${v}}}
+                                </label>
+                                <input
+                                    type="text"
+                                    value=${testVariables[v] || ''}
+                                    onChange=${(e) => setTestVariables({...testVariables, [v]: e.target.value})}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    placeholder="Ide írd a teszt értéket..."
+                                />
+                            </div>
+                        `)}
+                    </div>
+
+                    <div className="flex items-center justify-end space-x-3 pt-4 border-t">
+                        <button
+                            onClick=${() => setShowTestModal(false)}
+                            className="px-4 py-2 bg-gray-100 text-gray-700 text-base font-medium rounded-md shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-300 transition-colors"
+                        >
+                            Mégsem
+                        </button>
+                        <button
+                            onClick=${async () => {
+                                setIsSendingTest(true);
+                                try {
+                                    const { httpsCallable } = await import('../firebase.js');
+                                    const sendAdminTestEmail = httpsCallable(window.functions, 'sendAdminTestEmail');
+
+                                    await sendAdminTestEmail({
+                                        templateId: activeTemplateId,
+                                        subject: subject,
+                                        htmlContent: htmlContent,
+                                        variables: testVariables
+                                    });
+
+                                    showToast("Teszt e-mail sikeresen kiküldve az iroda@mosolyzona.hu címre!", "success");
+                                    setShowTestModal(false);
+                                } catch (error) {
+                                    console.error("Hiba teszt e-mail küldésekor:", error);
+                                    showToast("Hiba történt a teszt e-mail küldése során: " + error.message, "error");
+                                } finally {
+                                    setIsSendingTest(false);
+                                }
+                            }}
+                            disabled=${isSendingTest}
+                            className="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 flex items-center justify-center disabled:opacity-50 transition-colors min-w-[120px]"
+                        >
+                            ${isSendingTest ? html`<${Icons.SpinnerIcon} className="animate-spin mr-2" size=${18} /> Küldés...` : 'Küldés'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        ` : null}
+        </${Fragment}>
+    \`;
 };
 
 export default EmailTemplatesTab;
