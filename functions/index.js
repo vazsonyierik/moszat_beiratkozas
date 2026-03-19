@@ -325,7 +325,7 @@ const runDailyChecks = async () => {
             }
         }
     });
-    await Promise.all(studentPromises);
+
     // --- IDŐPONT EMLÉKEZTETŐK (3 NAPOS ÉS 1 NAPOS) ---
 
     // 3 napos emlékeztető

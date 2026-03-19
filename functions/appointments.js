@@ -537,16 +537,30 @@ async function processWaitlist(courseId, isTestView) {
 
         // 3. Mennyi idő van hátra a kurzus kezdetéig?
         // A courseData.date formátuma "YYYY-MM-DD", a startTime "HH:mm"
-        const courseDateTimeString = `${courseData.date}T${courseData.startTime}:00+01:00`; // Magyar időzóna, kb. jó
-        const courseDateObj = new Date(courseData.date + "T" + courseData.startTime + ":00Z"); // UTC anchor biztonság kedvéért (vagy local, függ a beállítástól)
+        // Felépítjük a dátumot explicitly a budapesti időzónában.
+        // Mivel a Cloud Functions UTC-n fut, a sima `new Date(Y, M, D, H, m)` UTC-ként lesz értelmezve.
+        // Beállítjuk a helyes stringet: "2024-10-25T14:30:00.000+01:00" vagy "+02:00" attól függően,
+        // hogy nyári vagy téli időszámítás van. Az Intl.DateTimeFormat megmondja az eltolódást.
 
-        // Biztosabb módszer a lokális idő kiszámítására:
-        const [year, month, day] = courseData.date.split('-');
-        const [hours, minutes] = courseData.startTime.split(':');
-        // Kezeljük úgy, mintha budapesti idő lenne (ez a szerveren is így fut a timezone miatt, de local date objektumként)
-        const courseStartDate = new Date(year, month - 1, day, hours, minutes);
-        const now = new Date();
+        // Először készítünk egy hozzávetőleges (UTC) dátumot a keresett napra
+        const approximateDate = new Date(`${courseData.date}T12:00:00Z`);
 
+        // Kiszámítjuk, hogy a kért napon Magyarországon mennyi volt az UTC-től való eltérés
+        // Egy formatter Europe/Budapest timezone-nal
+        const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: 'Europe/Budapest',
+            timeZoneName: 'longOffset' // pl: "GMT+02:00" vagy "GMT+01:00"
+        });
+        const parts = formatter.formatToParts(approximateDate);
+        const offsetPart = parts.find(p => p.type === 'timeZoneName').value; // "GMT+02:00"
+        const offsetString = offsetPart.replace('GMT', ''); // "+02:00" vagy "+01:00" (ha csak 'GMT', az 'Z')
+        const finalOffset = offsetString === '' ? 'Z' : offsetString;
+
+        // Most már pontos ISO stringet tudunk építeni
+        const exactCourseDateTimeString = `${courseData.date}T${courseData.startTime}:00.000${finalOffset}`;
+        const courseStartDate = new Date(exactCourseDateTimeString);
+
+        const now = new Date(); // Mostani időpillanat (UTC, de az epoch millisec abszolút)
         const hoursUntilStart = (courseStartDate.getTime() - now.getTime()) / (1000 * 60 * 60);
 
         if (hoursUntilStart > 24) {
@@ -606,8 +620,8 @@ async function processWaitlist(courseId, isTestView) {
             await sendDynamicEmail("waitlistPromoted", bookingData, templates.waitlistPromoted(bookingData), isTestView);
             console.log(`Waitlist auto-promotion successful for ${normalizedEmail}`);
 
-        } else if (hoursUntilStart > 0) {
-            // KEVESEBB MINT 24 ÓRA: Gyorsasági Broadcast (3. opció)
+        } else if (hoursUntilStart >= 3) {
+            // KEVESEBB MINT 24 ÓRA, DE TÖBB MINT 3 ÓRA: Gyorsasági Broadcast (3. opció)
             // Létrehozunk egy claim dokumentumot, hogy nyomon kövessük a "versenyt"
             const claimRef = db.collection(isTestView ? "claims_test" : "claims").doc(courseId);
 
@@ -644,6 +658,9 @@ async function processWaitlist(courseId, isTestView) {
 
             await Promise.allSettled(emailsPromises);
             console.log(`Sent ${waitlistSnap.size} last-minute broadcast emails for course ${courseId}`);
+        } else {
+            // KEVESEBB MINT 3 ÓRA VAN HÁTRA: Már nem küldünk semmilyen értesítést a várólistásoknak
+            console.log(`Course ${courseId} is starting in less than 3 hours (${hoursUntilStart.toFixed(2)} hours). No waitlist emails sent.`);
         }
 
     } catch (error) {
