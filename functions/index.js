@@ -326,6 +326,34 @@ const runDailyChecks = async () => {
         }
     });
     await Promise.all(studentPromises);
+    // --- VÁRÓLISTA EMLÉKEZTETŐK (3 NAPOS) ---
+    // Lekérdezzük a "courses" kollekciót azokra a foglalkozásokra, amelyek pont 3 nap múlva kezdődnek
+    const targetDateObj = new Date(today);
+    targetDateObj.setDate(today.getDate() + 3);
+    const targetDateStr = targetDateObj.toISOString().split("T")[0]; // YYYY-MM-DD formátum
+
+    const coursesSnapshot = await db.collection("courses").where("date", "==", targetDateStr).get();
+
+    for (const courseDoc of coursesSnapshot.docs) {
+        const courseData = courseDoc.data();
+        const courseId = courseDoc.id;
+
+        // Csak akkor küldünk, ha vannak rendes jelentkezők
+        if (courseData.bookingsCount > 0) {
+            const bookingsSnap = await courseDoc.ref.collection("bookings").get();
+            bookingsSnap.forEach((bookingDoc) => {
+                const bookingData = bookingDoc.data();
+                studentPromises.push(sendEmail(bookingData, templates.courseReminder3Days(bookingData)));
+                automationLogs.push({
+                    student: `${bookingData.lastName} ${bookingData.firstName}`,
+                    action: `3 napos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                });
+            });
+        }
+    }
+
+    await Promise.allSettled(studentPromises); // Use allSettled here to catch all, just in case
+
     if (automationLogs.length > 0) {
         const logDocRef = db.collection("automation_logs").doc(today.toISOString().split("T")[0]);
         await logDocRef.set({
@@ -900,6 +928,9 @@ exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
 exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
 exports.bookAppointment = appointments.bookAppointment;
 exports.cancelBookingByStudent = appointments.cancelBookingByStudent;
+exports.joinWaitlist = appointments.joinWaitlist;
+exports.claimLastMinuteSpot = appointments.claimLastMinuteSpot;
+exports.removeWaitlistEntryAsAdmin = appointments.removeWaitlistEntryAsAdmin;
 
 // ÚJ FUNKCIÓ: Teszt e-mail küldése az admin felületről
 exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {

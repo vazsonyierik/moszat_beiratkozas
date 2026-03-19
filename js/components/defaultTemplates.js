@@ -469,5 +469,80 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    courseReminder3Days: {
+        id: 'courseReminder3Days',
+        name: 'Időpont emlékeztető 3 nap (T-8)', category: 'Emlékeztetők',
+        subject: `Emlékeztető a közelgő KRESZ foglalkozásról`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy 3 nap múlva várunk a következő foglalkozásra:</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Kérjük, hogy pontosan érkezz!</p>
+                <p><strong>FONTOS KÉRÉS:</strong> Ha időközben közbejött valami, és mégsem tudsz részt venni, kérjük, az alábbi gombra kattintva mielőbb mondd le az időpontot! Ezzel esélyt adsz a várólistán lévő tanulóknak, hogy bejussanak a helyedre.</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    waitlistPromoted: {
+        id: 'waitlistPromoted',
+        name: 'Várólista: Automatikus bekerülés', category: 'Időpontfoglalás',
+        subject: `Jó hír! Bekerültél a foglalkozásra - Mosolyzóna Autósiskola`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Örömmel értesítünk, hogy felszabadult egy hely az alábbi foglalkozáson, és mivel a várólistán voltál, automatikusan be is osztottunk rá!</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Nincs más teendőd, mint pontosan megjelenni a megadott időpontban.</p>
+                <p>Ha esetleg már nem aktuális, és mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet, hogy a várólistán következő tanuló megkaphassa a helyet:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    lastMinuteSpot: {
+        id: 'lastMinuteSpot',
+        name: 'Várólista: Gyorsasági last-minute hely', category: 'Időpontfoglalás',
+        subject: `Utolsó pillanatos szabad hely! (Gyorsasági foglalás)`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Váratlanul felszabadult egy hely a várva várt foglalkozáson, amely kevesebb mint 24 óra múlva kezdődik!</p>
+                <ul>
+                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Mivel az idő rövid, a helyet <strong>gyorsasági alapon lehet lefoglalni</strong>. Aki először kattint a lenti gombra, az kapja meg a helyet.</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lastminute.html?courseId={{courseId}}&email={{encodedEmail}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #5cb85c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Lefoglalom a helyet!
+                    </a>
+                </p>
+                <p>Ha a gombra kattintva azt az üzenetet kapod, hogy a hely betelt, akkor valaki más már gyorsabb volt. Köszönjük a megértésedet!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
 };
 export default DEFAULT_TEMPLATES;
