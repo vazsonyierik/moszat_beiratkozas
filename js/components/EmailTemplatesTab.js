@@ -3,6 +3,7 @@ import { db, doc, getDoc, setDoc, collection, getDocs } from '../firebase.js';
 import * as Icons from '../Icons.js';
 import { useToast, useConfirmation } from '../context/AppContext.js';
 import DEFAULT_TEMPLATES from './defaultTemplates.js';
+import TestEmailModal from './modals/TestEmailModal.js';
 
 const React = window.React;
 const { useState, useEffect, useRef, Fragment } = React;
@@ -18,6 +19,11 @@ const EmailTemplatesTab = () => {
     const [htmlContent, setHtmlContent] = useState('');
     const [isEnabled, setIsEnabled] = useState(true);
     
+    // Test Email Modal state
+    const [isTestModalOpen, setIsTestModalOpen] = useState(false);
+    const [savedSubject, setSavedSubject] = useState('');
+    const [savedHtmlContent, setSavedHtmlContent] = useState('');
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
     const quillRef = useRef(null);
@@ -72,6 +78,10 @@ const EmailTemplatesTab = () => {
             setHtmlContent(mergedTemplates[activeTemplateId].html);
             setIsEnabled(mergedTemplates[activeTemplateId].enabled);
 
+            // Set saved state tracking
+            setSavedSubject(mergedTemplates[activeTemplateId].subject);
+            setSavedHtmlContent(mergedTemplates[activeTemplateId].html);
+
         } catch (error) {
             console.error("Error loading templates:", error);
             showToast("Nem sikerült betölteni az e-mail sablonokat (valószínűleg jogosultsági hiba). Alapértelmezett betöltése.", "warning");
@@ -123,6 +133,8 @@ const EmailTemplatesTab = () => {
         setSubject(templates[templateId].subject);
         setHtmlContent(templates[templateId].html);
         setIsEnabled(templates[templateId].enabled !== false);
+        setSavedSubject(templates[templateId].subject);
+        setSavedHtmlContent(templates[templateId].html);
     };
 
     const handleSave = async () => {
@@ -146,6 +158,10 @@ const EmailTemplatesTab = () => {
                     enabled: isEnabled
                 }
             }));
+
+            // Frissítjük a mentett állapotot
+            setSavedSubject(subject);
+            setSavedHtmlContent(htmlContent);
 
             showToast("Sablon sikeresen elmentve!", "success");
         } catch (error) {
@@ -216,12 +232,26 @@ const EmailTemplatesTab = () => {
                         enabled: isEnabled, // Keep current enabled state
                         updatedAt: new Date().toISOString()
                     }, { merge: true });
+                    setSavedSubject(defaultTpl.subject);
+                    setSavedHtmlContent(defaultTpl.html);
                     showToast("Alapértelmezett sablon visszaállítva.", "success");
                 } catch (e) {
                     console.error(e);
                 }
             }
         });
+    };
+
+    const handleOpenTestModal = () => {
+        const hasUnsavedChanges = subject !== savedSubject || htmlContent !== savedHtmlContent;
+        if (hasUnsavedChanges) {
+            showConfirmation({
+                message: "Figyelem: Vannak nem mentett módosításaid! A teszt e-mail a legutóbb mentett állapotot fogja tükrözni. Biztosan folytatod?",
+                onConfirm: () => setIsTestModalOpen(true)
+            });
+        } else {
+            setIsTestModalOpen(true);
+        }
     };
 
     if (isLoading) {
@@ -341,16 +371,33 @@ const EmailTemplatesTab = () => {
                         Alapértelmezett visszaállítása
                     </button>
                     
-                    <button 
-                        onClick=${handleSave}
-                        disabled=${isSaving}
-                        className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
-                    >
-                        <${Icons.SaveIcon} size=${18} />
-                        ${isSaving ? 'Mentés folyamatban...' : 'Sablon mentése az adatbázisba'}
-                    </button>
+                    <div className="flex gap-3">
+                        <button
+                            onClick=${handleOpenTestModal}
+                            disabled=${isSaving}
+                            className="bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-md hover:bg-blue-200 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <${Icons.SendIcon} size=${18} />
+                            Teszt e-mail küldése
+                        </button>
+
+                        <button
+                            onClick=${handleSave}
+                            disabled=${isSaving}
+                            className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-sm flex items-center gap-2"
+                        >
+                            <${Icons.SaveIcon} size=${18} />
+                            ${isSaving ? 'Mentés folyamatban...' : 'Sablon mentése az adatbázisba'}
+                        </button>
+                    </div>
                 </div>
             </div>
+            <${TestEmailModal}
+                templateId=${activeTemplateId}
+                savedTemplate=${{ subject: savedSubject, html: savedHtmlContent }}
+                isOpen=${isTestModalOpen}
+                onClose=${() => setIsTestModalOpen(false)}
+            />
         </div>
     `;
 };

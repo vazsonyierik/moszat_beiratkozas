@@ -901,3 +901,65 @@ exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
 exports.bookAppointment = appointments.bookAppointment;
 exports.cancelBookingByStudent = appointments.cancelBookingByStudent;
 
+// ÚJ FUNKCIÓ: Teszt e-mail küldése az admin felületről
+exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {
+    const userEmail = request.auth?.token?.email;
+    if (!userEmail || !(await isAdmin(userEmail))) {
+        throw new HttpsError("permission-denied", "Nincs jogosultságod a funkció futtatásához.");
+    }
+
+    const { templateId, testData } = request.data;
+    if (!templateId || !testData) {
+        throw new HttpsError("invalid-argument", "A sablon azonosító és a teszt adatok megadása kötelező.");
+    }
+
+    try {
+        let finalSubject = "";
+        let finalHtml = "";
+
+        // Próbáljuk meg betölteni a sablont a Firestore-ból
+        const templateDoc = await db.collection("email_templates").doc(templateId).get();
+        if (templateDoc.exists) {
+            const dynamicTemplate = templateDoc.data();
+            if (dynamicTemplate.subject && dynamicTemplate.html) {
+                finalSubject = dynamicTemplate.subject;
+                finalHtml = dynamicTemplate.html;
+            }
+        }
+
+        // Ha nincs adatbázisban, használjuk a fallbacket (emailTemplates.js)
+        if (!finalSubject || !finalHtml) {
+            // Ellenőrizzük, hogy a template létezik-e az emailTemplates.js fájlban
+            if (templates[templateId]) {
+                const fallbackTemplate = templates[templateId](testData);
+                finalSubject = fallbackTemplate.subject;
+                finalHtml = fallbackTemplate.html;
+            } else {
+                throw new HttpsError("not-found", "A sablon nem található sem az adatbázisban, sem az alapértelmezések között.");
+            }
+        } else {
+             // Ha az adatbázisból jött, behelyettesítjük az értékeket
+             const { replaceTemplateVariables } = require('./utils');
+             finalSubject = replaceTemplateVariables(finalSubject, testData);
+             finalHtml = replaceTemplateVariables(finalHtml, testData);
+        }
+
+        const mailPayload = {
+            to: "iroda@mosolyzona.hu",
+            from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
+            message: {
+                subject: `[TESZT SABLON] ${finalSubject}`,
+                html: finalHtml,
+            },
+        };
+
+        await db.collection("mail").add(mailPayload);
+        logger.info(`Test email sent for template ${templateId} by admin ${userEmail}`);
+
+        return { success: true };
+
+    } catch (error) {
+        logger.error(`Error sending test email for template ${templateId}:`, error);
+        throw new HttpsError("internal", "Hiba történt a teszt e-mail küldése során.");
+    }
+});
