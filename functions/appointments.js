@@ -395,6 +395,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 cancellation_token: cancellationToken,
                 isPresent: null,
                 feePaid: false,
+                addedByAdmin: !!silent,
             };
 
             // 5. Prepare global reference
@@ -498,6 +499,7 @@ exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (reques
                     isPresent: null,
                     feePaid: false,
                     allBookingId: globalBookingRef.id,
+                    addedByAdmin: true,
                 };
 
                 transaction.set(bookingDocRef, localBookingData);

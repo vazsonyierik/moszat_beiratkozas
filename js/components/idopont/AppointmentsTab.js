@@ -420,7 +420,15 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                             ${index + 1}.
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-medium text-indigo-600 truncate">${booking.lastName} ${booking.firstName}</p>
+                                                            <p className="text-sm font-medium text-indigo-600 truncate">
+                                                                ${booking.lastName} ${booking.firstName}
+                                                                ${booking.addedByAdmin ? html`
+                                                                    <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                                                        <${Icons.ShieldIcon} size=${12} />
+                                                                        Admin
+                                                                    </span>
+                                                                ` : ''}
+                                                            </p>
                                                             <p className="text-sm text-gray-500 truncate">${booking.email}</p>
                                                         </div>
                                                     </div>
