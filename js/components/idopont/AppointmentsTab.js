@@ -402,84 +402,88 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
 
                     ${isLoading ? html`
                         <div className="text-center py-8 text-gray-500">Jelentkezők betöltése...</div>
-                    ` : bookings.length === 0 ? html`
-                        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                            <${Icons.UsersIcon} size=${48} className="mx-auto text-gray-400 mb-4" />
-                            <p className="text-gray-500">Még nincs jelentkező erre a foglalkozásra.</p>
-                        </div>
                     ` : html`
-                        <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
-                            <ul className="divide-y divide-gray-200">
-                                ${bookings.map((booking, index) => html`
-                                    <li key=${booking.id} className="hover:bg-gray-50">
-                                        <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                                                    ${index + 1}.
+                        <div>
+                            ${bookings.length === 0 ? html`
+                                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                                    <${Icons.UsersIcon} size=${48} className="mx-auto text-gray-400 mb-4" />
+                                    <p className="text-gray-500">Még nincs jelentkező erre a foglalkozásra.</p>
+                                </div>
+                            ` : html`
+                                <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                                    <ul className="divide-y divide-gray-200">
+                                        ${bookings.map((booking, index) => html`
+                                            <li key=${booking.id} className="hover:bg-gray-50">
+                                                <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                                            ${index + 1}.
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-indigo-600 truncate">${booking.lastName} ${booking.firstName}</p>
+                                                            <p className="text-sm text-gray-500 truncate">${booking.email}</p>
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-sm text-gray-500">
+                                                            ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
+                                                        </div>
+                                                        <button
+                                                            onClick=${() => handleCancelBooking(booking)}
+                                                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                            title="Jelentkezés törlése"
+                                                        >
+                                                            <${Icons.TrashIcon} size=${16} />
+                                                        </button>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-indigo-600 truncate">${booking.lastName} ${booking.firstName}</p>
-                                                    <p className="text-sm text-gray-500 truncate">${booking.email}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-sm text-gray-500">
-                                                    ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
-                                                </div>
-                                                <button 
-                                                    onClick=${() => handleCancelBooking(booking)}
-                                                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
-                                                    title="Jelentkezés törlése"
-                                                >
-                                                    <${Icons.TrashIcon} size=${16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                `)}
-                            </ul>
+                                            </li>
+                                        `)}
+                                    </ul>
+                                </div>
+                            `}
+
+                            ${(!isWaitlistLoading && waitlist.length > 0) ? html`
+                                <div className="mt-8">
+                                    <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                        <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
+                                        Várólista (${waitlist.length})
+                                    </h4>
+                                    <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                                        <ul className="divide-y divide-gray-200">
+                                            ${waitlist.map((entry, index) => html`
+                                                <li key=${entry.id} className="hover:bg-gray-50">
+                                                    <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">
+                                                                V-${index + 1}.
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-gray-900 truncate">${entry.lastName} ${entry.firstName}</p>
+                                                                <p className="text-sm text-gray-500 truncate">${entry.email}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-sm text-gray-500 hidden sm:block">
+                                                                Feliratkozott: ${entry.joinedAt ? new Date(entry.joinedAt.seconds * 1000).toLocaleString('hu-HU') : '...'}
+                                                            </div>
+                                                            <button
+                                                                onClick=${() => handleRemoveWaitlist(entry)}
+                                                                className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                                title="Eltávolítás a várólistáról"
+                                                            >
+                                                                <${Icons.TrashIcon} size=${16} />
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </li>
+                                            `)}
+                                        </ul>
+                                    </div>
+                                </div>
+                            ` : null}
                         </div>
                     `}
-
-                    ${(!isWaitlistLoading && waitlist.length > 0) ? html`
-                        <div className="mt-8">
-                            <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                                <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
-                                Várólista (${waitlist.length})
-                            </h4>
-                            <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
-                                <ul className="divide-y divide-gray-200">
-                                    ${waitlist.map((entry, index) => html`
-                                        <li key=${entry.id} className="hover:bg-gray-50">
-                                            <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">
-                                                        V-${index + 1}.
-                                                    </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900 truncate">${entry.lastName} ${entry.firstName}</p>
-                                                        <p className="text-sm text-gray-500 truncate">${entry.email}</p>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="text-sm text-gray-500 hidden sm:block">
-                                                        Feliratkozott: ${entry.joinedAt ? new Date(entry.joinedAt.seconds * 1000).toLocaleString('hu-HU') : '...'}
-                                                    </div>
-                                                    <button 
-                                                        onClick=${() => handleRemoveWaitlist(entry)}
-                                                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
-                                                        title="Eltávolítás a várólistáról"
-                                                    >
-                                                        <${Icons.TrashIcon} size=${16} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    `)}
-                                </ul>
-                            </div>
-                        </div>
-                    ` : null}
                 </div>
                 
                 <div className="flex items-center justify-end rounded-b border-t p-4 bg-white">
