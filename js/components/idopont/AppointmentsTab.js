@@ -4,7 +4,7 @@ import { db, collection, onSnapshot, query, orderBy, deleteDoc, doc, functions, 
 import { useToast, useConfirmation } from '../../context/AppContext.js';
 
 const React = window.React;
-const { useState, useEffect } = React;
+const { useState, useEffect, Fragment } = React;
 
 /**
  * BulkStudentRegistrationModal
@@ -403,7 +403,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     ${isLoading ? html`
                         <div className="text-center py-8 text-gray-500">Jelentkezők betöltése...</div>
                     ` : html`
-                        <div>
+                        <${Fragment}>
                             ${bookings.length === 0 ? html`
                                 <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                                     <${Icons.UsersIcon} size=${48} className="mx-auto text-gray-400 mb-4" />
@@ -482,7 +482,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                     </div>
                                 </div>
                             ` : null}
-                        </div>
+                        </${Fragment}>
                     `}
                 </div>
                 
