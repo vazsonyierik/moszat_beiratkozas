@@ -953,6 +953,7 @@ exports.cancelBookingByStudent = appointments.cancelBookingByStudent;
 exports.joinWaitlist = appointments.joinWaitlist;
 exports.claimLastMinuteSpot = appointments.claimLastMinuteSpot;
 exports.removeWaitlistEntryAsAdmin = appointments.removeWaitlistEntryAsAdmin;
+exports.bulkAddStudentToCourses = appointments.bulkAddStudentToCourses;
 
 // ÚJ FUNKCIÓ: Teszt e-mail küldése az admin felületről
 exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {

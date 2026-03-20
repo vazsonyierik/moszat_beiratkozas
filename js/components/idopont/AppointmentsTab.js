@@ -4,7 +4,173 @@ import { db, collection, onSnapshot, query, orderBy, deleteDoc, doc, functions, 
 import { useToast, useConfirmation } from '../../context/AppContext.js';
 
 const React = window.React;
-const { useState, useEffect } = React;
+const { useState, useEffect, Fragment } = React;
+
+/**
+ * BulkStudentRegistrationModal
+ * Modal to add one student to multiple courses at once.
+ */
+const BulkStudentRegistrationModal = ({ courses, onClose, isTestView }) => {
+    const [firstName, setFirstName] = useState('');
+    const [lastName, setLastName] = useState('');
+    const [email, setEmail] = useState('');
+    const [selectedCourseIds, setSelectedCourseIds] = useState(new Set());
+    const [isSaving, setIsSaving] = useState(false);
+    
+    const showToast = useToast();
+
+    // Szűrjük csak a szabad kapacitású, jövőbeli/aktuális kurzusokat (ha akarjuk). Most egyszerűen csak a szabadokat.
+    const availableCourses = courses.filter(c => (c.bookingsCount || 0) < c.capacity);
+
+    const toggleCourseSelection = (courseId) => {
+        const newSet = new Set(selectedCourseIds);
+        if (newSet.has(courseId)) {
+            newSet.delete(courseId);
+        } else {
+            newSet.add(courseId);
+        }
+        setSelectedCourseIds(newSet);
+    };
+
+    const handleSave = async (e) => {
+        e.preventDefault();
+
+        if (!firstName || !lastName || !email || selectedCourseIds.size === 0) {
+            showToast('Kérjük, töltsön ki minden személyes adatot és válasszon ki legalább egy foglalkozást!', 'warning');
+            return;
+        }
+
+        setIsSaving(true);
+        try {
+            const bulkAddFn = httpsCallable(functions, 'bulkAddStudentToCourses');
+            const result = await bulkAddFn({
+                firstName,
+                lastName,
+                email,
+                courseIds: Array.from(selectedCourseIds),
+                isTestView
+            });
+
+            if (result.data && result.data.success) {
+                showToast(result.data.message || 'Sikeres mentés.', 'success');
+                onClose();
+            }
+        } catch (error) {
+            console.error("Error bulk adding student:", error);
+            showToast(`Hiba a mentés során: ${error.message}`, 'error');
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    return html`
+        <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-50 p-4">
+            <div className="relative w-full max-w-2xl rounded-lg bg-white shadow-xl flex flex-col max-h-[90vh]">
+                
+                <div className="flex items-center justify-between rounded-t border-b p-4">
+                    <div>
+                        <h3 className="text-xl font-semibold text-gray-900">
+                            Tanuló csoportos beosztása
+                        </h3>
+                    </div>
+                    <button onClick=${onClose} className="ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900">
+                        <${Icons.XIcon} size=${20} />
+                    </button>
+                </div>
+
+                <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
+                    <form id="bulkRegistrationForm" onSubmit=${handleSave} className="space-y-6">
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h4 className="text-md font-bold text-gray-800 mb-4 border-b pb-2">1. Tanuló adatai</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Vezetéknév</label>
+                                    <input 
+                                        type="text" 
+                                        value=${lastName}
+                                        onChange=${(e) => setLastName(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Keresztnév</label>
+                                    <input 
+                                        type="text" 
+                                        value=${firstName}
+                                        onChange=${(e) => setFirstName(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">E-mail cím</label>
+                                    <input 
+                                        type="email" 
+                                        value=${email}
+                                        onChange=${(e) => setEmail(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        required
+                                    />
+                                    <p className="text-xs text-gray-500 mt-1">A rendszer a sikeres mentés után értesítő e-mailt küld erre a címre minden kiválasztott foglalkozásról.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+                            <h4 className="text-md font-bold text-gray-800 mb-4 border-b pb-2 flex justify-between items-center">
+                                <span>2. Foglalkozások kiválasztása</span>
+                                <span className="text-sm font-normal text-gray-500 bg-gray-100 px-2 py-0.5 rounded">Kiválasztva: ${selectedCourseIds.size} db</span>
+                            </h4>
+                            <p className="text-sm text-gray-600 mb-3">Csak a szabad helyekkel rendelkező foglalkozások listázódnak.</p>
+                            
+                            <div className="max-h-60 overflow-y-auto pr-2 space-y-2">
+                                ${availableCourses.length === 0 ? html`
+                                    <p className="text-sm text-gray-500 italic p-2 bg-gray-50 rounded border">Nincs szabad foglalkozás a rendszerben.</p>
+                                ` : availableCourses.map(course => {
+                                    const isSelected = selectedCourseIds.has(course.id);
+                                    return html`
+                                        <label key=${course.id} className=${`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${isSelected ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+                                            <div className="flex items-center h-5 mt-0.5">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked=${isSelected}
+                                                    onChange=${() => toggleCourseSelection(course.id)}
+                                                    className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-bold text-gray-900 truncate">${course.name}</p>
+                                                <p className="text-sm text-gray-500 truncate">${course.date} | ${course.startTime} - ${course.endTime}</p>
+                                            </div>
+                                            <div className="text-xs text-gray-500 whitespace-nowrap pt-0.5">
+                                                ${course.capacity - (course.bookingsCount || 0)} szabad hely
+                                            </div>
+                                        </label>
+                                    `;
+                                })}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div className="flex items-center justify-end gap-3 rounded-b border-t p-4 bg-white">
+                    <button type="button" onClick=${onClose} className="rounded-lg bg-white px-5 py-2.5 text-center text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200">
+                        Mégse
+                    </button>
+                    <button 
+                        type="submit" 
+                        form="bulkRegistrationForm"
+                        disabled=${isSaving}
+                        className="rounded-lg bg-indigo-600 px-5 py-2.5 text-center text-sm font-medium text-white hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 disabled:opacity-50 flex items-center gap-2"
+                    >
+                        ${isSaving ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Mentés...` : 'Tanuló beiratása'}
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+};
 
 /**
  * Modal to view and manage students who booked a specific course
@@ -14,6 +180,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     const [waitlist, setWaitlist] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isWaitlistLoading, setIsWaitlistLoading] = useState(true);
+    
+    // Add student silently form states
+    const [addFirstName, setAddFirstName] = useState('');
+    const [addLastName, setAddLastName] = useState('');
+    const [addEmail, setAddEmail] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
+    const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
@@ -105,18 +279,65 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         });
     };
 
+    const handleAddStudentSilently = async (e) => {
+        e.preventDefault();
+        
+        if (!addFirstName || !addLastName || !addEmail) {
+            showToast('Minden mező kitöltése kötelező az új tanuló felviteléhez!', 'warning');
+            return;
+        }
+
+        setIsAdding(true);
+        try {
+            const bookFn = httpsCallable(functions, 'bookAppointment');
+            const result = await bookFn({
+                courseId: course.id,
+                firstName: addFirstName,
+                lastName: addLastName,
+                email: addEmail,
+                isTestView,
+                silent: true // The key param indicating NO confirmation email should be sent
+            });
+            
+            showToast(result.data.message || 'Sikeres hozzáadás értesítés nélkül.', 'success');
+            
+            // Reset form and close
+            setAddFirstName('');
+            setAddLastName('');
+            setAddEmail('');
+            setIsAddFormOpen(false);
+
+        } catch (error) {
+            console.error("Error adding student silently:", error);
+            showToast(`Hiba a hozzáadás során: ${error.message}`, 'error');
+        } finally {
+            setIsAdding(false);
+        }
+    };
+
     return html`
         <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-50 p-4">
             <div className="relative w-full max-w-4xl rounded-lg bg-white shadow-xl flex flex-col max-h-[90vh]">
                 
                 <div className="flex items-center justify-between rounded-t border-b p-4">
-                    <div>
-                        <h3 className="text-xl font-semibold text-gray-900">
-                            Jelentkezők: ${course.name}
-                        </h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                            ${course.date} | ${course.startTime} - ${course.endTime}
-                        </p>
+                    <div className="flex-1">
+                        <div className="flex justify-between items-center pr-4">
+                            <div>
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                    Jelentkezők: ${course.name}
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1">
+                                    ${course.date} | ${course.startTime} - ${course.endTime}
+                                </p>
+                            </div>
+                            <button 
+                                onClick=${() => setIsAddFormOpen(!isAddFormOpen)}
+                                className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-4 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
+                            >
+                                <${Icons.PlusCircleIcon} size=${16} />
+                                Új tanuló hozzáadása (Csendes)
+                            </button>
+                        </div>
                     </div>
                     <button onClick=${onClose} className="ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900">
                         <${Icons.XIcon} size=${20} />
@@ -124,85 +345,152 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                 </div>
 
                 <div className="p-6 overflow-y-auto flex-1 bg-gray-50">
-                    ${isLoading ? html`
-                        <div className="text-center py-8 text-gray-500">Jelentkezők betöltése...</div>
-                    ` : bookings.length === 0 ? html`
-                        <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                            <${Icons.UsersIcon} size=${48} className="mx-auto text-gray-400 mb-4" />
-                            <p className="text-gray-500">Még nincs jelentkező erre a foglalkozásra.</p>
-                        </div>
-                    ` : html`
-                        <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
-                            <ul className="divide-y divide-gray-200">
-                                ${bookings.map((booking, index) => html`
-                                    <li key=${booking.id} className="hover:bg-gray-50">
-                                        <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
-                                            <div className="flex items-center gap-4">
-                                                <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
-                                                    ${index + 1}.
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-indigo-600 truncate">${booking.lastName} ${booking.firstName}</p>
-                                                    <p className="text-sm text-gray-500 truncate">${booking.email}</p>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-4">
-                                                <div className="text-sm text-gray-500">
-                                                    ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
-                                                </div>
-                                                <button 
-                                                    onClick=${() => handleCancelBooking(booking)}
-                                                    className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
-                                                    title="Jelentkezés törlése"
-                                                >
-                                                    <${Icons.TrashIcon} size=${16} />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </li>
-                                `)}
-                            </ul>
+                    ${isAddFormOpen && html`
+                        <div className="mb-6 bg-white p-4 rounded-lg shadow-sm border border-indigo-200">
+                            <div className="flex justify-between items-center mb-4">
+                                <h4 className="text-md font-bold text-gray-800 flex items-center gap-2">
+                                    <${Icons.UserAddIcon} size=${18} className="text-indigo-600" />
+                                    Új tanuló azonnali felvitele a kurzusra
+                                </h4>
+                                <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded font-semibold border border-gray-200">
+                                    Nem kap e-mailt!
+                                </span>
+                            </div>
+                            <form onSubmit=${handleAddStudentSilently} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Vezetéknév</label>
+                                    <input 
+                                        type="text" 
+                                        value=${addLastName}
+                                        onChange=${(e) => setAddLastName(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Keresztnév</label>
+                                    <input 
+                                        type="text" 
+                                        value=${addFirstName}
+                                        onChange=${(e) => setAddFirstName(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">E-mail cím</label>
+                                    <input 
+                                        type="email" 
+                                        value=${addEmail}
+                                        onChange=${(e) => setAddEmail(e.target.value)}
+                                        className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+                                        required
+                                    />
+                                </div>
+                                <div className="md:col-span-3 flex justify-end mt-2">
+                                    <button 
+                                        type="submit" 
+                                        disabled=${isAdding}
+                                        className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        ${isAdding ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Hozzáadás...` : 'Hozzáadás Csendben'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     `}
 
-                    ${!isWaitlistLoading && waitlist.length > 0 && html`
-                        <div className="mt-8">
-                            <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
-                                <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
-                                Várólista (${waitlist.length})
-                            </h4>
-                            <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
-                                <ul className="divide-y divide-gray-200">
-                                    ${waitlist.map((entry, index) => html`
-                                        <li key=${entry.id} className="hover:bg-gray-50">
-                                            <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">
-                                                        V-${index + 1}.
+                    ${isLoading ? html`
+                        <div className="text-center py-8 text-gray-500">Jelentkezők betöltése...</div>
+                    ` : html`
+                        <${Fragment}>
+                            ${bookings.length === 0 ? html`
+                                <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                                    <${Icons.UsersIcon} size=${48} className="mx-auto text-gray-400 mb-4" />
+                                    <p className="text-gray-500">Még nincs jelentkező erre a foglalkozásra.</p>
+                                </div>
+                            ` : html`
+                                <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                                    <ul className="divide-y divide-gray-200">
+                                        ${bookings.map((booking, index) => html`
+                                            <li key=${booking.id} className="hover:bg-gray-50">
+                                                <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
+                                                            ${index + 1}.
+                                                        </div>
+                                                        <div>
+                                                            <p className="text-sm font-medium text-indigo-600 truncate">
+                                                                ${booking.lastName} ${booking.firstName}
+                                                                ${booking.addedByAdmin ? html`
+                                                                    <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                                                        <${Icons.ShieldIcon} size=${12} />
+                                                                        Admin
+                                                                    </span>
+                                                                ` : ''}
+                                                            </p>
+                                                            <p className="text-sm text-gray-500 truncate">${booking.email}</p>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <p className="text-sm font-medium text-gray-900 truncate">${entry.lastName} ${entry.firstName}</p>
-                                                        <p className="text-sm text-gray-500 truncate">${entry.email}</p>
+                                                    <div className="flex items-center gap-4">
+                                                        <div className="text-sm text-gray-500">
+                                                            ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
+                                                        </div>
+                                                        <button 
+                                                            onClick=${() => handleCancelBooking(booking)}
+                                                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                            title="Jelentkezés törlése"
+                                                        >
+                                                            <${Icons.TrashIcon} size=${16} />
+                                                        </button>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-4">
-                                                    <div className="text-sm text-gray-500 hidden sm:block">
-                                                        Feliratkozott: ${entry.joinedAt ? new Date(entry.joinedAt.seconds * 1000).toLocaleString('hu-HU') : '...'}
+                                            </li>
+                                        `)}
+                                    </ul>
+                                </div>
+                            `}
+
+                            ${(!isWaitlistLoading && waitlist.length > 0) ? html`
+                                <div className="mt-8">
+                                    <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
+                                        <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
+                                        Várólista (${waitlist.length})
+                                    </h4>
+                                    <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
+                                        <ul className="divide-y divide-gray-200">
+                                            ${waitlist.map((entry, index) => html`
+                                                <li key=${entry.id} className="hover:bg-gray-50">
+                                                    <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">
+                                                                V-${index + 1}.
+                                                            </div>
+                                                            <div>
+                                                                <p className="text-sm font-medium text-gray-900 truncate">${entry.lastName} ${entry.firstName}</p>
+                                                                <p className="text-sm text-gray-500 truncate">${entry.email}</p>
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex items-center gap-4">
+                                                            <div className="text-sm text-gray-500 hidden sm:block">
+                                                                Feliratkozott: ${entry.joinedAt ? new Date(entry.joinedAt.seconds * 1000).toLocaleString('hu-HU') : '...'}
+                                                            </div>
+                                                            <button 
+                                                                onClick=${() => handleRemoveWaitlist(entry)}
+                                                                className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                                title="Eltávolítás a várólistáról"
+                                                            >
+                                                                <${Icons.TrashIcon} size=${16} />
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                    <button 
-                                                        onClick=${() => handleRemoveWaitlist(entry)}
-                                                        className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
-                                                        title="Eltávolítás a várólistáról"
-                                                    >
-                                                        <${Icons.TrashIcon} size=${16} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </li>
-                                    `)}
-                                </ul>
-                            </div>
-                        </div>
+                                                </li>
+                                            `)}
+                                        </ul>
+                                    </div>
+                                </div>
+                            ` : null}
+                        </${Fragment}>
                     `}
                 </div>
                 
@@ -243,6 +531,9 @@ const AppointmentsTab = ({ isTestView }) => {
     const [genAfternoonModule, setGenAfternoonModule] = useState(3);
     const [previewCourses, setPreviewCourses] = useState([]);
     const [isBulkSaving, setIsBulkSaving] = useState(false);
+
+    // Bulk student registration states
+    const [isBulkStudentRegistrationOpen, setIsBulkStudentRegistrationOpen] = useState(false);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -567,6 +858,23 @@ const AppointmentsTab = ({ isTestView }) => {
 
     return html`
         <div className="space-y-8">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200 flex items-center justify-between">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                        <${Icons.UsersIcon} size=${20} className="text-indigo-600" />
+                        Csoportos regisztráció
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">Egy tanuló felvétele több szabad foglalkozásra egyszerre.</p>
+                </div>
+                <button 
+                    onClick=${() => setIsBulkStudentRegistrationOpen(true)}
+                    className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 shadow flex items-center gap-2 transition-colors"
+                >
+                    <${Icons.PlusCircleIcon} size=${18} />
+                    Tanuló csoportos beosztása
+                </button>
+            </div>
+
             <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
                 <div className="flex justify-between items-center mb-4">
                     <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
@@ -993,6 +1301,14 @@ const AppointmentsTab = ({ isTestView }) => {
                 <${CourseBookingsModal} 
                     course=${selectedCourseForBookings}
                     onClose=${() => setSelectedCourseForBookings(null)}
+                    isTestView=${isTestView}
+                />
+            `}
+
+            ${isBulkStudentRegistrationOpen && html`
+                <${BulkStudentRegistrationModal} 
+                    courses=${courses}
+                    onClose=${() => setIsBulkStudentRegistrationOpen(false)}
                     isTestView=${isTestView}
                 />
             `}

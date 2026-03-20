@@ -96,6 +96,11 @@ service cloud.firestore {
         // A tanulók is csak Cloud Function-ön keresztül foglalhatnak, direkt írás tiltva.
         allow create: if false; 
       }
+
+      match /waitlist/{waitlistId} {
+        allow read, update, delete: if isAdmin();
+        allow create: if false; 
+      }
     }
 
     // --- ÚJ RENDSZER: Időpontfoglaló Modul (TESZT) ---
@@ -104,7 +109,13 @@ service cloud.firestore {
       allow read: if true;
       allow write: if isAdmin();
 
-      match /bookings_test/{bookingId} {
+      // Javítva bookings_test -> bookings-ra a Cloud Function alapján
+      match /bookings/{bookingId} {
+        allow read, update, delete: if isAdmin();
+        allow create: if false; 
+      }
+
+      match /waitlist/{waitlistId} {
         allow read, update, delete: if isAdmin();
         allow create: if false; 
       }
