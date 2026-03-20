@@ -474,30 +474,55 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
 
         const coursesCollection = isTestView ? "courses_test" : "courses";
         courseRefToUpdate = db.collection(coursesCollection).doc(bookingData.courseId);
-        bookingRefToDelete = courseRefToUpdate.collection("bookings").doc(bookingData.email);
 
-        // Perform the deletion in a transaction to safely decrement the count
-        await db.runTransaction(async (transaction) => {
-            const bookingDoc = await transaction.get(bookingRefToDelete);
-            if (!bookingDoc.exists) {
-                throw new HttpsError("not-found", "A jelentkezés (már) nem található a foglalkozásnál.");
+        // Check if this token belongs to a WAITLIST entry
+        if (bookingData.isWaitlist) {
+            const waitlistRefToDelete = courseRefToUpdate.collection("waitlist").doc(bookingData.email);
+
+            await db.runTransaction(async (transaction) => {
+                const waitlistDoc = await transaction.get(waitlistRefToDelete);
+                if (!waitlistDoc.exists) {
+                    throw new HttpsError("not-found", "A várólista jelentkezés (már) nem található.");
+                }
+
+                transaction.delete(waitlistRefToDelete);
+                transaction.delete(globalRefToDelete);
+
+                transaction.update(courseRefToUpdate, {
+                    waitlistCount: FieldValue.increment(-1)
+                });
+            });
+
+            // Opcionális: itt lehetne küldeni egy emailt arról, hogy a tanuló leiratkozott a várólistáról.
+            // Egyelőre csak sikeres üzenetet adunk vissza.
+            return {success: true, message: "Sikeresen leiratkoztál a várólistáról."};
+        } else {
+            // Normal Booking Cancellation
+            bookingRefToDelete = courseRefToUpdate.collection("bookings").doc(bookingData.email);
+
+            // Perform the deletion in a transaction to safely decrement the count
+            await db.runTransaction(async (transaction) => {
+                const bookingDoc = await transaction.get(bookingRefToDelete);
+                if (!bookingDoc.exists) {
+                    throw new HttpsError("not-found", "A jelentkezés (már) nem található a foglalkozásnál.");
+                }
+
+                transaction.delete(bookingRefToDelete);
+                transaction.delete(globalRefToDelete);
+
+                transaction.update(courseRefToUpdate, {
+                    bookingsCount: FieldValue.increment(-1)
+                });
+            });
+
+            if (bookingData) {
+                await sendDynamicEmail("bookingCancelledByStudent", bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
+                // Várólista logika meghívása
+                await processWaitlist(bookingData.courseId, isTestView);
             }
 
-            transaction.delete(bookingRefToDelete);
-            transaction.delete(globalRefToDelete);
-
-            transaction.update(courseRefToUpdate, {
-                bookingsCount: FieldValue.increment(-1)
-            });
-        });
-
-        if (bookingData) {
-            await sendDynamicEmail("bookingCancelledByStudent", bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
-            // Várólista logika meghívása
-            await processWaitlist(bookingData.courseId, isTestView);
+            return {success: true, message: "Jelentkezés sikeresen lemondva."};
         }
-
-        return {success: true, message: "Jelentkezés sikeresen lemondva."};
     } catch (error) {
         console.error("Error during student cancellation:", error);
         if (error instanceof HttpsError) {
@@ -606,8 +631,12 @@ async function processWaitlist(courseId, isTestView) {
                 transaction.set(bookingDocRef, bookingData);
                 transaction.set(globalBookingRef, bookingData);
                 
-                // Törlés a várólistáról
+                // Törlés a várólistáról és a globalis waitlist doc-ból
                 transaction.delete(firstWaitlistUserDoc.ref);
+                if (waitlistData.allWaitlistId) {
+                    const globalWaitlistRef = db.collection(allBookingsCollection).doc(waitlistData.allWaitlistId);
+                    transaction.delete(globalWaitlistRef);
+                }
 
                 // Létszám növelése és várólista csökkentése
                 transaction.update(courseRef, {
@@ -705,28 +734,36 @@ exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
             throw new HttpsError("already-exists", "Ezzel az e-mail címmel már feliratkoztál a várólistára!");
         }
 
-        await waitlistRef.set({
+        const courseData = courseDoc.data();
+        const cancellationToken = crypto.randomUUID();
+        const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+        const globalBookingRef = db.collection(allBookingsCollection).doc(`waitlist_${courseId}_${normalizedEmail}`);
+
+        const waitlistData = {
             firstName: firstName.trim(),
             lastName: lastName.trim(),
             email: normalizedEmail,
-            joinedAt: FieldValue.serverTimestamp()
-        });
+            joinedAt: FieldValue.serverTimestamp(),
+            courseId: courseId,
+            courseName: courseData.name,
+            courseDate: courseData.date,
+            startTime: courseData.startTime,
+            endTime: courseData.endTime || "ismeretlen",
+            cancellation_token: cancellationToken,
+            allWaitlistId: globalBookingRef.id,
+            isWaitlist: true
+        };
+
+        // Create the global waitlist document for the token to work in cancelBookingByStudent
+        await globalBookingRef.set(waitlistData);
+        await waitlistRef.set(waitlistData);
 
         // Növeljük a várólista számlálót
         await courseRef.update({
             waitlistCount: FieldValue.increment(1)
         });
 
-        const courseData = courseDoc.data();
-        const waitlistEmailData = {
-            firstName: firstName.trim(),
-            lastName: lastName.trim(),
-            email: normalizedEmail,
-            courseName: courseData.name,
-            courseDate: courseData.date,
-            startTime: courseData.startTime,
-            endTime: courseData.endTime || "ismeretlen"
-        };
+        const waitlistEmailData = { ...waitlistData };
 
         // Küldünk egy megerősítő e-mailt a feliratkozásról
         await sendDynamicEmail("waitlistJoined", waitlistEmailData, templates.waitlistJoined(waitlistEmailData), isTestView);
@@ -824,8 +861,12 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
             transaction.set(bookingDocRef, bookingData);
             transaction.set(globalBookingRef, bookingData);
             
-            // Törlés várólistáról
+            // Törlés várólistáról és a globalis waitlist doc-ból
             transaction.delete(waitlistDocRef);
+            if (waitlistData.allWaitlistId) {
+                const globalWaitlistRef = db.collection(allBookingsCollection).doc(waitlistData.allWaitlistId);
+                transaction.delete(globalWaitlistRef);
+            }
 
             // Kurzus létszám növelése és várólista csökkentése
             transaction.update(courseRef, {
@@ -884,7 +925,15 @@ exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (req
         await db.runTransaction(async (transaction) => {
             const docSnap = await transaction.get(waitlistDocRef);
             if (docSnap.exists) {
+                const waitlistData = docSnap.data();
                 transaction.delete(waitlistDocRef);
+
+                if (waitlistData.allWaitlistId) {
+                    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+                    const globalWaitlistRef = db.collection(allBookingsCollection).doc(waitlistData.allWaitlistId);
+                    transaction.delete(globalWaitlistRef);
+                }
+
                 transaction.update(courseRef, {
                     waitlistCount: FieldValue.increment(-1)
                 });

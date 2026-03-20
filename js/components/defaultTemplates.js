@@ -557,6 +557,13 @@ const DEFAULT_TEMPLATES = {
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p>Amint felszabadul egy hely, e-mailben fogunk értesíteni a részletekről.</p>
+                <p>Amennyiben már nem aktuális, és szeretnél leiratkozni a várólistáról, kérjük, kattints az alábbi gombra:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
         `,
@@ -582,6 +589,13 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p>Ha a gombra kattintva azt az üzenetet kapod, hogy a hely betelt, akkor valaki más már gyorsabb volt. Köszönjük a megértésedet!</p>
+                <p>Amennyiben már nem aktuális, és szeretnél leiratkozni a várólistáról, kérjük, kattints az alábbi gombra:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
         `,

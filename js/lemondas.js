@@ -24,11 +24,16 @@ const CancellationApp = () => {
         }
     }, [token]);
 
+    const [successMessage, setSuccessMessage] = useState('A jelentkezésedet sikeresen töröltük a rendszerből. Köszönjük, hogy időben jelezted felénk!');
+
     const handleCancel = async () => {
         setStatus('loading');
         try {
             const cancelFn = httpsCallable(functions, 'cancelBookingByStudent');
-            await cancelFn({ token });
+            const result = await cancelFn({ token });
+            if (result.data && result.data.message) {
+                setSuccessMessage(result.data.message);
+            }
             setStatus('success');
         } catch (error) {
             console.error("Hiba a lemondás során:", error);
@@ -36,7 +41,7 @@ const CancellationApp = () => {
             
             let msg = error.message;
             if (msg.includes('nem található') || msg.includes('not-found')) {
-                msg = 'A jelentkezés nem található. Lehet, hogy már korábban lemondtad, vagy a foglalkozás elmaradt.';
+                msg = 'A jelentkezés nem található. Lehet, hogy már korábban lemondtad, leiratkoztál a várólistáról, vagy a foglalkozás elmaradt.';
             }
             setErrorMessage(msg || 'Hiba történt a művelet közben.');
         }
@@ -54,7 +59,7 @@ const CancellationApp = () => {
                         <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                     </div>
                     <h2 className="text-2xl font-bold text-gray-800 mb-2">Sikeres lemondás</h2>
-                    <p className="text-gray-600 mb-6">A jelentkezésedet sikeresen töröltük a rendszerből. Köszönjük, hogy időben jelezted felénk!</p>
+                    <p className="text-gray-600 mb-6">${successMessage}</p>
                     <a href="https://mosolyzona.hu" className="text-indigo-600 hover:text-indigo-800 font-medium underline">Vissza a főoldalra</a>
                 </div>
             `;
@@ -79,13 +84,13 @@ const CancellationApp = () => {
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">Jelentkezés lemondása</h2>
-                <p className="text-gray-600 mb-8">Biztosan szeretnéd lemondani az időpontodat? Ez a művelet nem vonható vissza, és elveszíted a helyed a foglalkozáson.</p>
+                <p className="text-gray-600 mb-8">Biztosan szeretnéd lemondani az időpontodat, vagy leiratkozni a várólistáról? Ez a művelet nem vonható vissza.</p>
                 <div className="flex flex-col gap-3">
                     <button 
                         onClick=${handleCancel}
                         className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors focus:ring-4 focus:ring-red-300"
                     >
-                        Igen, lemondom az időpontot
+                        Igen, lemondom / leiratkozom
                     </button>
                     <a 
                         href="idopont.html" 
