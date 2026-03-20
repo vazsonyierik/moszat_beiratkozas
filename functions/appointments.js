@@ -339,7 +339,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
     }
 
     const data = request.data;
-    const {courseId, firstName, lastName, email, isTestView} = data;
+    const {courseId, firstName, lastName, email, isTestView, silent} = data;
 
     if (!courseId || !firstName || !lastName || !email) {
         throw new HttpsError("invalid-argument", "Minden mező kitöltése kötelező.");
@@ -415,11 +415,11 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             bookingDataToEmail = bookingData;
         });
 
-        if (bookingDataToEmail) {
+        if (bookingDataToEmail && !silent) {
             await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
         }
 
-        return {success: true};
+        return {success: true, message: silent ? "A tanuló sikeresen hozzáadva értesítés nélkül." : "Jelentkezés sikeresen rögzítve."};
     } catch (error) {
         console.error("Booking transaction failed:", error);
         // Re-throw known HttpErrors
@@ -428,6 +428,106 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
         }
         throw new HttpsError("internal", "Hiba történt a jelentkezés rögzítésekor.", error.message);
     }
+});
+
+/**
+ * bulkAddStudentToCourses
+ * Admin adds a student to multiple courses at once.
+ */
+exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const {courseIds, firstName, lastName, email, isTestView} = data;
+
+    if (!Array.isArray(courseIds) || courseIds.length === 0 || !firstName || !lastName || !email) {
+        throw new HttpsError("invalid-argument", "Minden mező kitöltése kötelező.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+    const normalizedEmail = email.toLowerCase().trim();
+
+    let successCount = 0;
+    let failCount = 0;
+    const emailsToSend = [];
+
+    // Megpróbáljuk minden kurzusra egyenként beregisztrálni (kivédve a tranzakciós korlátokat)
+    for (const courseId of courseIds) {
+        const courseRef = db.collection(coursesCollection).doc(courseId);
+        const bookingsSubcollection = courseRef.collection("bookings");
+
+        try {
+            let localBookingData = null;
+            await db.runTransaction(async (transaction) => {
+                const courseDoc = await transaction.get(courseRef);
+                if (!courseDoc.exists) {
+                    throw new Error("Course not found");
+                }
+
+                const courseData = courseDoc.data();
+                const currentBookings = courseData.bookingsCount || 0;
+
+                // Ha az Admin pipálta ki, de időközben betelt, akkor skip (ahogy a user kérte: "csak a szabad helyekkel rendelkező")
+                if (currentBookings >= courseData.capacity) {
+                    throw new Error("Course is full");
+                }
+
+                const bookingDocRef = bookingsSubcollection.doc(normalizedEmail);
+                const existingBooking = await transaction.get(bookingDocRef);
+
+                if (existingBooking.exists) {
+                    throw new Error("Already booked");
+                }
+
+                const cancellationToken = crypto.randomUUID();
+                const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+
+                localBookingData = {
+                    firstName: firstName.trim(),
+                    lastName: lastName.trim(),
+                    email: normalizedEmail,
+                    bookingDate: FieldValue.serverTimestamp(),
+                    courseId: courseId,
+                    courseName: courseData.name,
+                    courseDate: courseData.date,
+                    startTime: courseData.startTime,
+                    endTime: courseData.endTime || "ismeretlen",
+                    cancellation_token: cancellationToken,
+                    isPresent: null,
+                    feePaid: false,
+                    allBookingId: globalBookingRef.id,
+                };
+
+                transaction.set(bookingDocRef, localBookingData);
+                transaction.set(globalBookingRef, localBookingData);
+
+                transaction.update(courseRef, {
+                    bookingsCount: FieldValue.increment(1)
+                });
+
+            });
+            if (localBookingData) {
+                emailsToSend.push(localBookingData);
+                successCount++;
+            }
+        } catch (error) {
+            console.error(`Error booking course ${courseId} in bulk:`, error.message);
+            failCount++;
+        }
+    }
+
+    // E-mailek elküldése (a kérés szerint a csoportos küld e-mailt)
+    const emailPromises = emailsToSend.map(bookingData => {
+        return sendDynamicEmail("bookingConfirmation", bookingData, templates.bookingConfirmation(bookingData), isTestView);
+    });
+    await Promise.allSettled(emailPromises);
+
+    return {
+        success: true,
+        message: `Sikeresen felírtuk ${successCount} foglalkozásra. (Sikertelen: ${failCount})`
+    };
 });
 
 /**
