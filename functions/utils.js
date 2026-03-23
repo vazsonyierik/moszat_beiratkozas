@@ -141,6 +141,15 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
                 mappedTemplateData.secondName = mappedTemplateData.current_secondName;
             }
 
+            // Generate a clean {{fullName}} property just like the backend getFullName()
+            if (!mappedTemplateData.fullName) {
+                mappedTemplateData.fullName = [
+                    mappedTemplateData.lastName,
+                    mappedTemplateData.firstName,
+                    mappedTemplateData.secondName
+                ].filter(Boolean).join(" ");
+            }
+
             // Csak akkor cseréljük le a beégetett sablont a db-s sablonra,
             // ha a db-ben ténylegesen VAN is elmentve valamilyen szöveg
             if (dynamicTemplate.subject && dynamicTemplate.html) {
