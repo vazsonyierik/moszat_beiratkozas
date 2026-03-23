@@ -245,7 +245,7 @@ const LinkStudentModal = ({ booking, courseId, isTestView, onClose, onSuccess })
             <div className="relative w-full max-w-lg rounded-lg bg-white shadow-2xl flex flex-col">
                 <div className="flex items-center justify-between rounded-t border-b p-4 bg-gray-50">
                     <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                        <${Icons.LinkIcon} size=${20} className="text-blue-600" />
+                        <${Icons.UserAddIcon} size=${20} className="text-blue-600" />
                         Tanuló összerendelése
                     </h3>
                     <button onClick=${onClose} className="text-gray-400 hover:text-gray-900">
