@@ -413,19 +413,24 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
                                     <ul className="divide-y divide-gray-200">
                                         ${bookings.map((booking, index) => html`
-                                            <li key=${booking.id} className="hover:bg-gray-50">
+                                            <li key=${booking.id || index} className="hover:bg-gray-50">
                                                 <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
                                                     <div className="flex items-center gap-4">
                                                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
                                                             ${index + 1}.
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-medium text-indigo-600 truncate">
+                                                            <p className="text-sm font-medium text-indigo-600 truncate flex items-center gap-2">
                                                                 ${booking.lastName} ${booking.firstName}
                                                                 ${booking.addedByAdmin ? html`
-                                                                    <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                                                    <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
                                                                         <${Icons.ShieldIcon} size=${12} />
                                                                         Admin
+                                                                    </span>
+                                                                ` : ''}
+                                                                ${booking.isLinkedToStudent === false ? html`
+                                                                    <span className="text-red-500 font-bold ml-1" title="Nincs tanulói profilja az adatbázisban ezzel az e-mail címmel!">
+                                                                        ⚠️
                                                                     </span>
                                                                 ` : ''}
                                                             </p>
@@ -460,7 +465,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                     <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
                                         <ul className="divide-y divide-gray-200">
                                             ${waitlist.map((entry, index) => html`
-                                                <li key=${entry.id} className="hover:bg-gray-50">
+                                                <li key=${entry.id || index} className="hover:bg-gray-50">
                                                     <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
                                                         <div className="flex items-center gap-4">
                                                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">

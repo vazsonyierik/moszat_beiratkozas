@@ -358,12 +358,25 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
     const db = getFirestore();
     const coursesCollection = isTestView ? "courses_test" : "courses";
     const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+    const registrationsCollection = isTestView ? "registrations_test" : "registrations";
 
     const courseRef = db.collection(coursesCollection).doc(courseId);
     const bookingsSubcollection = courseRef.collection("bookings");
 
     try {
         let bookingDataToEmail = null;
+        let isLinkedToStudent = false;
+
+        // 0. Check if student exists in registrations collection by email
+        const normalizedEmail = email.toLowerCase().trim();
+        const registrationsSnapshot = await db.collection(registrationsCollection)
+            .where("email", "==", normalizedEmail)
+            .limit(1)
+            .get();
+        
+        if (!registrationsSnapshot.empty) {
+            isLinkedToStudent = true;
+        }
 
         await db.runTransaction(async (transaction) => {
             // 1. Get course to check capacity
@@ -380,7 +393,6 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             }
 
             // 2. Check if this email is already registered for THIS course
-            const normalizedEmail = email.toLowerCase().trim();
             const bookingDocRef = bookingsSubcollection.doc(normalizedEmail);
             const existingBooking = await transaction.get(bookingDocRef);
 
@@ -406,6 +418,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 isPresent: null,
                 feePaid: false,
                 addedByAdmin: !!silent,
+                isLinkedToStudent: isLinkedToStudent,
             };
 
             // 5. Prepare global reference
@@ -458,7 +471,20 @@ exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (reques
     const db = getFirestore();
     const coursesCollection = isTestView ? "courses_test" : "courses";
     const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+    const registrationsCollection = isTestView ? "registrations_test" : "registrations";
     const normalizedEmail = email.toLowerCase().trim();
+
+    let isLinkedToStudent = false;
+
+    // 0. Check if student exists in registrations collection by email
+    const registrationsSnapshot = await db.collection(registrationsCollection)
+        .where("email", "==", normalizedEmail)
+        .limit(1)
+        .get();
+        
+    if (!registrationsSnapshot.empty) {
+        isLinkedToStudent = true;
+    }
 
     let successCount = 0;
     let failCount = 0;
@@ -510,6 +536,7 @@ exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (reques
                     feePaid: false,
                     allBookingId: globalBookingRef.id,
                     addedByAdmin: true,
+                    isLinkedToStudent: isLinkedToStudent,
                 };
 
                 transaction.set(bookingDocRef, localBookingData);
