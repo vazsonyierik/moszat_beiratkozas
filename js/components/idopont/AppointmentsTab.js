@@ -413,7 +413,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
                                     <ul className="divide-y divide-gray-200">
                                         ${bookings.map((booking, index) => html`
-                                            <li key=${booking.id} className="hover:bg-gray-50">
+                                            <li key=${booking.id || index} className="hover:bg-gray-50">
                                                 <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
                                                     <div className="flex items-center gap-4">
                                                         <div className="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold">
@@ -465,7 +465,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                     <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
                                         <ul className="divide-y divide-gray-200">
                                             ${waitlist.map((entry, index) => html`
-                                                <li key=${entry.id} className="hover:bg-gray-50">
+                                                <li key=${entry.id || index} className="hover:bg-gray-50">
                                                     <div className="px-4 py-4 sm:px-6 flex items-center justify-between">
                                                         <div className="flex items-center gap-4">
                                                             <div className="flex-shrink-0 h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-700 font-bold border border-yellow-200">

@@ -18,7 +18,7 @@ import { html } from '../../UI.js';
 import { formatFullName, formatSingleTimestamp } from '../../utils.js';
 import * as Icons from '../../Icons.js';
 import { useConfirmation, useToast } from '../../context/AppContext.js';
-import { functions, httpsCallable, isTestMode, db, doc, getDoc } from '../../firebase.js';
+import { functions, httpsCallable, isTestMode, db, doc, getDoc, collection, query, where, getDocs } from '../../firebase.js';
 
 const { useState, useEffect } = window.React;
 
@@ -235,13 +235,16 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
             try {
                 // Determine the correct global bookings collection based on test mode
                 const allBookingsCollectionName = isTestView ? 'allBookings_test' : 'allBookings';
-                const bookingsRef = db.collection(allBookingsCollectionName);
+                const bookingsRef = collection(db, allBookingsCollectionName);
 
                 // Note: since Firestore requires an index for complex queries,
                 // we'll just query by email and filter out waitlist entries locally.
-                const snapshot = await bookingsRef
-                    .where("email", "==", localStudent.email.toLowerCase().trim())
-                    .get();
+                const q = query(
+                    bookingsRef,
+                    where("email", "==", localStudent.email.toLowerCase().trim())
+                );
+
+                const snapshot = await getDocs(q);
 
                 const bookings = snapshot.docs
                     .map(doc => ({ id: doc.id, ...doc.data() }))
