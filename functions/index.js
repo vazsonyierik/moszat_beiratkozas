@@ -1013,8 +1013,18 @@ exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {
         } else {
              // Ha az adatbázisból jött, behelyettesítjük az értékeket
              const { replaceTemplateVariables } = require('./utils');
-             finalSubject = replaceTemplateVariables(finalSubject, testData);
-             finalHtml = replaceTemplateVariables(finalHtml, testData);
+             
+             // Format course date if it exists in testData
+             const mappedTestData = { ...testData };
+             if (mappedTestData.courseDate && typeof mappedTestData.courseDate === "string") {
+                 const parts = mappedTestData.courseDate.split("-");
+                 if (parts.length === 3) {
+                     mappedTestData.courseDate = `${parts[0]}. ${parts[1]}. ${parts[2]}.`;
+                 }
+             }
+             
+             finalSubject = replaceTemplateVariables(finalSubject, mappedTestData);
+             finalHtml = replaceTemplateVariables(finalHtml, mappedTestData);
         }
 
         const mailPayload = {

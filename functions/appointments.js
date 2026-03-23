@@ -4,6 +4,16 @@ const crypto = require("crypto");
 const {ensureIsAdmin, sendDynamicEmail} = require("./utils");
 const templates = require("./emailTemplates");
 
+// Helper function to format date (YYYY-MM-DD to YYYY. MM. DD.)
+function formatCourseDate(dateStr) {
+    if (!dateStr || typeof dateStr !== "string") return dateStr;
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+        return `${parts[0]}. ${parts[1]}. ${parts[2]}.`;
+    }
+    return dateStr;
+}
+
 /**
  * createMultipleCourses
  * Creates multiple courses/appointments in a single batch.
@@ -152,7 +162,7 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
             bookingsSnap.forEach((doc) => {
                 transaction.update(doc.ref, {
                     courseName: name,
-                    courseDate: date,
+                    courseDate: formatCourseDate(date),
                     startTime: startTime
                 });
 
@@ -161,7 +171,7 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
                     const globalRef = db.collection(allBookingsCollection).doc(doc.data().allBookingId);
                     transaction.update(globalRef, {
                         courseName: name,
-                        courseDate: date,
+                        courseDate: formatCourseDate(date),
                         startTime: startTime
                     });
                 }
@@ -177,7 +187,7 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
                 const combinedData = {
                     ...booking,
                     oldCourseName: oldCourseData.name,
-                    oldCourseDate: oldCourseData.date,
+                    oldCourseDate: formatCourseDate(oldCourseData.date),
                     oldStartTime: oldCourseData.startTime,
                     oldEndTime: oldCourseData.endTime,
                     newCourseName: name,
@@ -389,7 +399,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.name,
-                courseDate: courseData.date,
+                courseDate: formatCourseDate(courseData.date),
                 startTime: courseData.startTime,
                 endTime: courseData.endTime || "ismeretlen",
                 cancellation_token: cancellationToken,
@@ -492,7 +502,7 @@ exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (reques
                     bookingDate: FieldValue.serverTimestamp(),
                     courseId: courseId,
                     courseName: courseData.name,
-                    courseDate: courseData.date,
+                    courseDate: formatCourseDate(courseData.date),
                     startTime: courseData.startTime,
                     endTime: courseData.endTime || "ismeretlen",
                     cancellation_token: cancellationToken,
@@ -711,7 +721,7 @@ async function processWaitlist(courseId, isTestView) {
                 bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.name,
-                courseDate: courseData.date,
+                courseDate: formatCourseDate(courseData.date),
                 startTime: courseData.startTime,
                 endTime: courseData.endTime || "ismeretlen",
                 cancellation_token: cancellationToken,
@@ -778,7 +788,7 @@ async function processWaitlist(courseId, isTestView) {
                     ...waitlistData,
                     courseId: courseId,
                     courseName: courseData.name,
-                    courseDate: courseData.date,
+                    courseDate: formatCourseDate(courseData.date),
                     startTime: courseData.startTime,
                     endTime: courseData.endTime || "ismeretlen",
                     encodedEmail: encodedEmail
@@ -848,7 +858,7 @@ exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
             joinedAt: FieldValue.serverTimestamp(),
             courseId: courseId,
             courseName: courseData.name,
-            courseDate: courseData.date,
+            courseDate: formatCourseDate(courseData.date),
             startTime: courseData.startTime,
             endTime: courseData.endTime || "ismeretlen",
             cancellation_token: cancellationToken,
@@ -949,7 +959,7 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
                 bookingDate: FieldValue.serverTimestamp(),
                 courseId: courseId,
                 courseName: courseData.name,
-                courseDate: courseData.date,
+                courseDate: formatCourseDate(courseData.date),
                 startTime: courseData.startTime,
                 endTime: courseData.endTime || "ismeretlen",
                 cancellation_token: cancellationToken,
