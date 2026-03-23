@@ -348,7 +348,7 @@ const StudentAppointmentsApp = () => {
     }
 
     return html`
-        <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
             ${isTestView && html`
                 <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
                     <${Icons.AlertTriangleIcon} size=${20} />
@@ -362,6 +362,9 @@ const StudentAppointmentsApp = () => {
                     Válasszon a szabad időpontok közül és jelentkezzen be!
                 </p>
             </header>
+
+            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                <div className="flex-1 w-full lg:w-2/3">
 
             <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
                 <ul className="divide-y divide-gray-200">
@@ -434,6 +437,47 @@ const StudentAppointmentsApp = () => {
                 </ul>
             </div>
 
+            </div>
+
+            ${cart.length > 0 ? html`
+                <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow sm:rounded-md p-6 border border-gray-100 mb-20">
+                    <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Kiválasztott modulok</h3>
+                    <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
+                        ${cart.map(item => html`
+                            <div key=${item.course.id} className="flex justify-between items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
+                                <div className="flex-1">
+                                    <div className="font-semibold text-indigo-600 text-sm">
+                                        ${item.course.name}
+                                        ${item.isWaitlist ? html`<span className="ml-2 text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded">(Várólista)</span>` : ''}
+                                    </div>
+                                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                                        <${Icons.CalendarIcon} size=${12} />
+                                        ${item.course.date.replace(/-/g, '. ')}. ${item.course.startTime} - ${item.course.endTime}
+                                    </div>
+                                </div>
+                                <button
+                                    onClick=${() => removeFromCart(item.course.id)}
+                                    className="ml-2 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded p-1 transition-colors"
+                                    title="Eltávolítás"
+                                >
+                                    <${Icons.XIcon} size=${16} />
+                                </button>
+                            </div>
+                        `)}
+                    </div>
+                    <div className="mt-6 pt-4 border-t border-gray-200">
+                        <button
+                            onClick=${() => setIsCheckoutOpen(true)}
+                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                        >
+                            Tovább a jelentkezéshez (${cart.length})
+                        </button>
+                    </div>
+                </div>
+            ` : null}
+
+            </div>
+
             ${isCheckoutOpen && html`
                 <${CheckoutModal}
                     cart=${cart}
@@ -444,8 +488,8 @@ const StudentAppointmentsApp = () => {
             `}
 
             ${cart.length > 0 && html`
-                <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-40 transform transition-transform duration-300 ease-in-out">
-                    <div className="max-w-4xl mx-auto flex items-center justify-between">
+                <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-40 transform transition-transform duration-300 ease-in-out">
+                    <div className="max-w-7xl mx-auto flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold">
                                 ${cart.length}
