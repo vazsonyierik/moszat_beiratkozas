@@ -1043,6 +1043,73 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
  * removeWaitlistEntryAsAdmin
  * Admin törölhet valakit a várólistáról.
  */
+/**
+ * linkStudentToBooking
+ * Admin manuálisan összekapcsol egy "árva" foglalást egy létező tanulóval.
+ */
+exports.linkStudentToBooking = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const { courseId, bookingEmail, studentId, isTestView } = data;
+
+    if (!courseId || !bookingEmail || !studentId) {
+        throw new HttpsError("invalid-argument", "Hiányzó adatok az összerendeléshez.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+    const registrationsCollection = isTestView ? "registrations_test" : "registrations";
+
+    const normalizedEmail = bookingEmail.toLowerCase().trim();
+    const courseRef = db.collection(coursesCollection).doc(courseId);
+    const bookingDocRef = courseRef.collection("bookings").doc(normalizedEmail);
+    const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+    const studentRef = db.collection(registrationsCollection).doc(studentId);
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            // 1. Ellenőrizzük, hogy létezik-e a tanuló
+            const studentDoc = await transaction.get(studentRef);
+            if (!studentDoc.exists) {
+                throw new HttpsError("not-found", "A kiválasztott tanuló nem található.");
+            }
+
+            // 2. Ellenőrizzük a lokális foglalást
+            const bookingDoc = await transaction.get(bookingDocRef);
+            if (!bookingDoc.exists) {
+                throw new HttpsError("not-found", "A foglalás nem található.");
+            }
+
+            // 3. Ellenőrizzük a globális foglalást
+            const globalBookingDoc = await transaction.get(globalBookingRef);
+
+            // 4. Frissítjük a lokális foglalást
+            transaction.update(bookingDocRef, {
+                linkedStudentId: studentId,
+                manuallyLinked: true
+            });
+
+            // 5. Frissítjük a globális foglalást, ha létezik
+            if (globalBookingDoc.exists) {
+                transaction.update(globalBookingRef, {
+                    linkedStudentId: studentId,
+                    manuallyLinked: true
+                });
+            }
+        });
+
+        return { success: true, message: "A foglalás sikeresen összerendelve a tanulóval!" };
+    } catch (error) {
+        console.error("Error linking student to booking:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", "Hiba történt az összerendelés során.", error.message);
+    }
+});
+
 exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (request) => {
     await ensureIsAdmin(request.auth);
 

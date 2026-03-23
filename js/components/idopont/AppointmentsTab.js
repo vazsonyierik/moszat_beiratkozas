@@ -1,6 +1,6 @@
 import { html } from '../../UI.js';
 import * as Icons from '../../Icons.js';
-import { db, collection, onSnapshot, query, orderBy, deleteDoc, doc, functions, httpsCallable } from '../../firebase.js';
+import { db, collection, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, limit, where, functions, httpsCallable } from '../../firebase.js';
 import { useToast, useConfirmation } from '../../context/AppContext.js';
 
 const React = window.React;
@@ -173,6 +173,139 @@ const BulkStudentRegistrationModal = ({ courses, onClose, isTestView }) => {
 };
 
 /**
+ * Modal to link an orphan booking to a student
+ */
+const LinkStudentModal = ({ booking, courseId, isTestView, onClose, onSuccess }) => {
+    const [searchTerm, setSearchTerm] = useState('');
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [isLinking, setIsLinking] = useState(false);
+
+    const showToast = useToast();
+
+    const handleSearch = async (e) => {
+        e.preventDefault();
+        if (!searchTerm || searchTerm.length < 3) {
+            showToast('Kérjük, adjon meg legalább 3 karaktert a kereséshez!', 'warning');
+            return;
+        }
+
+        setIsSearching(true);
+        try {
+            const collectionName = isTestView ? 'registrations_test' : 'registrations';
+            const regsRef = collection(db, collectionName);
+            // We can't easily OR query by name in v8/v9, so we'll fetch all active and filter locally.
+            // For simplicity, let's just fetch all and filter locally for a robust search (since we need to search by name too)
+
+            const allSnap = await getDocs(query(regsRef, where('status', '==', 'active')));
+            const results = [];
+            const searchLower = searchTerm.toLowerCase();
+
+            allSnap.forEach(doc => {
+                const data = doc.data();
+                const fullName = `${data.current_lastName || ''} ${data.current_firstName || ''}`.toLowerCase();
+                if (data.email?.toLowerCase().includes(searchLower) || fullName.includes(searchLower)) {
+                    results.push({ id: doc.id, ...data });
+                }
+            });
+
+            setSearchResults(results);
+            if (results.length === 0) {
+                showToast('Nem található tanuló ezzel a keresési feltétellel.', 'info');
+            }
+        } catch (error) {
+            console.error("Error searching students:", error);
+            showToast('Hiba a keresés során.', 'error');
+        } finally {
+            setIsSearching(false);
+        }
+    };
+
+    const handleLink = async (studentId) => {
+        setIsLinking(true);
+        try {
+            const linkFn = httpsCallable(functions, 'linkStudentToBooking');
+            await linkFn({
+                courseId,
+                bookingEmail: booking.email,
+                studentId,
+                isTestView
+            });
+            showToast('Sikeres összerendelés!', 'success');
+            onSuccess();
+        } catch (error) {
+            console.error("Error linking student:", error);
+            showToast(`Hiba az összerendelés során: ${error.message}`, 'error');
+            setIsLinking(false);
+        }
+    };
+
+    return html`
+        <div className="fixed inset-0 z-[60] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-60 p-4">
+            <div className="relative w-full max-w-lg rounded-lg bg-white shadow-2xl flex flex-col">
+                <div className="flex items-center justify-between rounded-t border-b p-4 bg-gray-50">
+                    <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                        <${Icons.LinkIcon} size=${20} className="text-blue-600" />
+                        Tanuló összerendelése
+                    </h3>
+                    <button onClick=${onClose} className="text-gray-400 hover:text-gray-900">
+                        <${Icons.XIcon} size=${20} />
+                    </button>
+                </div>
+
+                <div className="p-4 flex-1 overflow-y-auto max-h-[70vh]">
+                    <div className="mb-4 bg-yellow-50 p-3 rounded-md border border-yellow-200">
+                        <p className="text-sm text-yellow-800">
+                            <strong>Árva jelentkezés:</strong> ${booking.lastName} ${booking.firstName} (${booking.email})
+                        </p>
+                    </div>
+
+                    <form onSubmit=${handleSearch} className="mb-4 flex gap-2">
+                        <input
+                            type="text"
+                            value=${searchTerm}
+                            onChange=${(e) => setSearchTerm(e.target.value)}
+                            placeholder="Keresés név vagy e-mail alapján..."
+                            className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
+                        <button
+                            type="submit"
+                            disabled=${isSearching}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-blue-700 disabled:opacity-50"
+                        >
+                            ${isSearching ? 'Keresés...' : 'Keresés'}
+                        </button>
+                    </form>
+
+                    ${searchResults.length > 0 && html`
+                        <div className="space-y-2">
+                            <h4 className="text-sm font-bold text-gray-700">Találatok:</h4>
+                            <ul className="divide-y divide-gray-200 border rounded-md">
+                                ${searchResults.map(student => html`
+                                    <li key=${student.id} className="p-3 flex items-center justify-between hover:bg-gray-50">
+                                        <div>
+                                            <p className="text-sm font-bold text-gray-900">${student.current_lastName} ${student.current_firstName}</p>
+                                            <p className="text-xs text-gray-500">${student.email}</p>
+                                        </div>
+                                        <button
+                                            onClick=${() => handleLink(student.id)}
+                                            disabled=${isLinking}
+                                            className="bg-green-100 text-green-700 hover:bg-green-200 px-3 py-1 rounded text-xs font-bold transition-colors disabled:opacity-50"
+                                        >
+                                            ${isLinking ? 'Mentés...' : 'Összerendelés'}
+                                        </button>
+                                    </li>
+                                `)}
+                            </ul>
+                        </div>
+                    `}
+                </div>
+            </div>
+        </div>
+    `;
+};
+
+/**
  * Modal to view and manage students who booked a specific course
  */
 const CourseBookingsModal = ({ course, onClose, isTestView }) => {
@@ -187,6 +320,9 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     const [addEmail, setAddEmail] = useState('');
     const [isAdding, setIsAdding] = useState(false);
     const [isAddFormOpen, setIsAddFormOpen] = useState(false);
+
+    // Linking state
+    const [bookingToLink, setBookingToLink] = useState(null);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -428,9 +564,20 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                                         Admin
                                                                     </span>
                                                                 ` : ''}
-                                                                ${booking.isLinkedToStudent === false ? html`
-                                                                    <span className="text-red-500 font-bold ml-1" title="Nincs tanulói profilja az adatbázisban ezzel az e-mail címmel!">
+                                                                ${(booking.isLinkedToStudent === false && !booking.manuallyLinked) ? html`
+                                                                    <span className="text-yellow-500 font-bold ml-1 flex items-center" title="Nincs tanulói profilja az adatbázisban ezzel az e-mail címmel!">
                                                                         ⚠️
+                                                                        <button
+                                                                            onClick=${() => setBookingToLink(booking)}
+                                                                            className="ml-2 text-xs bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded hover:bg-yellow-200 transition-colors"
+                                                                        >
+                                                                            Összerendelés
+                                                                        </button>
+                                                                    </span>
+                                                                ` : ''}
+                                                                ${booking.manuallyLinked ? html`
+                                                                    <span className="text-blue-500 font-bold ml-1" title="Manuálisan összerendelve egy tanulóval">
+                                                                        🔷
                                                                     </span>
                                                                 ` : ''}
                                                             </p>
@@ -505,6 +652,16 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     </button>
                 </div>
             </div>
+
+            ${bookingToLink && html`
+                <${LinkStudentModal}
+                    booking=${bookingToLink}
+                    courseId=${course.id}
+                    isTestView=${isTestView}
+                    onClose=${() => setBookingToLink(null)}
+                    onSuccess=${() => setBookingToLink(null)}
+                />
+            `}
         </div>
     `;
 };
