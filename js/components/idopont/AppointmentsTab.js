@@ -420,12 +420,17 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                             ${index + 1}.
                                                         </div>
                                                         <div>
-                                                            <p className="text-sm font-medium text-indigo-600 truncate">
+                                                            <p className="text-sm font-medium text-indigo-600 truncate flex items-center gap-2">
                                                                 ${booking.lastName} ${booking.firstName}
                                                                 ${booking.addedByAdmin ? html`
-                                                                    <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                                                    <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
                                                                         <${Icons.ShieldIcon} size=${12} />
                                                                         Admin
+                                                                    </span>
+                                                                ` : ''}
+                                                                ${booking.isLinkedToStudent === false ? html`
+                                                                    <span className="text-red-500 font-bold ml-1" title="Nincs tanulói profilja az adatbázisban ezzel az e-mail címmel!">
+                                                                        ⚠️
                                                                     </span>
                                                                 ` : ''}
                                                             </p>

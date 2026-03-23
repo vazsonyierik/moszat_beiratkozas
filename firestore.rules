@@ -83,6 +83,17 @@ service cloud.firestore {
         allow read, write: if isAdmin();
     }
 
+    // --- ÚJ RENDSZER: Időpontfoglaló Globális Gyűjtemények ---
+    match /allBookings/{bookingId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false; // Only Cloud Functions can write here
+    }
+
+    match /allBookings_test/{bookingId} {
+      allow read, update, delete: if isAdmin();
+      allow create: if false; // Only Cloud Functions can write here
+    }
+
     // --- ÚJ RENDSZER: Időpontfoglaló Modul (ÉLES) ---
     match /courses/{courseId} {
       // Publikus olvasás engedélyezett az időpontok listázásához

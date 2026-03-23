@@ -211,6 +211,10 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
     const [tempExamData, setTempExamData] = useState({});
     const [isRecalculating, setIsRecalculating] = useState(false);
 
+    // Uj állapot a tantermi foglalásokhoz
+    const [classroomBookings, setClassroomBookings] = useState([]);
+    const [isClassroomBookingsLoading, setIsClassroomBookingsLoading] = useState(true);
+
     const showConfirmation = useConfirmation();
     const showToast = useToast();
 
@@ -218,6 +222,51 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
     useEffect(() => {
         setLocalStudent(student);
     }, [student]);
+
+    // Fetch classroom bookings when modal opens
+    useEffect(() => {
+        const fetchClassroomBookings = async () => {
+            if (!localStudent.email) {
+                setIsClassroomBookingsLoading(false);
+                return;
+            }
+
+            setIsClassroomBookingsLoading(true);
+            try {
+                // Determine the correct global bookings collection based on test mode
+                const allBookingsCollectionName = isTestView ? 'allBookings_test' : 'allBookings';
+                const bookingsRef = db.collection(allBookingsCollectionName);
+
+                // Note: since Firestore requires an index for complex queries,
+                // we'll just query by email and filter out waitlist entries locally.
+                const snapshot = await bookingsRef
+                    .where("email", "==", localStudent.email.toLowerCase().trim())
+                    .get();
+
+                const bookings = snapshot.docs
+                    .map(doc => ({ id: doc.id, ...doc.data() }))
+                    .filter(b => !b.isWaitlist); // filter out waitlist entries
+
+                // Sort by date ascending
+                bookings.sort((a, b) => {
+                    if (a.courseDate < b.courseDate) return -1;
+                    if (a.courseDate > b.courseDate) return 1;
+                    if (a.startTime < b.startTime) return -1;
+                    if (a.startTime > b.startTime) return 1;
+                    return 0;
+                });
+
+                setClassroomBookings(bookings);
+            } catch (error) {
+                console.error("Hiba a tantermi foglalások betöltésekor:", error);
+                showToast("Nem sikerült betölteni a tantermi foglalásokat.", "error");
+            } finally {
+                setIsClassroomBookingsLoading(false);
+            }
+        };
+
+        fetchClassroomBookings();
+    }, [localStudent.email, isTestView, showToast]);
 
     const handleRecalculateDeadline = async () => {
         setIsRecalculating(true);
@@ -698,6 +747,50 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                             `}
                         >
                             ${renderDeadlineStatus()}
+                        <//>
+                    </div>
+
+                    ${/* Tantermi Foglalások szekció - Teljes szélességben */''}
+                    <div className="mt-6">
+                        <${Section} title="Tantermi Foglalások" className="border-teal-100 ring-4 ring-teal-50">
+                            ${isClassroomBookingsLoading ? html`
+                                <p className="text-sm text-gray-500 italic">Foglalások betöltése...</p>
+                            ` : classroomBookings.length === 0 ? html`
+                                <p className="text-sm text-gray-500 italic">Nincs rögzített tantermi foglalás.</p>
+                            ` : html`
+                                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dátum és Időpont</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modul / Foglalkozás</th>
+                                                <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jelentkezés ideje</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200 text-sm">
+                                            ${classroomBookings.map(booking => html`
+                                                <tr key=${booking.id} className="hover:bg-gray-50">
+                                                    <td className="px-3 py-2 whitespace-nowrap text-gray-900 font-medium">
+                                                        ${booking.courseDate} ${booking.startTime}-${booking.endTime}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-gray-700">
+                                                        ${booking.courseName}
+                                                        ${booking.addedByAdmin ? html`
+                                                            <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                                                                <${Icons.ShieldIcon} size=${10} />
+                                                                Admin
+                                                            </span>
+                                                        ` : ''}
+                                                    </td>
+                                                    <td className="px-3 py-2 whitespace-nowrap text-gray-500 text-xs">
+                                                        ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
+                                                    </td>
+                                                </tr>
+                                            `)}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            `}
                         <//>
                     </div>
 
