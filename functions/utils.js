@@ -77,7 +77,12 @@ const ensureIsAdmin = async (auth) => {
  */
 const replaceTemplateVariables = (templateString, data) => {
     if (!templateString) return "";
-    return templateString.replace(/\{\{([\w.]+)\}\}/g, (match, path) => {
+
+    // Bármit megtalál a {{ és }} között, beleértve sortöréseket is
+    return templateString.replace(/\{\{([\s\S]*?)\}\}/g, (match, rawInner) => {
+        // HTML tagek kiszűrése és szóközök levágása a változó neve körül
+        const path = rawInner.replace(/<[^>]*>?/gm, '').trim();
+
         // Kezeli a beágyazott objektum tulajdonságokat is, bár itt nem jellemző
         const keys = path.split(".");
         let value = data;
@@ -122,12 +127,26 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
                 isEnabled = dynamicTemplate.enabled;
             }
 
+            // MAP DATA FOR TEMPLATES EARLY: Ensure standardized variable names are available for DB interpolation
+            // Frontend editor templates use {{firstName}}, {{lastName}}, {{secondName}}
+            // but the underlying student record might only have current_firstName, etc.
+            const mappedTemplateData = { ...templateData };
+            if (mappedTemplateData.current_firstName && !mappedTemplateData.firstName) {
+                mappedTemplateData.firstName = mappedTemplateData.current_firstName;
+            }
+            if (mappedTemplateData.current_lastName && !mappedTemplateData.lastName) {
+                mappedTemplateData.lastName = mappedTemplateData.current_lastName;
+            }
+            if (mappedTemplateData.current_secondName !== undefined && mappedTemplateData.secondName === undefined) {
+                mappedTemplateData.secondName = mappedTemplateData.current_secondName;
+            }
+
             // Csak akkor cseréljük le a beégetett sablont a db-s sablonra,
             // ha a db-ben ténylegesen VAN is elmentve valamilyen szöveg
             if (dynamicTemplate.subject && dynamicTemplate.html) {
                 // Behelyettesítjük a változókat a Firestore-ból jött sablonba
-                finalSubject = replaceTemplateVariables(dynamicTemplate.subject, templateData);
-                finalHtml = replaceTemplateVariables(dynamicTemplate.html, templateData);
+                finalSubject = replaceTemplateVariables(dynamicTemplate.subject, mappedTemplateData);
+                finalHtml = replaceTemplateVariables(dynamicTemplate.html, mappedTemplateData);
                 logger.info(`Using dynamic template from DB for ${templateId}`);
             } else {
                 logger.warn(`DynamicTemplate ${templateId} exists but is missing subject or html, using fallback content. Enabled state: ${isEnabled}`);
