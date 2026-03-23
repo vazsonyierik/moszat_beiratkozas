@@ -439,9 +439,13 @@ const StudentAppointmentsApp = () => {
 
             </div>
 
-            ${cart.length > 0 ? html`
-                <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow sm:rounded-md p-6 border border-gray-100 mb-20">
-                    <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Kiválasztott modulok</h3>
+            <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow sm:rounded-md p-6 border border-gray-100 mb-20">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Kiválasztott modulok</h3>
+                ${cart.length === 0 ? html`
+                    <div className="text-gray-500 text-sm italic py-4 text-center">
+                        Még nem választottál ki modult.
+                    </div>
+                ` : html`
                     <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
                         ${cart.map(item => html`
                             <div key=${item.course.id} className="flex justify-between items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
@@ -473,8 +477,8 @@ const StudentAppointmentsApp = () => {
                             Tovább a jelentkezéshez (${cart.length})
                         </button>
                     </div>
-                </div>
-            ` : null}
+                `}
+            </div>
 
             </div>
 

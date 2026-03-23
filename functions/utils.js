@@ -71,6 +71,16 @@ const ensureIsAdmin = async (auth) => {
     }
 };
 
+// Helper function to format date (YYYY-MM-DD to YYYY. MM. DD.)
+function formatCourseDate(dateStr) {
+    if (!dateStr || typeof dateStr !== "string") return dateStr;
+    const parts = dateStr.split("-");
+    if (parts.length === 3) {
+        return `${parts[0]}. ${parts[1]}. ${parts[2]}.`;
+    }
+    return dateStr;
+}
+
 /**
  * A beégetett sablon változóit is cserélni tudó függvény.
  * Csak az adatbázisból betöltött sablonokhoz használjuk.
@@ -148,6 +158,11 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
                     mappedTemplateData.firstName,
                     mappedTemplateData.secondName
                 ].filter(Boolean).join(" ");
+            }
+
+            // Format course date if it exists
+            if (mappedTemplateData.courseDate) {
+                mappedTemplateData.courseDate = formatCourseDate(mappedTemplateData.courseDate);
             }
 
             // Csak akkor cseréljük le a beégetett sablont a db-s sablonra,
