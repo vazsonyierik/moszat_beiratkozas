@@ -778,14 +778,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                                     className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-green-50 hover:scale-110 ${booking.isPresent === true ? 'text-green-600 bg-green-50 shadow-sm' : 'text-gray-300'}`}
                                                                     title="Jelen volt"
                                                                 >
-                                                                    <${Icons.CheckCircleIcon} size=${28} className="fill-current" />
+                                                                    <${Icons.CheckCircleIcon} size=${28} />
                                                                 </button>
                                                                 <button
                                                                     onClick=${() => handleAttendanceToggle(booking, false)}
                                                                     className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-red-50 hover:scale-110 ${booking.isPresent === false ? 'text-red-600 bg-red-50 shadow-sm' : 'text-gray-300'}`}
                                                                     title="Hiányzott"
                                                                 >
-                                                                    <${Icons.XCircleIcon} size=${28} className="fill-current" />
+                                                                    <${Icons.XCircleIcon} size=${28} />
                                                                 </button>
                                                             </div>
                                                         `}
