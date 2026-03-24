@@ -238,17 +238,35 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                 const bookingsRef = collection(db, allBookingsCollectionName);
                 
                 // Note: since Firestore requires an index for complex queries, 
-                // we'll just query by email and filter out waitlist entries locally.
-                const q = query(
-                    bookingsRef,
-                    where("email", "==", localStudent.email.toLowerCase().trim())
-                );
+                // we'll query by email and by linkedStudentId separately, then merge and filter.
+                const normalizedEmail = localStudent.email ? localStudent.email.toLowerCase().trim() : "";
                 
-                const snapshot = await getDocs(q);
+                let bookingsMap = new Map();
                 
-                const bookings = snapshot.docs
-                    .map(doc => ({ id: doc.id, ...doc.data() }))
-                    .filter(b => !b.isWaitlist); // filter out waitlist entries
+                if (normalizedEmail) {
+                    const qEmail = query(bookingsRef, where("email", "==", normalizedEmail));
+                    const snapEmail = await getDocs(qEmail);
+                    snapEmail.forEach(doc => {
+                        const data = doc.data();
+                        if (!data.isWaitlist) {
+                            bookingsMap.set(doc.id, { id: doc.id, ...data });
+                        }
+                    });
+                }
+                
+                // Query by linkedStudentId
+                if (localStudent.id) {
+                    const qLinked = query(bookingsRef, where("linkedStudentId", "==", localStudent.id));
+                    const snapLinked = await getDocs(qLinked);
+                    snapLinked.forEach(doc => {
+                        const data = doc.data();
+                        if (!data.isWaitlist) {
+                            bookingsMap.set(doc.id, { id: doc.id, ...data });
+                        }
+                    });
+                }
+                
+                const bookings = Array.from(bookingsMap.values());
                 
                 // Sort by date ascending
                 bookings.sort((a, b) => {
