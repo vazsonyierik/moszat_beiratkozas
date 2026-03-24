@@ -1069,23 +1069,33 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
 
     try {
         await db.runTransaction(async (transaction) => {
-            // Ellenőrizzük a lokális foglalást
+            // 1. READS (Minden olvasásnak meg kell előznie az írásokat a Firestore transaction-ökben!)
             const bookingDoc = await transaction.get(bookingDocRef);
-            if (!bookingDoc.exists) {
-                throw new HttpsError("not-found", "A foglalás nem található.");
+            let globalBookingDoc = null;
+            try {
+                globalBookingDoc = await transaction.get(globalBookingRef);
+            } catch (err) {
+                console.warn("Global booking fetch failed, but continuing.", err);
             }
 
-            // Frissítjük a lokális foglalást
-            transaction.update(bookingDocRef, {
-                isPresent: isPresent
-            });
+            // 2. WRITES
+            // Ha létezik a lokális foglalás, frissítjük
+            if (bookingDoc.exists) {
+                transaction.update(bookingDocRef, {
+                    isPresent: isPresent
+                });
+            } else {
+                console.warn(`Booking with ID ${normalizedEmail} not found in course ${courseId}.`);
+                throw new HttpsError("not-found", `A foglalás nem található (${normalizedEmail}).`);
+            }
 
-            // Ellenőrizzük a globális foglalást
-            const globalBookingDoc = await transaction.get(globalBookingRef);
-            if (globalBookingDoc.exists) {
+            // Ha létezik a globális foglalás, azt is frissítjük
+            if (globalBookingDoc && globalBookingDoc.exists) {
                 transaction.update(globalBookingRef, {
                     isPresent: isPresent
                 });
+            } else {
+                console.warn(`Global booking with ID ${globalBookingRef.id} not found.`);
             }
         });
 
@@ -1095,7 +1105,7 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
         if (error instanceof HttpsError) {
             throw error;
         }
-        throw new HttpsError("internal", "Hiba történt a jelenlét rögzítése során.", error.message);
+        throw new HttpsError("internal", `Hiba történt a jelenlét rögzítése során: ${error.message}`);
     }
 });
 

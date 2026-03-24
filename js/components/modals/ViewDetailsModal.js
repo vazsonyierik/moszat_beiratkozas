@@ -786,6 +786,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dátum és Időpont</th>
                                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Modul / Foglalkozás</th>
                                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Jelentkezés ideje</th>
+                                                <th className="px-3 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">Jelenlét</th>
                                             </tr>
                                         </thead>
                                         <tbody className="bg-white divide-y divide-gray-200 text-sm">
@@ -805,6 +806,21 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                                                     </td>
                                                     <td className="px-3 py-2 whitespace-nowrap text-gray-500 text-xs">
                                                         ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
+                                                    </td>
+                                                    <td className="px-3 py-2 whitespace-nowrap text-center">
+                                                        ${booking.isPresent === true ? html`
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-700 ring-1 ring-inset ring-green-600/20">
+                                                                <${Icons.CheckCircleIcon} size=${14} />
+                                                                Jelen volt
+                                                            </span>
+                                                        ` : booking.isPresent === false ? html`
+                                                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20">
+                                                                <${Icons.XCircleIcon} size=${14} />
+                                                                Hiányzott
+                                                            </span>
+                                                        ` : html`
+                                                            <span className="text-gray-400 text-xs italic">-</span>
+                                                        `}
                                                     </td>
                                                 </tr>
                                             `)}
