@@ -388,7 +388,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             const courseData = courseDoc.data();
             const currentBookings = courseData.bookingsCount || 0;
 
-            if (currentBookings >= courseData.capacity) {
+            if (currentBookings >= courseData.capacity && !silent) {
                 throw new HttpsError("resource-exhausted", "Sajnos ez a foglalkozás időközben betelt. (Course is full)");
             }
 
