@@ -415,6 +415,120 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         });
     };
 
+    const handlePrintCourseBookings = () => {
+        // Név alapján ABC sorrendbe rendezzük a tanulókat
+        const sortedBookings = [...bookings].sort((a, b) => {
+            const nameA = `${a.lastName || ''} ${a.firstName || ''}`.toLowerCase().trim();
+            const nameB = `${b.lastName || ''} ${b.firstName || ''}`.toLowerCase().trim();
+            return nameA.localeCompare(nameB, 'hu');
+        });
+
+        // Nyomtatási HTML összeállítása
+        const printContent = `
+            <!DOCTYPE html>
+            <html lang="hu">
+            <head>
+                <meta charset="UTF-8">
+                <title>Jelenléti ív - ${course.name}</title>
+                <style>
+                    body {
+                        font-family: 'Arial', sans-serif;
+                        color: #000;
+                        margin: 0;
+                        padding: 20px;
+                    }
+                    .header {
+                        text-align: center;
+                        margin-bottom: 30px;
+                        border-bottom: 2px solid #000;
+                        padding-bottom: 10px;
+                    }
+                    .course-title {
+                        font-size: 28px;
+                        font-weight: bold;
+                        text-transform: uppercase;
+                        margin: 0 0 10px 0;
+                    }
+                    .course-datetime {
+                        font-size: 18px;
+                        font-weight: normal;
+                        color: #333;
+                    }
+                    table {
+                        width: 100%;
+                        border-collapse: collapse;
+                        margin-top: 20px;
+                    }
+                    th, td {
+                        border: 1px solid #000;
+                        padding: 12px 15px;
+                        text-align: left;
+                        font-size: 18px;
+                    }
+                    th {
+                        background-color: #f0f0f0;
+                        font-weight: bold;
+                        -webkit-print-color-adjust: exact;
+                        print-color-adjust: exact;
+                    }
+                    .col-num {
+                        width: 50px;
+                        text-align: center;
+                        font-weight: bold;
+                    }
+                    .col-name {
+                        width: auto;
+                    }
+                    @media print {
+                        @page { margin: 15mm; }
+                        body { margin: 0; padding: 0; }
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1 class="course-title">${course.name}</h1>
+                    <div class="course-datetime">${course.date} | ${course.startTime} - ${course.endTime}</div>
+                </div>
+
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="col-num">Ssz.</th>
+                            <th class="col-name">Név</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${sortedBookings.map((b, index) => `
+                            <tr>
+                                <td class="col-num">${index + 1}.</td>
+                                <td class="col-name">${b.lastName} ${b.firstName}</td>
+                            </tr>
+                        `).join('')}
+                        ${sortedBookings.length === 0 ? '<tr><td colspan="2" style="text-align:center;">Nincs jelentkező erre a foglalkozásra.</td></tr>' : ''}
+                    </tbody>
+                </table>
+            </body>
+            </html>
+        `;
+
+        // Új ablak nyitása és a HTML tartalom beírása
+        const printWindow = window.open('', '_blank', 'width=800,height=900');
+        if (printWindow) {
+            printWindow.document.open();
+            printWindow.document.write(printContent);
+            printWindow.document.close();
+
+            // Várunk kicsit, hogy a DOM felépüljön, majd hívjuk a print-et
+            printWindow.setTimeout(() => {
+                printWindow.focus();
+                printWindow.print();
+            }, 250);
+        } else {
+            showToast('Nem sikerült megnyitni a nyomtatási ablakot (esetleg a böngésző blokkolta a felugró ablakokat).', 'error');
+        }
+    };
+
     const handleAddStudentSilently = async (e) => {
         e.preventDefault();
         
@@ -466,13 +580,22 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                     ${course.date} | ${course.startTime} - ${course.endTime}
                                 </p>
                             </div>
-                            <button 
-                                onClick=${() => setIsAddFormOpen(!isAddFormOpen)}
-                                className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-4 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
-                            >
-                                <${Icons.PlusCircleIcon} size=${16} />
-                                Új tanuló hozzáadása (Extra)
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick=${handlePrintCourseBookings}
+                                    className="bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center transition-colors"
+                                    title="Jelenléti ív nyomtatása"
+                                >
+                                    <${Icons.PrinterIcon} size=${18} />
+                                </button>
+                                <button
+                                    onClick=${() => setIsAddFormOpen(!isAddFormOpen)}
+                                    className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-4 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
+                                >
+                                    <${Icons.PlusCircleIcon} size=${16} />
+                                    Új tanuló hozzáadása (Extra)
+                                </button>
+                            </div>
                         </div>
                     </div>
                     <button onClick=${onClose} className="ml-auto inline-flex items-center rounded-lg bg-transparent p-1.5 text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900">
