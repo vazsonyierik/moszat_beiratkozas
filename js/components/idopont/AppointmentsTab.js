@@ -324,6 +324,9 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     // Linking state
     const [bookingToLink, setBookingToLink] = useState(null);
 
+    // Attendance loading state
+    const [updatingAttendanceId, setUpdatingAttendanceId] = useState(null);
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
@@ -529,6 +532,46 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         }
     };
 
+    const handleAttendanceToggle = async (booking, newStatus) => {
+        // Ha ugyanarra kattint ami már be van állítva, akkor vegyük le a jelölést (null)
+        const finalStatus = booking.isPresent === newStatus ? null : newStatus;
+
+        setUpdatingAttendanceId(booking.id || booking.email);
+        try {
+            const updateAttendanceFn = httpsCallable(functions, 'updateBookingAttendance');
+            await updateAttendanceFn({
+                courseId: course.id,
+                studentEmail: booking.email,
+                isPresent: finalStatus,
+                isTestView
+            });
+            // The local UI will update automatically via the onSnapshot listener
+        } catch (error) {
+            console.error("Error updating attendance:", error);
+            showToast(`Hiba a jelenlét rögzítésekor: ${error.message}`, 'error');
+        } finally {
+            setUpdatingAttendanceId(null);
+        }
+    };
+
+    const handleNotifyAbsentees = () => {
+        // Ezt a gombot egyelőre csak előkészítjük
+        const absentees = bookings.filter(b => b.isPresent === false);
+        if (absentees.length === 0) {
+            showToast('Nincs olyan tanuló, aki hiányzóként (piros X) lenne megjelölve.', 'info');
+            return;
+        }
+
+        const absenteeNames = absentees.map(b => `${b.lastName} ${b.firstName}`).join(', ');
+
+        showConfirmation({
+            message: `Hamarosan: Értesítés küldése a következő ${absentees.length} hiányzónak: ${absenteeNames}. Ez a funkció jelenleg fejlesztés alatt áll.`,
+            onConfirm: () => {
+                console.log('Absentees to notify:', absentees);
+            }
+        });
+    };
+
     const handleAddStudentSilently = async (e) => {
         e.preventDefault();
         
@@ -581,6 +624,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
+                                <button
+                                    onClick=${handleNotifyAbsentees}
+                                    className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
+                                    title="Hiányzók értesítése (Hamarosan)"
+                                >
+                                    <${Icons.MailIcon} size=${16} />
+                                    <span className="hidden sm:inline">Hiányzók értesítése</span>
+                                </button>
                                 <button
                                     onClick=${handlePrintCourseBookings}
                                     className="bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center transition-colors"
@@ -710,18 +761,41 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                                 ` : ''}
                                                             </p>
                                                             <p className="text-sm text-gray-500 truncate">${booking.email}</p>
+                                                            <p className="text-xs text-gray-400 mt-0.5" title="Jelentkezés időpontja">
+                                                                Jelentkezés: ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
+                                                            </p>
                                                         </div>
                                                     </div>
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="text-sm text-gray-500">
-                                                            ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
-                                                        </div>
+                                                    <div className="flex items-center gap-2 sm:gap-4">
+                                                        ${updatingAttendanceId === (booking.id || booking.email) ? html`
+                                                            <div className="flex items-center justify-center w-20">
+                                                                <span className="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></span>
+                                                            </div>
+                                                        ` : html`
+                                                            <div className="flex items-center gap-1 sm:gap-2 mr-2">
+                                                                <button
+                                                                    onClick=${() => handleAttendanceToggle(booking, true)}
+                                                                    className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-green-50 hover:scale-110 ${booking.isPresent === true ? 'text-green-600 bg-green-50 shadow-sm' : 'text-gray-300'}`}
+                                                                    title="Jelen volt"
+                                                                >
+                                                                    <${Icons.CheckCircleIcon} size=${28} className="fill-current" />
+                                                                </button>
+                                                                <button
+                                                                    onClick=${() => handleAttendanceToggle(booking, false)}
+                                                                    className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-red-50 hover:scale-110 ${booking.isPresent === false ? 'text-red-600 bg-red-50 shadow-sm' : 'text-gray-300'}`}
+                                                                    title="Hiányzott"
+                                                                >
+                                                                    <${Icons.XCircleIcon} size=${28} className="fill-current" />
+                                                                </button>
+                                                            </div>
+                                                        `}
+                                                        <div className="w-px h-8 bg-gray-200 mx-1"></div>
                                                         <button 
                                                             onClick=${() => handleCancelBooking(booking)}
-                                                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors"
+                                                            className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors ml-1"
                                                             title="Jelentkezés törlése"
                                                         >
-                                                            <${Icons.TrashIcon} size=${16} />
+                                                            <${Icons.TrashIcon} size=${18} />
                                                         </button>
                                                     </div>
                                                 </div>
