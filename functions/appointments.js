@@ -1071,21 +1071,32 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
         await db.runTransaction(async (transaction) => {
             // Ellenőrizzük a lokális foglalást
             const bookingDoc = await transaction.get(bookingDocRef);
-            if (!bookingDoc.exists) {
-                throw new HttpsError("not-found", "A foglalás nem található.");
-            }
 
-            // Frissítjük a lokális foglalást
-            transaction.update(bookingDocRef, {
-                isPresent: isPresent
-            });
-
-            // Ellenőrizzük a globális foglalást
-            const globalBookingDoc = await transaction.get(globalBookingRef);
-            if (globalBookingDoc.exists) {
-                transaction.update(globalBookingRef, {
+            // Ha létezik, frissítjük a lokális foglalást
+            if (bookingDoc.exists) {
+                transaction.update(bookingDocRef, {
                     isPresent: isPresent
                 });
+            } else {
+                // Ha nem létezik az email mint ID, az azt jelenti hogy valószínűleg rossz dokumentumra mutat, de az UI-ból jött a kérés
+                // Ebben az esetben próbáljunk rákeresni a tényleges ID-ra (ha esetleg nem email alapján mentették el)
+                // Figyelem: Transaction-ben query-t futtatni nem lehet, így csak HttpsError dobás működik.
+                console.warn(`Booking with ID ${normalizedEmail} not found in course ${courseId}.`);
+                throw new HttpsError("not-found", `A foglalás nem található (${normalizedEmail}).`);
+            }
+
+            // Ellenőrizzük a globális foglalást
+            try {
+                const globalBookingDoc = await transaction.get(globalBookingRef);
+                if (globalBookingDoc.exists) {
+                    transaction.update(globalBookingRef, {
+                        isPresent: isPresent
+                    });
+                } else {
+                    console.warn(`Global booking with ID ${globalBookingRef.id} not found.`);
+                }
+            } catch (err) {
+                console.warn("Global booking fetch failed, but continuing with local update.", err);
             }
         });
 
@@ -1095,7 +1106,7 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
         if (error instanceof HttpsError) {
             throw error;
         }
-        throw new HttpsError("internal", "Hiba történt a jelenlét rögzítése során.", error.message);
+        throw new HttpsError("internal", `Hiba történt a jelenlét rögzítése során: ${error.message}`);
     }
 });
 
