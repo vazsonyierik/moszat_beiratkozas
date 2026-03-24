@@ -410,7 +410,7 @@ const EmailTemplatesTab = () => {
                                     const isDraggedOver = draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === index;
                                     
                                     return html`
-                                        <${Fragment} key=${key}>
+                                        <${React.Fragment} key=${key}>
                                             ${isDraggedOver ? html`<div className="h-1 bg-indigo-500 rounded my-1 w-full transition-all"></div>` : ''}
                                             <li
                                                 draggable="true"
@@ -437,7 +437,7 @@ const EmailTemplatesTab = () => {
                                                     </div>
                                                 </div>
                                             </li>
-                                        </${Fragment}>
+                                        </${React.Fragment}>
                                     `;
                                 })}
 
