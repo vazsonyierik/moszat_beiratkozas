@@ -24,6 +24,11 @@ const EmailTemplatesTab = () => {
     const [savedSubject, setSavedSubject] = useState('');
     const [savedHtmlContent, setSavedHtmlContent] = useState('');
     
+    // Drag and Drop state
+    const [templateOrder, setTemplateOrder] = useState(null); // { categoryName: [templateId1, templateId2] }
+    const [draggedItem, setDraggedItem] = useState(null); // { category, index, id }
+    const [draggedOverItem, setDraggedOverItem] = useState(null); // { category, index }
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
     const quillRef = useRef(null);
@@ -57,9 +62,48 @@ const EmailTemplatesTab = () => {
                 loadedData[doc.id] = doc.data();
             });
 
+            // 2.a Generate initial fallback categories
+            const initialCategories = {};
+            Object.keys(DEFAULT_TEMPLATES).forEach(key => {
+                const category = DEFAULT_TEMPLATES[key].category || 'Egyéb';
+                if (!initialCategories[category]) {
+                    initialCategories[category] = [];
+                }
+                initialCategories[category].push(key);
+            });
+
+            // 2.b Attempt to read saved custom order from _metadata document
+            let loadedOrder = null;
+            if (loadedData['_metadata'] && loadedData['_metadata'].order) {
+                loadedOrder = loadedData['_metadata'].order;
+
+                // Handle new templates that might not be in the saved metadata yet
+                Object.keys(DEFAULT_TEMPLATES).forEach(key => {
+                    let isFound = false;
+                    Object.values(loadedOrder).forEach(categoryArr => {
+                        if (categoryArr.includes(key)) isFound = true;
+                    });
+
+                    if (!isFound) {
+                        const defaultCat = DEFAULT_TEMPLATES[key].category || 'Egyéb';
+                        if (!loadedOrder[defaultCat]) {
+                            loadedOrder[defaultCat] = [];
+                        }
+                        loadedOrder[defaultCat].push(key);
+                    }
+                });
+            } else {
+                loadedOrder = initialCategories;
+            }
+
+            setTemplateOrder(loadedOrder);
+
             // Merge with defaults to ensure all keys exist
             const mergedTemplates = {};
             Object.keys(DEFAULT_TEMPLATES).forEach(key => {
+                // Ignore the metadata document when treating as a template
+                if (key === '_metadata') return;
+
                 mergedTemplates[key] = {
                     ...DEFAULT_TEMPLATES[key],
                     ...loadedData[key] // DB data overwrites default if it exists
@@ -254,19 +298,84 @@ const EmailTemplatesTab = () => {
         }
     };
 
-    if (isLoading) {
+    // --- Drag and Drop Handlers ---
+    const handleDragStart = (e, category, index, id) => {
+        setDraggedItem({ category, index, id });
+        e.dataTransfer.effectAllowed = 'move';
+        // HTML5 drag image / transparent background trick
+        setTimeout(() => {
+            e.target.classList.add('opacity-50');
+        }, 0);
+    };
+
+    const handleDragOver = (e, category, index) => {
+        e.preventDefault(); // Necessary to allow dropping
+        e.dataTransfer.dropEffect = 'move';
+
+        // Prevent unnecessary state updates if still over the same item
+        if (draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === index) {
+            return;
+        }
+        setDraggedOverItem({ category, index });
+    };
+
+    const handleDragEnter = (e, category, index) => {
+        e.preventDefault();
+        setDraggedOverItem({ category, index });
+    };
+
+    const handleDragEnd = (e) => {
+        e.target.classList.remove('opacity-50');
+        setDraggedItem(null);
+        setDraggedOverItem(null);
+    };
+
+    const handleDrop = async (e, targetCategory, targetIndex) => {
+        e.preventDefault();
+
+        if (!draggedItem || !templateOrder) return;
+
+        const sourceCategory = draggedItem.category;
+        const sourceIndex = draggedItem.index;
+
+        // Return if dropped on itself
+        if (sourceCategory === targetCategory && sourceIndex === targetIndex) {
+            handleDragEnd(e);
+            return;
+        }
+
+        const newOrder = { ...templateOrder };
+
+        // Remove from source array
+        const [movedItem] = newOrder[sourceCategory].splice(sourceIndex, 1);
+
+        // Add to target array at the specified index
+        if (!newOrder[targetCategory]) {
+             newOrder[targetCategory] = [];
+        }
+        newOrder[targetCategory].splice(targetIndex, 0, movedItem);
+
+        // If a category becomes empty, you could theoretically delete it,
+        // but we'll keep it so users can drag items back into it.
+
+        setTemplateOrder(newOrder);
+        handleDragEnd(e);
+
+        // Save the new order to Firestore
+        try {
+            await setDoc(doc(db, "email_templates", "_metadata"), {
+                order: newOrder,
+                updatedAt: new Date().toISOString()
+            }, { merge: true });
+        } catch (err) {
+            console.error("Failed to save new order to Firestore", err);
+            showToast("Nem sikerült elmenteni az új sorrendet.", "error");
+        }
+    };
+
+    if (isLoading || !templateOrder) {
         return html`<div className="text-center p-12 text-gray-500">Sablonok betöltése...</div>`;
     }
-
-    // Csoportosítás kategóriák szerint
-    const groupedTemplates = {};
-    Object.keys(DEFAULT_TEMPLATES).forEach(key => {
-        const category = DEFAULT_TEMPLATES[key].category || 'Egyéb';
-        if (!groupedTemplates[category]) {
-            groupedTemplates[category] = [];
-        }
-        groupedTemplates[category].push(key);
-    });
 
     return html`
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col md:flex-row min-h-[600px]">
@@ -279,34 +388,63 @@ const EmailTemplatesTab = () => {
                 </div>
                 
                 <div className="p-2 space-y-4">
-                    ${Object.keys(groupedTemplates).map(category => html`
+                    ${Object.keys(templateOrder).map((category, catIndex) => html`
                         <div key=${category} className="mb-2">
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-4">${category}</h4>
-                            <ul className="space-y-1">
-                                ${groupedTemplates[category].map(key => {
+                            <ul
+                                className="space-y-1 pb-4"
+                                onDragOver=${(e) => handleDragOver(e, category, templateOrder[category].length)}
+                                onDragEnter=${(e) => handleDragEnter(e, category, templateOrder[category].length)}
+                                onDrop=${(e) => handleDrop(e, category, templateOrder[category].length)}
+                            >
+                                ${templateOrder[category].length === 0 ? html`
+                                    <li className="text-xs text-gray-400 italic px-3 py-1 border-2 border-dashed border-gray-200 rounded text-center">Húzz ide egy sablont</li>
+                                ` : ''}
+
+                                ${templateOrder[category].map((key, index) => {
                                     const tpl = templates[key] || DEFAULT_TEMPLATES[key];
+                                    if (!tpl) return null; // Safe check for missing templates
+
                                     const isActive = activeTemplateId === key;
                                     const isTemplateEnabled = tpl.enabled !== false;
+                                    const isDraggedOver = draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === index;
                                     
                                     return html`
-                                        <li key=${key}>
-                                            <div className=${`group flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 border-l-4 border-indigo-500 text-indigo-700' : 'hover:bg-gray-100 text-gray-700 border-l-4 border-transparent'}`}
-                                                 onClick=${() => handleTemplateSelect(key)}>
-                                                <div className="flex-1 min-w-0 pr-2">
-                                                    <span className=${`block truncate text-sm font-medium ${isActive ? 'text-indigo-700' : 'text-gray-700'} ${!isTemplateEnabled && !isActive ? 'opacity-50' : ''}`}>
-                                                        ${DEFAULT_TEMPLATES[key].name}
-                                                    </span>
+                                        <${React.Fragment} key=${key}>
+                                            ${isDraggedOver ? html`<div className="h-1 bg-indigo-500 rounded my-1 w-full transition-all"></div>` : ''}
+                                            <li
+                                                draggable="true"
+                                                onDragStart=${(e) => handleDragStart(e, category, index, key)}
+                                                onDragOver=${(e) => handleDragOver(e, category, index)}
+                                                onDragEnter=${(e) => handleDragEnter(e, category, index)}
+                                                onDragEnd=${handleDragEnd}
+                                                onDrop=${(e) => handleDrop(e, category, index)}
+                                                className="cursor-move"
+                                            >
+                                                <div className=${`group flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 border-l-4 border-indigo-500 text-indigo-700' : 'hover:bg-gray-100 text-gray-700 border-l-4 border-transparent'}`}
+                                                     onClick=${() => handleTemplateSelect(key)}>
+                                                    <div className="flex-1 min-w-0 pr-2 flex items-center gap-2">
+                                                        <${Icons.GripVerticalIcon} size=${14} className="text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab flex-shrink-0 transition-opacity" />
+                                                        <span className=${`block truncate text-sm font-medium ${isActive ? 'text-indigo-700' : 'text-gray-700'} ${!isTemplateEnabled && !isActive ? 'opacity-50' : ''}`}>
+                                                            ${DEFAULT_TEMPLATES[key].name}
+                                                        </span>
+                                                    </div>
+                                                    <div className="flex-shrink-0 ml-2" onClick=${(e) => e.stopPropagation()}>
+                                                        <label className="relative inline-flex items-center cursor-pointer">
+                                                          <input type="checkbox" className="sr-only peer" checked=${isTemplateEnabled} onChange=${(e) => handleToggleEnable(key, e.target.checked)} />
+                                                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                        </label>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-shrink-0 ml-2" onClick=${(e) => e.stopPropagation()}>
-                                                    <label className="relative inline-flex items-center cursor-pointer">
-                                                      <input type="checkbox" className="sr-only peer" checked=${isTemplateEnabled} onChange=${(e) => handleToggleEnable(key, e.target.checked)} />
-                                                      <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        </li>
+                                            </li>
+                                        </${React.Fragment}>
                                     `;
                                 })}
+
+                                ${/* This is the drop zone for the very end of the list */''}
+                                ${draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === templateOrder[category].length && templateOrder[category].length > 0 ? html`
+                                    <div className="h-1 bg-indigo-500 rounded my-1 w-full transition-all"></div>
+                                ` : ''}
                             </ul>
                         </div>
                     `)}
