@@ -1069,34 +1069,33 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
 
     try {
         await db.runTransaction(async (transaction) => {
-            // Ellenőrizzük a lokális foglalást
+            // 1. READS (Minden olvasásnak meg kell előznie az írásokat a Firestore transaction-ökben!)
             const bookingDoc = await transaction.get(bookingDocRef);
+            let globalBookingDoc = null;
+            try {
+                globalBookingDoc = await transaction.get(globalBookingRef);
+            } catch (err) {
+                console.warn("Global booking fetch failed, but continuing.", err);
+            }
 
-            // Ha létezik, frissítjük a lokális foglalást
+            // 2. WRITES
+            // Ha létezik a lokális foglalás, frissítjük
             if (bookingDoc.exists) {
                 transaction.update(bookingDocRef, {
                     isPresent: isPresent
                 });
             } else {
-                // Ha nem létezik az email mint ID, az azt jelenti hogy valószínűleg rossz dokumentumra mutat, de az UI-ból jött a kérés
-                // Ebben az esetben próbáljunk rákeresni a tényleges ID-ra (ha esetleg nem email alapján mentették el)
-                // Figyelem: Transaction-ben query-t futtatni nem lehet, így csak HttpsError dobás működik.
                 console.warn(`Booking with ID ${normalizedEmail} not found in course ${courseId}.`);
                 throw new HttpsError("not-found", `A foglalás nem található (${normalizedEmail}).`);
             }
 
-            // Ellenőrizzük a globális foglalást
-            try {
-                const globalBookingDoc = await transaction.get(globalBookingRef);
-                if (globalBookingDoc.exists) {
-                    transaction.update(globalBookingRef, {
-                        isPresent: isPresent
-                    });
-                } else {
-                    console.warn(`Global booking with ID ${globalBookingRef.id} not found.`);
-                }
-            } catch (err) {
-                console.warn("Global booking fetch failed, but continuing with local update.", err);
+            // Ha létezik a globális foglalás, azt is frissítjük
+            if (globalBookingDoc && globalBookingDoc.exists) {
+                transaction.update(globalBookingRef, {
+                    isPresent: isPresent
+                });
+            } else {
+                console.warn(`Global booking with ID ${globalBookingRef.id} not found.`);
             }
         });
 
