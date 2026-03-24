@@ -435,7 +435,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                 silent: true // The key param indicating NO confirmation email should be sent
             });
             
-            showToast(result.data.message || 'Sikeres hozzáadás értesítés nélkül.', 'success');
+            showToast(result.data.message || 'Sikeres hozzáadás extraként (értesítés nélkül).', 'success');
             
             // Reset form and close
             setAddFirstName('');
@@ -471,7 +471,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-4 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
                             >
                                 <${Icons.PlusCircleIcon} size=${16} />
-                                Új tanuló hozzáadása (Csendes)
+                                Új tanuló hozzáadása (Extra)
                             </button>
                         </div>
                     </div>
@@ -486,10 +486,10 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                             <div className="flex justify-between items-center mb-4">
                                 <h4 className="text-md font-bold text-gray-800 flex items-center gap-2">
                                     <${Icons.UserAddIcon} size=${18} className="text-indigo-600" />
-                                    Új tanuló azonnali felvitele a kurzusra
+                                    Új tanuló azonnali felvitele a kurzusra (Extra)
                                 </h4>
                                 <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded font-semibold border border-gray-200">
-                                    Nem kap e-mailt!
+                                    Nem kap e-mailt, de túllépheti a létszámot!
                                 </span>
                             </div>
                             <form onSubmit=${handleAddStudentSilently} className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -529,7 +529,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                         disabled=${isAdding}
                                         className="bg-indigo-600 text-white font-semibold py-2 px-6 rounded-md hover:bg-indigo-700 disabled:opacity-50 flex items-center gap-2"
                                     >
-                                        ${isAdding ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Hozzáadás...` : 'Hozzáadás Csendben'}
+                                        ${isAdding ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Hozzáadás...` : 'Hozzáadás Extraként'}
                                     </button>
                                 </div>
                             </form>
@@ -562,6 +562,11 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                                     <span className="inline-flex items-center gap-1 rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
                                                                         <${Icons.ShieldIcon} size=${12} />
                                                                         Admin
+                                                                    </span>
+                                                                ` : ''}
+                                                                ${booking.addedAsExtra ? html`
+                                                                    <span className="inline-flex items-center gap-1 rounded-md bg-orange-50 px-2 py-1 text-xs font-bold text-orange-700 ring-1 ring-inset ring-orange-700/10" title="Extra rögzítésként (létszám felett) lett hozzáadva">
+                                                                        Extra
                                                                     </span>
                                                                 ` : ''}
                                                                 ${(booking.isLinkedToStudent === false && !booking.manuallyLinked) ? html`

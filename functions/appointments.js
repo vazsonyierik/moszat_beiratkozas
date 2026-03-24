@@ -418,6 +418,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 isPresent: null,
                 feePaid: false,
                 addedByAdmin: !!silent,
+                addedAsExtra: !!silent,
                 isLinkedToStudent: isLinkedToStudent,
             };
 
@@ -443,7 +444,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
         }
 
-        return {success: true, message: silent ? "A tanuló sikeresen hozzáadva értesítés nélkül." : "Jelentkezés sikeresen rögzítve."};
+        return {success: true, message: silent ? "A tanuló sikeresen hozzáadva extraként (értesítés nélkül)." : "Jelentkezés sikeresen rögzítve."};
     } catch (error) {
         console.error("Booking transaction failed:", error);
         // Re-throw known HttpErrors
