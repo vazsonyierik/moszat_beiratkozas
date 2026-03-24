@@ -388,7 +388,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             const courseData = courseDoc.data();
             const currentBookings = courseData.bookingsCount || 0;
 
-            if (currentBookings >= courseData.capacity) {
+            if (currentBookings >= courseData.capacity && !silent) {
                 throw new HttpsError("resource-exhausted", "Sajnos ez a foglalkozás időközben betelt. (Course is full)");
             }
 
@@ -418,6 +418,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 isPresent: null,
                 feePaid: false,
                 addedByAdmin: !!silent,
+                addedAsExtra: !!silent,
                 isLinkedToStudent: isLinkedToStudent,
             };
 
@@ -443,7 +444,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
         }
 
-        return {success: true, message: silent ? "A tanuló sikeresen hozzáadva értesítés nélkül." : "Jelentkezés sikeresen rögzítve."};
+        return {success: true, message: silent ? "A tanuló sikeresen hozzáadva extraként (értesítés nélkül)." : "Jelentkezés sikeresen rögzítve."};
     } catch (error) {
         console.error("Booking transaction failed:", error);
         // Re-throw known HttpErrors
@@ -1043,6 +1044,71 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
  * removeWaitlistEntryAsAdmin
  * Admin törölhet valakit a várólistáról.
  */
+/**
+ * updateBookingAttendance
+ * Admin rögzíti, hogy a tanuló jelen volt-e a foglalkozáson (true, false, vagy null).
+ */
+exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const { courseId, studentEmail, isPresent, isTestView } = data;
+
+    if (!courseId || !studentEmail || isPresent === undefined) {
+        throw new HttpsError("invalid-argument", "Hiányzó adatok a jelenlét rögzítéséhez.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+
+    const normalizedEmail = studentEmail.toLowerCase().trim();
+    const courseRef = db.collection(coursesCollection).doc(courseId);
+    const bookingDocRef = courseRef.collection("bookings").doc(normalizedEmail);
+    const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+
+    try {
+        await db.runTransaction(async (transaction) => {
+            // 1. READS (Minden olvasásnak meg kell előznie az írásokat a Firestore transaction-ökben!)
+            const bookingDoc = await transaction.get(bookingDocRef);
+            let globalBookingDoc = null;
+            try {
+                globalBookingDoc = await transaction.get(globalBookingRef);
+            } catch (err) {
+                console.warn("Global booking fetch failed, but continuing.", err);
+            }
+            
+            // 2. WRITES
+            // Ha létezik a lokális foglalás, frissítjük
+            if (bookingDoc.exists) {
+                transaction.update(bookingDocRef, {
+                    isPresent: isPresent
+                });
+            } else {
+                console.warn(`Booking with ID ${normalizedEmail} not found in course ${courseId}.`);
+                throw new HttpsError("not-found", `A foglalás nem található (${normalizedEmail}).`);
+            }
+
+            // Ha létezik a globális foglalás, azt is frissítjük
+            if (globalBookingDoc && globalBookingDoc.exists) {
+                transaction.update(globalBookingRef, {
+                    isPresent: isPresent
+                });
+            } else {
+                console.warn(`Global booking with ID ${globalBookingRef.id} not found.`);
+            }
+        });
+
+        return { success: true, message: "Jelenlét sikeresen rögzítve." };
+    } catch (error) {
+        console.error("Error updating booking attendance:", error);
+        if (error instanceof HttpsError) {
+            throw error;
+        }
+        throw new HttpsError("internal", `Hiba történt a jelenlét rögzítése során: ${error.message}`);
+    }
+});
+
 /**
  * linkStudentToBooking
  * Admin manuálisan összekapcsol egy "árva" foglalást egy létező tanulóval.
