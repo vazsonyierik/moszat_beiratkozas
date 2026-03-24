@@ -332,6 +332,7 @@ const EmailTemplatesTab = () => {
 
     const handleDrop = async (e, targetCategory, targetIndex) => {
         e.preventDefault();
+        e.stopPropagation(); // Prevent event bubbling to parent <ul>
 
         if (!draggedItem || !templateOrder) return;
 
