@@ -131,6 +131,7 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
     try {
         let oldCourseData = null;
         let activeBookings = [];
+        let activeWaitlist = [];
 
         await db.runTransaction(async (transaction) => {
             const courseDoc = await transaction.get(courseRef);
@@ -146,6 +147,14 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
             
             bookingsSnap.forEach((doc) => {
                 activeBookings.push(doc.data());
+            });
+
+            // Kérjük le a várólistásokat is, hogy őket is értesíthessük
+            const waitlistQuery = courseRef.collection("waitlist");
+            const waitlistSnap = await transaction.get(waitlistQuery);
+
+            waitlistSnap.forEach((doc) => {
+                activeWaitlist.push(doc.data());
             });
 
             // Frissítsük magát a kurzust
@@ -176,28 +185,72 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
                     });
                 }
             });
+
+            // Ugyanezt megtesszük a várólistás adatokon is
+            waitlistSnap.forEach((doc) => {
+                transaction.update(doc.ref, {
+                    courseName: name,
+                    courseDate: formatCourseDate(date),
+                    startTime: startTime
+                });
+
+                if (doc.data().allWaitlistId) {
+                    const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
+                    const globalRef = db.collection(allBookingsCollection).doc(doc.data().allWaitlistId);
+                    transaction.update(globalRef, {
+                        courseName: name,
+                        courseDate: formatCourseDate(date),
+                        startTime: startTime
+                    });
+                }
+            });
         });
 
-        // Ha voltak jelentkezők és a fontos adatok (dátum, idő, név) változtak, küldjünk e-mailt
+        // Ha a fontos adatok (dátum, idő, név) változtak, küldjünk e-mailt az érintetteknek
         const isMajorChange = oldCourseData.date !== date || oldCourseData.startTime !== startTime || oldCourseData.name !== name || oldCourseData.endTime !== endTime;
         
-        if (isMajorChange && activeBookings.length > 0) {
-            const newCourseData = { name, date, startTime, endTime };
-            const emailPromises = activeBookings.map(booking => {
-                const combinedData = {
-                    ...booking,
-                    oldCourseName: oldCourseData.name,
-                    oldCourseDate: formatCourseDate(oldCourseData.date),
-                    oldStartTime: oldCourseData.startTime,
-                    oldEndTime: oldCourseData.endTime,
-                    newCourseName: name,
-                    newCourseDate: date,
-                    newStartTime: startTime,
-                    newEndTime: endTime
-                };
-                return sendDynamicEmail("courseModified", combinedData, templates.courseModified(combinedData), isTestView);
-            });
-            await Promise.allSettled(emailPromises);
+        if (isMajorChange) {
+            const emailPromises = [];
+
+            // 1. E-mailek a rendes jelentkezőknek
+            if (activeBookings.length > 0) {
+                activeBookings.forEach(booking => {
+                    const combinedData = {
+                        ...booking,
+                        oldCourseName: oldCourseData.name,
+                        oldCourseDate: formatCourseDate(oldCourseData.date),
+                        oldStartTime: oldCourseData.startTime,
+                        oldEndTime: oldCourseData.endTime,
+                        newCourseName: name,
+                        newCourseDate: date,
+                        newStartTime: startTime,
+                        newEndTime: endTime
+                    };
+                    emailPromises.push(sendDynamicEmail("courseModified", combinedData, templates.courseModified(combinedData), isTestView));
+                });
+            }
+
+            // 2. E-mailek a várólistásoknak
+            if (activeWaitlist.length > 0) {
+                activeWaitlist.forEach(waitlistEntry => {
+                    const combinedData = {
+                        ...waitlistEntry,
+                        oldCourseName: oldCourseData.name,
+                        oldCourseDate: formatCourseDate(oldCourseData.date),
+                        oldStartTime: oldCourseData.startTime,
+                        oldEndTime: oldCourseData.endTime,
+                        newCourseName: name,
+                        newCourseDate: date,
+                        newStartTime: startTime,
+                        newEndTime: endTime
+                    };
+                    emailPromises.push(sendDynamicEmail("waitlistCourseModified", combinedData, templates.waitlistCourseModified(combinedData), isTestView));
+                });
+            }
+
+            if (emailPromises.length > 0) {
+                await Promise.allSettled(emailPromises);
+            }
         }
 
         return {success: true, message: "Foglalkozás sikeresen módosítva."};

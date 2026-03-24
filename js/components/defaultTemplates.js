@@ -569,6 +569,44 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    waitlistCourseModified: {
+        id: 'waitlistCourseModified',
+        name: 'Várólista: Időpont változás', category: 'Időpontfoglalás',
+        subject: `Várólistás időpont változás - Mosolyzóna Autósiskola`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Tájékoztatunk, hogy az alábbi foglalkozás időpontja, amire <strong>várólistán vagy</strong>, megváltozott:</p>
+
+                <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px; color: #666;">
+                        <li>Foglalkozás: {{oldCourseName}}</li>
+                        <li>Időpont: {{oldCourseDate}} ({{oldStartTime}} - {{oldEndTime}})</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 2em; padding: 1em; background-color: #eef2ff; border-left: 4px solid #4f46e5;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Új adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Foglalkozás:</strong> {{newCourseName}}</li>
+                        <li><strong>Időpont:</strong> {{newCourseDate}} ({{newStartTime}} - {{newEndTime}})</li>
+                    </ul>
+                </div>
+
+                <p>A várólistás jelentkezésed automatikusan érvényben maradt az új időpontra, nincs további teendőd.</p>
+                <p>Amennyiben az új időpont már nem megfelelő számodra, kérjük, az alábbi linkre kattintva iratkozz le a várólistáról:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
     lastMinuteSpot: {
         id: 'lastMinuteSpot',
         name: 'Várólista: Gyorsasági last-minute hely', category: 'Időpontfoglalás',

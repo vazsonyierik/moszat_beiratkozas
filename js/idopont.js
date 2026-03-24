@@ -280,10 +280,35 @@ const StudentAppointmentsApp = () => {
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            let coursesData = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            }));
+            const now = new Date();
+            let coursesData = [];
+
+            snapshot.docs.forEach(doc => {
+                const data = doc.data();
+                let isPastStartTime = false;
+
+                if (data.date && data.startTime) {
+                    const dateParts = data.date.split('-');
+                    const timeParts = data.startTime.split(':');
+                    if (dateParts.length === 3 && timeParts.length === 2) {
+                        const courseStartDateTime = new Date(
+                            parseInt(dateParts[0]),
+                            parseInt(dateParts[1]) - 1,
+                            parseInt(dateParts[2]),
+                            parseInt(timeParts[0]),
+                            parseInt(timeParts[1])
+                        );
+                        if (now > courseStartDateTime) {
+                            isPastStartTime = true;
+                        }
+                    }
+                }
+
+                // Csak azokat tartjuk meg, amik még nem kezdődtek el
+                if (!isPastStartTime) {
+                    coursesData.push({ id: doc.id, ...data });
+                }
+            });
             
             // Sort locally
             coursesData.sort((a, b) => {
