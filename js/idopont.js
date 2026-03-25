@@ -282,11 +282,11 @@ const StudentAppointmentsApp = () => {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const now = new Date();
             let coursesData = [];
-            
+
             snapshot.docs.forEach(doc => {
                 const data = doc.data();
                 let isPastStartTime = false;
-                
+
                 if (data.date && data.startTime) {
                     const dateParts = data.date.split('-');
                     const timeParts = data.startTime.split(':');
@@ -303,7 +303,7 @@ const StudentAppointmentsApp = () => {
                         }
                     }
                 }
-                
+
                 // Csak azokat tartjuk meg, amik még nem kezdődtek el
                 if (!isPastStartTime) {
                     coursesData.push({ id: doc.id, ...data });
@@ -400,6 +400,8 @@ const StudentAppointmentsApp = () => {
                         const availableSeats = course.capacity - (course.bookingsCount || 0);
                         const isInCart = cart.some(item => item.course.id === course.id);
 
+                        const isFirstAid = course.name === "Elsősegély tanfolyam";
+
                         return html`
                             <li key=${course.id} className=${`hover:bg-gray-50 transition-colors ${isFull ? 'opacity-75' : ''}`}>
                                 <div className="px-4 py-4 sm:px-6 flex items-center justify-between flex-wrap gap-4">
@@ -439,14 +441,18 @@ const StudentAppointmentsApp = () => {
                                             >
                                                 Mégse kérem
                                             </button>
-                                        ` : (isFull ? html`
+                                        ` : (isFull ? (isFirstAid ? html`
+                                            <span className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-red-800 bg-red-100 cursor-not-allowed">
+                                                Betelt (Nincs várólista)
+                                            </span>
+                                        ` : html`
                                             <button 
                                                 onClick=${() => addToCart(course, true)}
                                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
                                             >
                                                 Hozzáadás várólistához
                                             </button>
-                                        ` : html`
+                                        `) : html`
                                             <button 
                                                 onClick=${() => addToCart(course, false)}
                                                 className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"

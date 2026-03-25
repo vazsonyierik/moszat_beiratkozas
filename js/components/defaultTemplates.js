@@ -577,7 +577,7 @@ const DEFAULT_TEMPLATES = {
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
                 <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az alábbi foglalkozás időpontja, amire <strong>várólistán vagy</strong>, megváltozott:</p>
-                
+
                 <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
                     <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
                     <ul style="margin: 0; padding-left: 20px; color: #666;">
@@ -597,7 +597,7 @@ const DEFAULT_TEMPLATES = {
                 <p>A várólistás jelentkezésed automatikusan érvényben maradt az új időpontra, nincs további teendőd.</p>
                 <p>Amennyiben az új időpont már nem megfelelő számodra, kérjük, az alábbi linkre kattintva iratkozz le a várólistáról:</p>
                 <p style="margin: 1.5em 0;">
-                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
                        style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
                        Leiratkozás a várólistáról
                     </a>
@@ -607,9 +607,9 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
-    lastMinuteSpot: {
-        id: 'lastMinuteSpot',
-        name: 'Várólista: Gyorsasági last-minute hely', category: 'Időpontfoglalás',
+    waitlistLastMinuteSpot: {
+        id: 'waitlistLastMinuteSpot',
+        name: 'Várólista: Last-minute üresedés (<24h)', category: 'Várólista',
         subject: `Utolsó pillanatos szabad hely! (Gyorsasági foglalás)`,
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
@@ -634,6 +634,120 @@ const DEFAULT_TEMPLATES = {
                        Leiratkozás a várólistáról
                     </a>
                 </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    firstAidConfirmation: {
+        id: 'firstAidConfirmation',
+        name: 'Elsősegély: Sikeres jelentkezés', category: 'Elsősegély',
+        subject: `Sikeres jelentkezés elsősegély tanfolyamra - Mosolyzóna`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Sikeresen regisztráltunk az alábbi elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p><strong>FONTOS: A részvétel feltétele a tanfolyam díjának előzetes rendezése!</strong></p>
+                <p>Kérjük, hogy a tanfolyam díját legkésőbb a tanfolyam előtti napig rendezd banki átutalással vagy személyesen az irodánkban. Helyszíni készpénzes fizetésre a tanfolyam napján nincs lehetőség!</p>
+                
+                <p style="margin-top: 1.2em; margin-bottom: 1.2em;"><strong>Fizetési lehetőségek:</strong></p>
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                    <li><strong>Banki átutalás:</strong>
+                        <ul style="list-style-type: circle; padding-left: 20px;">
+                            <li><strong>Kedvezményezett:</strong> Jogsiszoft Kft.</li>
+                            <li><strong>Számlaszám:</strong> 12010855-01164374-00100009 (Raiffeisen Bank)</li>
+                            <li><strong>Közlemény:</strong> Kérjük, tüntesd fel a nevedet és azt, hogy "Elsősegély"!</li>
+                        </ul>
+                    </li>
+                    <li style="margin-top: 1em;"><strong>Személyesen az irodában:</strong> 1088 Budapest, Krúdy u. 16-18. fszt. 3. (Nyitvatartási időben)</li>
+                </ul>
+
+                <p>Amennyiben mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    firstAidReminderDay5: {
+        id: 'firstAidReminderDay5',
+        name: 'Elsősegély Emlékeztető (T-5 nap)', category: 'Elsősegély',
+        subject: `Közeleg az elsősegély tanfolyamod!`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>5 nap múlva ({{courseDate}}) várunk az elsősegély tanfolyamra!</p>
+                <p>Rendszerünk szerint a tanfolyam díja még nem érkezett be hozzánk. Kérjük, ne felejtsd el rendezni a díjat banki átutalással vagy személyesen az irodánkban legkésőbb a tanfolyam előtti napig.</p>
+                <p>Kérjük, vedd figyelembe, hogy a helyszínen az oktatónál nincs lehetőség fizetésre, a díj beérkezése a részvétel feltétele!</p>
+                <p>Ha közbejött valami, kérjük mondd le a jelentkezésed:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    firstAidReminderDay3: {
+        id: 'firstAidReminderDay3',
+        name: 'Elsősegély Emlékeztető (T-3 nap)', category: 'Elsősegély',
+        subject: `Sürgős: Elsősegély tanfolyam fizetési emlékeztető`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>3 nap múlva lesz az elsősegély tanfolyam, amelyre jelentkeztél ({{courseDate}}).</p>
+                <p><strong>Fontos figyelmeztetés!</strong> A díj befizetésének hiányában a képzésen nem vehetsz részt. Kérjük, sürgősen pótold a befizetést! Ha átutaltad, kérjük, hozd magaddal a bizonylatot a tanfolyamra.</p>
+                <p>Amennyiben már nem aktuális, mindenképpen mondd le a jelentkezést:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}" 
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    firstAidReminderDay1: {
+        id: 'firstAidReminderDay1',
+        name: 'Elsősegély Figyelmeztetés (T-1 nap)', category: 'Elsősegély',
+        subject: `Figyelem! Holnapi elsősegély tanfolyam - Hiányzó befizetés`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Figyelem! Mivel a holnapi elsősegély tanfolyam díja a mai napig nem került rögzítésre a rendszerünkben, <strong>a holnapi tanfolyamon sajnos nem áll módunkban fogadni téged.</strong></p>
+                <p>Ha a díjat már átutaltad, és csak adminisztrációs hiba történt, kérlek <strong>azonnal vedd fel velünk a kapcsolatot</strong> válasz e-mailben, és hozd magaddal a fizetést igazoló bizonylatot a tanfolyamra!</p>
+                <p>Megértésedet köszönjük!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `,
+        enabled: true
+    },
+    firstAidPaymentReceived: {
+        id: 'firstAidPaymentReceived',
+        name: 'Elsősegély: Díj beérkezett', category: 'Elsősegély',
+        subject: `Sikeres fizetés: Elsősegély tanfolyam`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Örömmel értesítünk, hogy az elsősegély tanfolyam díja sikeresen megérkezett hozzánk, így a helyed <strong>véglegesítve lett.</strong></p>
+                <ul>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Már nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
+                <p>Várunk szeretettel!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
         `,

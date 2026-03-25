@@ -805,7 +805,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 </div>
                             `}
 
-                            ${(!isWaitlistLoading && waitlist.length > 0) ? html`
+                            ${(!isWaitlistLoading && waitlist.length > 0 && course.name !== "Elsősegély tanfolyam") ? html`
                                 <div className="mt-8">
                                     <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                                         <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
@@ -1588,13 +1588,13 @@ const AppointmentsTab = ({ isTestView }) => {
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-4">
-                    <button 
+                    <button
                         onClick=${() => { setActiveTab('active'); setCurrentPageActive(1); }}
                         className=${`text-lg font-bold pb-1 transition-colors ${activeTab === 'active' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
                     >
                         Aktív foglalkozások (${active.length})
                     </button>
-                    <button 
+                    <button
                         onClick=${() => { setActiveTab('archived'); setCurrentPageArchived(1); }}
                         className=${`text-lg font-bold pb-1 transition-colors ${activeTab === 'archived' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
                     >
@@ -1700,7 +1700,7 @@ const AppointmentsTab = ({ isTestView }) => {
                                                     <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                                         ${course.bookingsCount || 0} / ${course.capacity}
                                                     </span>
-                                                    ${(course.waitlistCount > 0) && html`
+                                                    ${(course.waitlistCount > 0 && course.name !== "Elsősegély tanfolyam") && html`
                                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" title="Várólistán lévők száma">
                                                             V: ${course.waitlistCount}
                                                         </span>
@@ -1744,7 +1744,7 @@ const AppointmentsTab = ({ isTestView }) => {
                             Összesen: <span className="font-medium">${currentList.length}</span> foglalkozás
                         </div>
                         <div className="flex gap-2">
-                            <button 
+                            <button
                                 onClick=${() => handlePageChange(currentPage - 1)}
                                 disabled=${currentPage === 1}
                                 className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1754,7 +1754,7 @@ const AppointmentsTab = ({ isTestView }) => {
                             <span className="px-3 py-1 text-sm text-gray-700 font-medium">
                                 ${currentPage} / ${totalPages}
                             </span>
-                            <button 
+                            <button
                                 onClick=${() => handlePageChange(currentPage + 1)}
                                 disabled=${currentPage === totalPages}
                                 className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"

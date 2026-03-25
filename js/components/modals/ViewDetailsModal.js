@@ -826,6 +826,25 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                                             `)}
                                         </tbody>
                                     </table>
+                                    
+                                    ${/* First Aid Payment specific rendering if they have an First Aid course */''}
+                                    ${classroomBookings.some(b => b.courseName === "Elsősegély tanfolyam") ? html`
+                                        <div className="bg-yellow-50 px-4 py-3 border-t border-yellow-100 flex items-center justify-between">
+                                            <div className="flex items-center gap-2">
+                                                <strong className="text-yellow-800 text-sm">Elsősegély tanfolyam díja befizetve:</strong>
+                                                ${localStudent.firstAidPaid ? html`
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
+                                                        <${Icons.CheckCircleIcon} size=${12} /> Igen
+                                                    </span>
+                                                ` : html`
+                                                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
+                                                        <${Icons.XCircleIcon} size=${12} /> Nem
+                                                    </span>
+                                                `}
+                                            </div>
+                                            <span className="text-xs text-yellow-700 italic">Ezt a beállítást a Szerkesztés menüpontban módosíthatod.</span>
+                                        </div>
+                                    ` : null}
                                 </div>
                             `}
                         <//>

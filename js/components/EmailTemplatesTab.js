@@ -28,7 +28,7 @@ const EmailTemplatesTab = () => {
     const [templateOrder, setTemplateOrder] = useState(null); // { categoryName: [templateId1, templateId2] }
     const [draggedItem, setDraggedItem] = useState(null); // { category, index, id }
     const [draggedOverItem, setDraggedOverItem] = useState(null); // { category, index }
-    
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
     const quillRef = useRef(null);
@@ -76,14 +76,14 @@ const EmailTemplatesTab = () => {
             let loadedOrder = null;
             if (loadedData['_metadata'] && loadedData['_metadata'].order) {
                 loadedOrder = loadedData['_metadata'].order;
-                
+
                 // Handle new templates that might not be in the saved metadata yet
                 Object.keys(DEFAULT_TEMPLATES).forEach(key => {
                     let isFound = false;
                     Object.values(loadedOrder).forEach(categoryArr => {
                         if (categoryArr.includes(key)) isFound = true;
                     });
-                    
+
                     if (!isFound) {
                         const defaultCat = DEFAULT_TEMPLATES[key].category || 'Egyéb';
                         if (!loadedOrder[defaultCat]) {
@@ -311,7 +311,7 @@ const EmailTemplatesTab = () => {
     const handleDragOver = (e, category, index) => {
         e.preventDefault(); // Necessary to allow dropping
         e.dataTransfer.dropEffect = 'move';
-        
+
         // Prevent unnecessary state updates if still over the same item
         if (draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === index) {
             return;
@@ -321,6 +321,10 @@ const EmailTemplatesTab = () => {
 
     const handleDragEnter = (e, category, index) => {
         e.preventDefault();
+        // Mivel az onDragOver is ezt teszi, itt csak ellenőrzünk
+        if (draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === index) {
+            return;
+        }
         setDraggedOverItem({ category, index });
     };
 
@@ -333,12 +337,12 @@ const EmailTemplatesTab = () => {
     const handleDrop = async (e, targetCategory, targetIndex) => {
         e.preventDefault();
         e.stopPropagation(); // Prevent event bubbling to parent <ul>
-        
+
         if (!draggedItem || !templateOrder) return;
-        
+
         const sourceCategory = draggedItem.category;
         const sourceIndex = draggedItem.index;
-        
+
         // Return if dropped on itself
         if (sourceCategory === targetCategory && sourceIndex === targetIndex) {
             handleDragEnd(e);
@@ -346,22 +350,22 @@ const EmailTemplatesTab = () => {
         }
 
         const newOrder = { ...templateOrder };
-        
+
         // Remove from source array
         const [movedItem] = newOrder[sourceCategory].splice(sourceIndex, 1);
-        
+
         // Add to target array at the specified index
         if (!newOrder[targetCategory]) {
              newOrder[targetCategory] = [];
         }
         newOrder[targetCategory].splice(targetIndex, 0, movedItem);
-        
-        // If a category becomes empty, you could theoretically delete it, 
+
+        // If a category becomes empty, you could theoretically delete it,
         // but we'll keep it so users can drag items back into it.
-        
+
         setTemplateOrder(newOrder);
         handleDragEnd(e);
-        
+
         // Save the new order to Firestore
         try {
             await setDoc(doc(db, "email_templates", "_metadata"), {
@@ -392,8 +396,8 @@ const EmailTemplatesTab = () => {
                     ${Object.keys(templateOrder).map((category, catIndex) => html`
                         <div key=${category} className="mb-2">
                             <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-3 mt-4">${category}</h4>
-                            <ul 
-                                className="space-y-1 pb-4" 
+                            <ul
+                                className="space-y-1 pb-4"
                                 onDragOver=${(e) => handleDragOver(e, category, templateOrder[category].length)}
                                 onDragEnter=${(e) => handleDragEnter(e, category, templateOrder[category].length)}
                                 onDrop=${(e) => handleDrop(e, category, templateOrder[category].length)}
@@ -408,44 +412,51 @@ const EmailTemplatesTab = () => {
 
                                     const isActive = activeTemplateId === key;
                                     const isTemplateEnabled = tpl.enabled !== false;
+                                    
+                                    // Itt rajzoljuk felülre a vonalat, ha épp efölé húzzák az egeret
                                     const isDraggedOver = draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === index;
                                     
+                                    // Ha van egy áthúzott elem, ami ráadásul a mi kategóriánkban van, és az index azonos:
+                                    const dropIndicatorClass = isDraggedOver ? 'border-t-2 border-t-indigo-500' : 'border-t-2 border-t-transparent';
+
                                     return html`
-                                        <${React.Fragment} key=${key}>
-                                            ${isDraggedOver ? html`<div className="h-1 bg-indigo-500 rounded my-1 w-full transition-all"></div>` : ''}
-                                            <li 
-                                                draggable="true"
-                                                onDragStart=${(e) => handleDragStart(e, category, index, key)}
-                                                onDragOver=${(e) => handleDragOver(e, category, index)}
-                                                onDragEnter=${(e) => handleDragEnter(e, category, index)}
-                                                onDragEnd=${handleDragEnd}
-                                                onDrop=${(e) => handleDrop(e, category, index)}
-                                                className="cursor-move"
-                                            >
-                                                <div className=${`group flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 border-l-4 border-indigo-500 text-indigo-700' : 'hover:bg-gray-100 text-gray-700 border-l-4 border-transparent'}`}
-                                                     onClick=${() => handleTemplateSelect(key)}>
-                                                    <div className="flex-1 min-w-0 pr-2 flex items-center gap-2">
-                                                        <${Icons.GripVerticalIcon} size=${14} className="text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab flex-shrink-0 transition-opacity" />
-                                                        <span className=${`block truncate text-sm font-medium ${isActive ? 'text-indigo-700' : 'text-gray-700'} ${!isTemplateEnabled && !isActive ? 'opacity-50' : ''}`}>
-                                                            ${DEFAULT_TEMPLATES[key].name}
-                                                        </span>
-                                                    </div>
-                                                    <div className="flex-shrink-0 ml-2" onClick=${(e) => e.stopPropagation()}>
-                                                        <label className="relative inline-flex items-center cursor-pointer">
-                                                          <input type="checkbox" className="sr-only peer" checked=${isTemplateEnabled} onChange=${(e) => handleToggleEnable(key, e.target.checked)} />
-                                                          <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                                                        </label>
-                                                    </div>
+                                        <li
+                                            key=${key}
+                                            draggable="true"
+                                            onDragStart=${(e) => handleDragStart(e, category, index, key)}
+                                            onDragOver=${(e) => handleDragOver(e, category, index)}
+                                            onDragEnter=${(e) => handleDragEnter(e, category, index)}
+                                            onDragEnd=${handleDragEnd}
+                                            onDrop=${(e) => handleDrop(e, category, index)}
+                                            className=${`cursor-move transition-all ${dropIndicatorClass}`}
+                                            style=${{ marginTop: isDraggedOver ? '0' : '0' }}
+                                        >
+                                            <div className=${`group flex items-center justify-between px-3 py-2.5 rounded-md cursor-pointer transition-colors ${isActive ? 'bg-indigo-50 border-l-4 border-indigo-500 text-indigo-700' : 'hover:bg-gray-100 text-gray-700 border-l-4 border-transparent'}`}
+                                                 onClick=${() => handleTemplateSelect(key)}>
+                                                <div className="flex-1 min-w-0 pr-2 flex items-center gap-2">
+                                                    <${Icons.GripVerticalIcon} size=${14} className="text-gray-300 opacity-0 group-hover:opacity-100 cursor-grab flex-shrink-0 transition-opacity" />
+                                                    <span className=${`block truncate text-sm font-medium ${isActive ? 'text-indigo-700' : 'text-gray-700'} ${!isTemplateEnabled && !isActive ? 'opacity-50' : ''}`}>
+                                                        ${DEFAULT_TEMPLATES[key].name}
+                                                    </span>
                                                 </div>
-                                            </li>
-                                        </${React.Fragment}>
+                                                <div className="flex-shrink-0 ml-2" onClick=${(e) => e.stopPropagation()}>
+                                                    <label className="relative inline-flex items-center cursor-pointer">
+                                                      <input type="checkbox" className="sr-only peer" checked=${isTemplateEnabled} onChange=${(e) => handleToggleEnable(key, e.target.checked)} />
+                                                      <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </li>
                                     `;
                                 })}
-                                
-                                ${/* This is the drop zone for the very end of the list */''}
-                                ${draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === templateOrder[category].length && templateOrder[category].length > 0 ? html`
-                                    <div className="h-1 bg-indigo-500 rounded my-1 w-full transition-all"></div>
-                                ` : ''}
+
+                                ${/* Ez az eldobási zóna a lista legvégére (ha utolsónak akarjuk bedobni) */''}
+                                <li
+                                    onDragOver=${(e) => handleDragOver(e, category, templateOrder[category].length)}
+                                    onDragEnter=${(e) => handleDragEnter(e, category, templateOrder[category].length)}
+                                    onDrop=${(e) => handleDrop(e, category, templateOrder[category].length)}
+                                    className=${`h-2 w-full transition-all ${draggedOverItem && draggedOverItem.category === category && draggedOverItem.index === templateOrder[category].length ? 'border-t-2 border-t-indigo-500' : 'border-t-2 border-t-transparent'}`}
+                                ></li>
                             </ul>
                         </div>
                     `)}
