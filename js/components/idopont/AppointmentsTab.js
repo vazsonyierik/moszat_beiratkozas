@@ -323,7 +323,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     
     // Linking state
     const [bookingToLink, setBookingToLink] = useState(null);
-    
+
     // Attendance loading state
     const [updatingAttendanceId, setUpdatingAttendanceId] = useState(null);
 
@@ -493,7 +493,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     <h1 class="course-title">${course.name}</h1>
                     <div class="course-datetime">${course.date} | ${course.startTime} - ${course.endTime}</div>
                 </div>
-                
+
                 <table>
                     <thead>
                         <tr>
@@ -521,7 +521,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
             printWindow.document.open();
             printWindow.document.write(printContent);
             printWindow.document.close();
-            
+
             // Várunk kicsit, hogy a DOM felépüljön, majd hívjuk a print-et
             printWindow.setTimeout(() => {
                 printWindow.focus();
@@ -535,7 +535,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     const handleAttendanceToggle = async (booking, newStatus) => {
         // Ha ugyanarra kattint ami már be van állítva, akkor vegyük le a jelölést (null)
         const finalStatus = booking.isPresent === newStatus ? null : newStatus;
-        
+
         setUpdatingAttendanceId(booking.id || booking.email);
         try {
             const updateAttendanceFn = httpsCallable(functions, 'updateBookingAttendance');
@@ -561,9 +561,9 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
             showToast('Nincs olyan tanuló, aki hiányzóként (piros X) lenne megjelölve.', 'info');
             return;
         }
-        
+
         const absenteeNames = absentees.map(b => `${b.lastName} ${b.firstName}`).join(', ');
-        
+
         showConfirmation({
             message: `Hamarosan: Értesítés küldése a következő ${absentees.length} hiányzónak: ${absenteeNames}. Ez a funkció jelenleg fejlesztés alatt áll.`,
             onConfirm: () => {
@@ -624,7 +624,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button 
+                                <button
                                     onClick=${handleNotifyAbsentees}
                                     className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
                                     title="Hiányzók értesítése (Hamarosan)"
@@ -632,14 +632,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                     <${Icons.MailIcon} size=${16} />
                                     <span className="hidden sm:inline">Hiányzók értesítése</span>
                                 </button>
-                                <button 
+                                <button
                                     onClick=${handlePrintCourseBookings}
                                     className="bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center transition-colors"
                                     title="Jelenléti ív nyomtatása"
                                 >
                                     <${Icons.PrinterIcon} size=${18} />
                                 </button>
-                                <button 
+                                <button
                                     onClick=${() => setIsAddFormOpen(!isAddFormOpen)}
                                     className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 px-4 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
                                 >
@@ -773,14 +773,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                             </div>
                                                         ` : html`
                                                             <div className="flex items-center gap-1 sm:gap-2 mr-2">
-                                                                <button 
+                                                                <button
                                                                     onClick=${() => handleAttendanceToggle(booking, true)}
                                                                     className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-green-50 hover:scale-110 ${booking.isPresent === true ? 'text-green-600 bg-green-50 shadow-sm' : 'text-gray-300'}`}
                                                                     title="Jelen volt"
                                                                 >
                                                                     <${Icons.CheckCircleIcon} size=${28} />
                                                                 </button>
-                                                                <button 
+                                                                <button
                                                                     onClick=${() => handleAttendanceToggle(booking, false)}
                                                                     className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-red-50 hover:scale-110 ${booking.isPresent === false ? 'text-red-600 bg-red-50 shadow-sm' : 'text-gray-300'}`}
                                                                     title="Hiányzott"
@@ -899,6 +899,12 @@ const AppointmentsTab = ({ isTestView }) => {
     // Bulk student registration states
     const [isBulkStudentRegistrationOpen, setIsBulkStudentRegistrationOpen] = useState(false);
 
+    // Új állapotok az Archív/Aktív fülekhez és a lapozáshoz
+    const [activeTab, setActiveTab] = useState('active'); // 'active' vagy 'archived'
+    const [currentPageActive, setCurrentPageActive] = useState(1);
+    const [currentPageArchived, setCurrentPageArchived] = useState(1);
+    const itemsPerPage = 10;
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
@@ -932,6 +938,49 @@ const AppointmentsTab = ({ isTestView }) => {
 
         return () => unsubscribe();
     }, [isTestView, showToast]);
+
+    // Foglalkozások szétválogatása Aktív és Archív kategóriákba
+    const getCategorizedCourses = () => {
+        const now = new Date();
+        const active = [];
+        const archived = [];
+
+        courses.forEach(course => {
+            // Kombináljuk a dátumot és a befejezési időt
+            let courseEndDateTime = null;
+            if (course.date && course.endTime) {
+                // course.date format is assumed to be YYYY-MM-DD based on HTML input type="date"
+                const dateParts = course.date.split('-');
+                const timeParts = course.endTime.split(':');
+                if (dateParts.length === 3 && timeParts.length === 2) {
+                    courseEndDateTime = new Date(
+                        parseInt(dateParts[0]),
+                        parseInt(dateParts[1]) - 1, // Hónapok 0-tól indulnak
+                        parseInt(dateParts[2]),
+                        parseInt(timeParts[0]),
+                        parseInt(timeParts[1])
+                    );
+                }
+            }
+
+            if (courseEndDateTime && now > courseEndDateTime) {
+                archived.push(course);
+            } else {
+                active.push(course);
+            }
+        });
+
+        // Archív lista rendezése: Dátum és befejezési idő csökkenő sorrendben
+        archived.sort((a, b) => {
+            if (a.date > b.date) return -1;
+            if (a.date < b.date) return 1;
+            if (a.endTime > b.endTime) return -1;
+            if (a.endTime < b.endTime) return 1;
+            return 0;
+        });
+
+        return { active, archived };
+    };
 
     const handleCreateCourse = async (e) => {
         e.preventDefault();
@@ -1219,6 +1268,24 @@ const AppointmentsTab = ({ isTestView }) => {
     if (isLoading) {
         return html`<div className="text-center p-8 text-gray-500">Foglalkozások betöltése...</div>`;
     }
+
+    const { active, archived } = getCategorizedCourses();
+    const currentList = activeTab === 'active' ? active : archived;
+    const currentPage = activeTab === 'active' ? currentPageActive : currentPageArchived;
+    const totalPages = Math.ceil(currentList.length / itemsPerPage);
+
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const visibleCourses = currentList.slice(startIndex, startIndex + itemsPerPage);
+
+    const handlePageChange = (newPage) => {
+        if (newPage >= 1 && newPage <= totalPages) {
+            if (activeTab === 'active') {
+                setCurrentPageActive(newPage);
+            } else {
+                setCurrentPageArchived(newPage);
+            }
+        }
+    };
 
     return html`
         <div className="space-y-8">
@@ -1520,8 +1587,19 @@ const AppointmentsTab = ({ isTestView }) => {
             </div>
 
             <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
-                    <h3 className="text-lg font-bold text-gray-800">Aktív foglalkozások (${courses.length})</h3>
+                <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex items-center gap-4">
+                    <button 
+                        onClick=${() => { setActiveTab('active'); setCurrentPageActive(1); }}
+                        className=${`text-lg font-bold pb-1 transition-colors ${activeTab === 'active' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Aktív foglalkozások (${active.length})
+                    </button>
+                    <button 
+                        onClick=${() => { setActiveTab('archived'); setCurrentPageArchived(1); }}
+                        className=${`text-lg font-bold pb-1 transition-colors ${activeTab === 'archived' ? 'text-indigo-600 border-b-2 border-indigo-600' : 'text-gray-500 hover:text-gray-700'}`}
+                    >
+                        Archív foglalkozások (${archived.length})
+                    </button>
                 </div>
                 
                 <div className="overflow-x-auto">
@@ -1535,13 +1613,13 @@ const AppointmentsTab = ({ isTestView }) => {
                             </tr>
                         </thead>
                         <tbody className="bg-white divide-y divide-gray-200">
-                            ${courses.length === 0 ? html`
+                            ${visibleCourses.length === 0 ? html`
                                 <tr>
                                     <td colSpan="4" className="px-6 py-10 text-center text-gray-500">
-                                        Nincsenek meghirdetett foglalkozások.
+                                        Nincsenek megjeleníthető foglalkozások.
                                     </td>
                                 </tr>
-                            ` : courses.map(course => {
+                            ` : visibleCourses.map(course => {
                                 const isFull = course.bookingsCount >= course.capacity;
                                 return html`
                                     <tr key=${course.id} className="hover:bg-gray-50">
@@ -1659,6 +1737,33 @@ const AppointmentsTab = ({ isTestView }) => {
                         </tbody>
                     </table>
                 </div>
+
+                ${totalPages > 1 && html`
+                    <div className="bg-gray-50 px-6 py-3 border-t border-gray-200 flex items-center justify-between">
+                        <div className="text-sm text-gray-700">
+                            Összesen: <span className="font-medium">${currentList.length}</span> foglalkozás
+                        </div>
+                        <div className="flex gap-2">
+                            <button 
+                                onClick=${() => handlePageChange(currentPage - 1)}
+                                disabled=${currentPage === 1}
+                                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Előző
+                            </button>
+                            <span className="px-3 py-1 text-sm text-gray-700 font-medium">
+                                ${currentPage} / ${totalPages}
+                            </span>
+                            <button 
+                                onClick=${() => handlePageChange(currentPage + 1)}
+                                disabled=${currentPage === totalPages}
+                                className="px-3 py-1 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Következő
+                            </button>
+                        </div>
+                    </div>
+                `}
             </div>
 
             ${selectedCourseForBookings && html`
