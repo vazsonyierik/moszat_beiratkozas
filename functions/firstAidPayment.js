@@ -1,9 +1,9 @@
 const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getFirestore } = require("firebase-admin/firestore");
 const { sendDynamicEmail, isAdmin } = require("./utils");
-const db = getFirestore();
 
 exports.sendFirstAidPaymentEmail = onCall({ region: "europe-west1" }, async (request) => {
+    const db = getFirestore();
     const userEmail = request.auth?.token?.email;
     if (!userEmail || !(await isAdmin(userEmail))) {
         throw new HttpsError("permission-denied", "Csak adminok hívhatják ezt a funkciót.");
