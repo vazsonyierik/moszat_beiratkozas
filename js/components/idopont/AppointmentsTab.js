@@ -805,7 +805,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 </div>
                             `}
 
-                            ${(!isWaitlistLoading && waitlist.length > 0) ? html`
+                            ${(!isWaitlistLoading && waitlist.length > 0 && course.name !== "Elsősegély tanfolyam") ? html`
                                 <div className="mt-8">
                                     <h4 className="text-lg font-bold text-gray-800 mb-4 border-b pb-2 flex items-center gap-2">
                                         <${Icons.UsersIcon} size=${20} className="text-yellow-600" />
@@ -1700,7 +1700,7 @@ const AppointmentsTab = ({ isTestView }) => {
                                                     <span className=${`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${isFull ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
                                                         ${course.bookingsCount || 0} / ${course.capacity}
                                                     </span>
-                                                    ${(course.waitlistCount > 0) && html`
+                                                    ${(course.waitlistCount > 0 && course.name !== "Elsősegély tanfolyam") && html`
                                                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800" title="Várólistán lévők száma">
                                                             V: ${course.waitlistCount}
                                                         </span>

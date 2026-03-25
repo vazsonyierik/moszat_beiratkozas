@@ -574,6 +574,125 @@ exports.bookingConfirmation = (bookingData) => {
     };
 };
 
+exports.firstAidConfirmation = (bookingData) => {
+    return {
+        id: 'firstAidConfirmation',
+        subject: "Sikeres jelentkezés elsősegély tanfolyamra - Mosolyzóna",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sikeresen regisztráltunk az alábbi elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p><strong>FONTOS: A részvétel feltétele a tanfolyam díjának előzetes rendezése!</strong></p>
+                <p>Kérjük, hogy a tanfolyam díját legkésőbb a tanfolyam előtti napig rendezd banki átutalással vagy személyesen az irodánkban. Helyszíni készpénzes fizetésre a tanfolyam napján nincs lehetőség!</p>
+
+                <p style="margin-top: 1.2em; margin-bottom: 1.2em;"><strong>Fizetési lehetőségek:</strong></p>
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                    <li><strong>Banki átutalás:</strong>
+                        <ul style="list-style-type: circle; padding-left: 20px;">
+                            <li><strong>Kedvezményezett:</strong> Jogsiszoft Kft.</li>
+                            <li><strong>Számlaszám:</strong> 12010855-01164374-00100009 (Raiffeisen Bank)</li>
+                            <li><strong>Közlemény:</strong> Kérjük, tüntesd fel a nevedet és azt, hogy "Elsősegély"!</li>
+                        </ul>
+                    </li>
+                    <li style="margin-top: 1em;"><strong>Személyesen az irodában:</strong> 1088 Budapest, Krúdy u. 16-18. fszt. 3. (Nyitvatartási időben)</li>
+                </ul>
+
+                <p>Amennyiben mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidReminderDay5 = (bookingData) => {
+    return {
+        id: 'firstAidReminderDay5',
+        subject: "Közeleg az elsősegély tanfolyamod!",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>5 nap múlva (${bookingData.courseDate}) várunk az elsősegély tanfolyamra!</p>
+                <p>Rendszerünk szerint a tanfolyam díja még nem érkezett be hozzánk. Kérjük, ne felejtsd el rendezni a díjat banki átutalással vagy személyesen az irodánkban legkésőbb a tanfolyam előtti napig.</p>
+                <p>Kérjük, vedd figyelembe, hogy a helyszínen az oktatónál nincs lehetőség fizetésre, a díj beérkezése a részvétel feltétele!</p>
+                <p>Ha közbejött valami, kérjük mondd le a jelentkezésed:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidReminderDay3 = (bookingData) => {
+    return {
+        id: 'firstAidReminderDay3',
+        subject: "Sürgős: Elsősegély tanfolyam fizetési emlékeztető",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>3 nap múlva lesz az elsősegély tanfolyam, amelyre jelentkeztél (${bookingData.courseDate}).</p>
+                <p><strong>Fontos figyelmeztetés!</strong> A díj befizetésének hiányában a képzésen nem vehetsz részt. Kérjük, sürgősen pótold a befizetést! Ha átutaltad, kérjük, hozd magaddal a bizonylatot a tanfolyamra.</p>
+                <p>Amennyiben már nem aktuális, mindenképpen mondd le a jelentkezést:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidReminderDay1 = (bookingData) => {
+    return {
+        id: 'firstAidReminderDay1',
+        subject: "Figyelem! Holnapi elsősegély tanfolyam - Hiányzó befizetés",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Figyelem! Mivel a holnapi elsősegély tanfolyam díja a mai napig nem került rögzítésre a rendszerünkben, <strong>a holnapi tanfolyamon sajnos nem áll módunkban fogadni téged.</strong></p>
+                <p>Ha a díjat már átutaltad, és csak adminisztrációs hiba történt, kérlek <strong>azonnal vedd fel velünk a kapcsolatot</strong> válasz e-mailben, és hozd magaddal a fizetést igazoló bizonylatot a tanfolyamra!</p>
+                <p>Megértésedet köszönjük!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidPaymentReceived = (bookingData) => {
+    return {
+        id: 'firstAidPaymentReceived',
+        subject: "Sikeres fizetés: Elsősegély tanfolyam",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Örömmel értesítünk, hogy az elsősegély tanfolyam díja sikeresen megérkezett hozzánk, így a helyed <strong>véglegesítve lett.</strong></p>
+                <ul>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Már nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
+                <p>Várunk szeretettel!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
 exports.bookingCancelledByAdmin = (bookingData) => {
     return {
         id: 'bookingCancelledByAdmin',
