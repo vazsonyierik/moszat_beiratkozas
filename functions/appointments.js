@@ -940,7 +940,6 @@ exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
             throw new HttpsError("already-exists", "Ezzel az e-mail címmel már feliratkoztál a várólistára!");
         }
 
-        const courseData = courseDoc.data();
         const cancellationToken = crypto.randomUUID();
         const allBookingsCollection = isTestView ? "allBookings_test" : "allBookings";
         const globalBookingRef = db.collection(allBookingsCollection).doc(`waitlist_${courseId}_${normalizedEmail}`);
