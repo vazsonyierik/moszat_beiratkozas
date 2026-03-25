@@ -11,7 +11,7 @@ import { html } from '../../UI.js';
 import { formatFullName, formatSingleTimestamp } from '../../utils.js';
 import { XCircleIcon, XIcon } from '../../Icons.js';
 import { documentTypeOptions, educationOptions, prefixOptions, budapestDistricts } from '../../constants.js';
-import { deleteField } from '../../firebase.js';
+import { deleteField, functions, httpsCallable, isTestMode } from '../../firebase.js';
 import UnmemoizedEditableField from '../EditableField.js';
 import UnmemoizedDateInput from '../DateInput.js';
 import { useToast, useConfirmation } from '../../context/AppContext.js';
@@ -92,7 +92,24 @@ const EditDetailsModal = ({ student, onClose, onUpdate, adminUser }) => {
             await onUpdate(formData.id, changes);
             const studentName = formatFullName(formData.current_prefix, formData.current_firstName, formData.current_lastName, formData.current_secondName);
             await logAdminAction(adminUser.email, `Adatok szerkesztése (${changedFields.join(', ')})`, studentName, formData.id);
-            showToast('Változások sikeresen mentve!', 'success');
+
+            // If firstAidPaid changed to true, trigger the confirmation email
+            if (changes.firstAidPaid === true) {
+                 try {
+                     const sendPaymentFn = httpsCallable(functions, 'sendFirstAidPaymentEmail');
+                     await sendPaymentFn({
+                         studentId: formData.id,
+                         isTestView: isTestMode()
+                     });
+                     showToast('Változások mentve! Elsősegély fizetési e-mail elküldve.', 'success');
+                 } catch (emailError) {
+                     console.error("Failed to send first aid payment email:", emailError);
+                     showToast('Változások mentve, de az e-mail küldése sikertelen.', 'warning');
+                 }
+            } else {
+                 showToast('Változások sikeresen mentve!', 'success');
+            }
+
             setIsSaving(false);
             onClose();
         } catch (error) {
@@ -257,6 +274,7 @@ const EditDetailsModal = ({ student, onClose, onUpdate, adminUser }) => {
                                 <//>
                                 <${Section} title="Adminisztráció">
                                     <${EditableField} label="Ügy iktatva" name="isCaseFiled" value=${formData.isCaseFiled} onChange=${handleChange} type="checkbox" />
+                                    <${EditableField} label="Elsősegély fizetve" name="firstAidPaid" value=${formData.firstAidPaid} onChange=${handleChange} type="checkbox" />
                                     <div className="text-sm text-gray-600 space-y-3 mt-4 pt-4 border-t">
                                         <h5 className="font-semibold text-gray-700 mb-2">Időbélyegek</h5>
                                         ${['createdAt', 'enrolledAt', 'studentIdAssignedAt', 'courseCompletedAt'].map(field => html`

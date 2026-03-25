@@ -494,7 +494,11 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
         });
 
         if (bookingDataToEmail && !silent) {
-            await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
+            if (bookingDataToEmail.courseName === "Elsősegély tanfolyam") {
+                await sendDynamicEmail("firstAidConfirmation", bookingDataToEmail, templates.firstAidConfirmation(bookingDataToEmail), isTestView);
+            } else {
+                await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
+            }
         }
 
         return {success: true, message: silent ? "A tanuló sikeresen hozzáadva extraként (értesítés nélkül)." : "Jelentkezés sikeresen rögzítve."};
@@ -613,7 +617,11 @@ exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (reques
 
     // E-mailek elküldése (a kérés szerint a csoportos küld e-mailt)
     const emailPromises = emailsToSend.map(bookingData => {
-        return sendDynamicEmail("bookingConfirmation", bookingData, templates.bookingConfirmation(bookingData), isTestView);
+        if (bookingData.courseName === "Elsősegély tanfolyam") {
+            return sendDynamicEmail("firstAidConfirmation", bookingData, templates.firstAidConfirmation(bookingData), isTestView);
+        } else {
+            return sendDynamicEmail("bookingConfirmation", bookingData, templates.bookingConfirmation(bookingData), isTestView);
+        }
     });
     await Promise.allSettled(emailPromises);
 
@@ -912,6 +920,11 @@ exports.joinWaitlist = onCall({region: "europe-west1"}, async (request) => {
 
         if (!courseDoc.exists) {
             throw new HttpsError("not-found", "A foglalkozás nem található.");
+        }
+
+        const courseData = courseDoc.data();
+        if (courseData.name === "Elsősegély tanfolyam") {
+            throw new HttpsError("invalid-argument", "Elsősegély tanfolyam esetén nincs lehetőség várólistára jelentkezni.");
         }
 
         // Ellenőrizzük, hogy nincs-e már a rendes jelentkezők között
