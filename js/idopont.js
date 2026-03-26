@@ -81,15 +81,15 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
 
     if (results) {
         return html`
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-                <div className="bg-white rounded-xl shadow-2xl w-full max-w-md transform transition-all my-8" onClick=${e => e.stopPropagation()}>
-                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto">
+                <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-md transform transition-all sm:my-8 max-h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
+                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
                             <${Icons.XIcon} size=${24} />
                         </button>
                     </header>
-                    <main className="p-4 sm:p-6">
+                    <main className="p-4 sm:p-6 overflow-y-auto custom-scrollbar">
                         ${results.success.length > 0 ? html`
                             <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
                                 <h4 className="font-bold text-green-800 mb-2 flex items-center gap-2">
@@ -130,16 +130,16 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
     }
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg transform transition-all my-8" onClick=${e => e.stopPropagation()}>
-                <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto">
+            <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-lg transform transition-all sm:my-8 mt-16 max-h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
+                <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
                     <h3 className="text-xl font-bold text-gray-800">Jelentkezés véglegesítése</h3>
                     <button onClick=${() => onClose()} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
                         <${Icons.XIcon} size=${24} />
                     </button>
                 </header>
                 
-                <div className="p-4 sm:p-6 bg-indigo-50 border-b border-indigo-100 max-h-48 overflow-y-auto">
+                <div className="p-4 sm:p-6 bg-indigo-50 border-b border-indigo-100 max-h-48 overflow-y-auto shrink-0 custom-scrollbar">
                     <p className="font-semibold text-indigo-900 mb-2">Kiválasztott időpontok (${cart.length}):</p>
                     <ul className="space-y-2">
                         ${cart.map((item, index) => html`
@@ -153,7 +153,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
                     </ul>
                 </div>
 
-                <main className="p-4 sm:p-6">
+                <main className="p-4 sm:p-6 overflow-y-auto custom-scrollbar">
                     ${error ? html`<div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">${error}</div>` : ''}
                     
                     <form onSubmit=${handleSubmit} className="space-y-4">
@@ -245,11 +245,17 @@ function getWeekKey(dateStr) {
     return `${year}-${month}-${date}`;
 }
 
-// Format week key to display name (e.g. "Március 11. hete")
+// Format week key to display name (e.g. "Március 23. (Hétfő) - Március 29. (Vasárnap)")
 function formatWeekName(weekKey) {
-    const d = new Date(weekKey);
+    const monday = new Date(weekKey);
+    const sunday = new Date(monday);
+    sunday.setDate(monday.getDate() + 6);
+
     const months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
-    return `${months[d.getMonth()]} ${d.getDate()}. hete`;
+
+    const startStr = `${months[monday.getMonth()]} ${monday.getDate()}. (Hétfő)`;
+    const endStr = `${months[sunday.getMonth()]} ${sunday.getDate()}. (Vasárnap)`;
+    return `${startStr} – ${endStr}`;
 }
 
 // Format day name
@@ -268,6 +274,8 @@ const StudentAppointmentsApp = () => {
     // Carts & UI state
     const [cart, setCart] = useState([]); // Array of { course, isWaitlist }
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
+    const [cartBump, setCartBump] = useState(false);
     const [quickBookItem, setQuickBookItem] = useState(null); // For instant booking Orvosi/Elsosegely
     const [toast, setToast] = useState(null);
     
@@ -380,12 +388,22 @@ const StudentAppointmentsApp = () => {
     const addToCart = (course, isWaitlist = false) => {
         if (!cart.find(item => item.course.id === course.id)) {
             setCart([...cart, { course, isWaitlist }]);
-            showToast('Hozzáadva a kiválasztottakhoz', 'success');
+
+            // Trigger animation
+            setCartBump(true);
+            setTimeout(() => setCartBump(false), 300);
+
+            // Only show toast on desktop (width >= 1024px, the lg breakpoint in Tailwind)
+            if (window.innerWidth >= 1024) {
+                showToast('Hozzáadva a kiválasztottakhoz', 'success');
+            }
         }
     };
 
     const removeFromCart = (courseId) => {
-        setCart(cart.filter(item => item.course.id !== courseId));
+        const newCart = cart.filter(item => item.course.id !== courseId);
+        setCart(newCart);
+        if (newCart.length === 0) setIsMobileCartOpen(false);
     };
 
     const handleCheckoutClose = (results) => {
@@ -450,7 +468,10 @@ const StudentAppointmentsApp = () => {
     const renderCourseCard = (course, isQuickBook = false) => {
         const isFull = course.bookingsCount >= course.capacity;
         const availableSeats = course.capacity - (course.bookingsCount || 0);
-        const isInCart = cart.some(item => item.course.id === course.id);
+                const cartItem = cart.find(item => item.course.id === course.id);
+        const isInCart = !!cartItem;
+        const isWaitlistInCart = cartItem && cartItem.isWaitlist;
+
         const isFirstAid = course.name === "Elsősegély tanfolyam";
 
         let buttonArea = null;
@@ -493,16 +514,18 @@ const StudentAppointmentsApp = () => {
         }
 
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-red-200 bg-red-50/30' : isInCart ? 'border-indigo-400 ring-1 ring-indigo-400' : 'border-gray-200'}`}>
+            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-red-200 bg-red-50/30' : isInCart ? (isWaitlistInCart ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-indigo-400 ring-1 ring-indigo-400 bg-indigo-50/10') : 'border-gray-200'}`}>
                 <div className="flex flex-col h-full justify-between gap-4">
                     <div>
                         <div className="flex justify-between items-start mb-2 gap-2">
                             <h4 className="font-bold text-gray-900 text-lg leading-tight">${course.startTime} - ${course.endTime}</h4>
                             ${isFull ? html`
                                 <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800 shrink-0">Betelt</span>
-                            ` : isInCart ? html`
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 shrink-0">Kiválasztva</span>
+                            ` : isInCart ? (isWaitlistInCart ? html`
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-yellow-100 text-yellow-800 shrink-0">Várólistán</span>
                             ` : html`
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 shrink-0">Kiválasztva</span>
+                            `) : html`
                                 <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800 shrink-0">${availableSeats} hely</span>
                             `}
                         </div>
@@ -548,19 +571,19 @@ const StudentAppointmentsApp = () => {
             <div className="flex justify-center mb-8">
                 <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
                     <button
-                        onClick=${() => setActiveTab('kresz')}
+                        onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMobileCartOpen(false); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🚗</span> KRESZ & Konzultáció
                     </button>
                     <button
-                        onClick=${() => setActiveTab('medical')}
+                        onClick=${() => { setActiveTab('medical'); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMobileCartOpen(false); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'medical' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🩺</span> Orvosi vizsgálat
                     </button>
                     <button
-                        onClick=${() => setActiveTab('firstaid')}
+                        onClick=${() => { setActiveTab('firstaid'); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMobileCartOpen(false); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'firstaid' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🚑</span> Elsősegély
@@ -670,27 +693,86 @@ const StudentAppointmentsApp = () => {
 
             <!-- Sticky Bottom Cart for Mobile (Only for KRESZ) -->
             ${activeTab === 'kresz' && cart.length > 0 && html`
-                <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] p-4 z-40 transform transition-transform duration-300 ease-in-out">
-                    <div className="max-w-7xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-indigo-100 text-indigo-800 px-3.5 py-1.5 rounded-full font-black text-lg border border-indigo-200 shadow-inner">
-                                ${cart.length}
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="font-bold text-gray-800 leading-tight">modul</span>
-                                <span className="text-xs text-gray-500 font-medium">kiválasztva</span>
-                            </div>
-                        </div>
-                        <button 
-                            onClick=${() => setIsCheckoutOpen(true)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg transition-colors flex items-center gap-2"
+                <${Fragment}>
+                    ${isMobileCartOpen ? html`
+                        <div className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity" onClick=${() => setIsMobileCartOpen(false)}></div>
+                    ` : ''}
+
+                    <div className=${`lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 transform transition-all duration-300 ease-in-out rounded-t-3xl ${isMobileCartOpen ? 'translate-y-0' : 'translate-y-0'}`}>
+
+                        <!-- Toggle Bar -->
+                        <div
+                            className="w-full flex justify-center pt-3 pb-1 cursor-pointer"
+                            onClick=${() => setIsMobileCartOpen(!isMobileCartOpen)}
                         >
-                            Jelentkezés <span className="text-xl">→</span>
-                        </button>
+                            <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                        </div>
+
+                        <div className="p-4 pt-2">
+                            <div className="flex items-center justify-between mb-2">
+                                <div
+                                    className="flex items-center gap-3 cursor-pointer"
+                                    onClick=${() => setIsMobileCartOpen(!isMobileCartOpen)}
+                                >
+                                    <div className=${`bg-indigo-100 text-indigo-800 px-3.5 py-1.5 rounded-full font-black text-lg border border-indigo-200 shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125' : 'scale-100'}`}>
+                                        ${cart.length}
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="font-bold text-gray-800 leading-tight">kiválasztott modul</span>
+                                        <span className="text-xs text-indigo-600 font-medium flex items-center gap-1">
+                                            Részletek ${isMobileCartOpen ? 'elrejtése ↓' : 'mutatása ↑'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                ${!isMobileCartOpen ? html`
+                                    <button
+                                        onClick=${() => setIsCheckoutOpen(true)}
+                                        className="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
+                                    >
+                                        Tovább <span className="text-xl">→</span>
+                                    </button>
+                                ` : ''}
+                            </div>
+
+                            <!-- Expanded Content -->
+                            ${isMobileCartOpen ? html`
+                                <div className="mt-4 pt-4 border-t border-gray-100">
+                                    <div className="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-1 custom-scrollbar mb-4">
+                                        ${cart.map(item => html`
+                                            <div key=${item.course.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-indigo-800 text-sm">
+                                                        ${item.course.name}
+                                                        ${item.isWaitlist ? html`<span className="ml-2 text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded border border-yellow-200">(Várólista)</span>` : ''}
+                                                    </div>
+                                                    <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
+                                                        <${Icons.CalendarIcon} size=${12} className="text-gray-400" />
+                                                        ${item.course.date.replace(/-/g, '. ')}. <span className="font-bold text-gray-800">${item.course.startTime}</span>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick=${() => removeFromCart(item.course.id)}
+                                                    className="ml-3 text-red-500 bg-white rounded-full shadow-sm border border-red-100 p-2 active:bg-red-50"
+                                                >
+                                                    <${Icons.XIcon} size=${16} />
+                                                </button>
+                                            </div>
+                                        `)}
+                                    </div>
+                                    <button
+                                        onClick=${() => { setIsMobileCartOpen(false); setIsCheckoutOpen(true); }}
+                                        className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 active:scale-95 transition-transform"
+                                    >
+                                        Jelentkezés véglegesítése
+                                    </button>
+                                </div>
+                            ` : ''}
+                        </div>
                     </div>
-                </div>
+                </${Fragment}>
                 <!-- Spacer for the fixed footer on mobile -->
-                <div className="lg:hidden h-28"></div>
+                <div className=${`lg:hidden ${isMobileCartOpen ? 'h-[50vh]' : 'h-28'}`}></div>
             `}
 
             <!-- Checkout Modal -->
