@@ -9,7 +9,7 @@ import * as Icons from './Icons.js';
 
 const React = window.React;
 const ReactDOM = window.ReactDOM;
-const { useState, useEffect } = React;
+const { useState, useEffect, useMemo, Fragment } = React;
 
 // Simple Toast component since we don't have AppContext wrapper here by default
 const Toast = ({ message, type, onClose }) => {
@@ -39,7 +39,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
     const [emailConfirm, setEmailConfirm] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
-    const [results, setResults] = useState(null); // { success: [], errors: [] }
+    const [results, setResults] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -58,7 +58,6 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
         setIsSubmitting(true);
         const currentResults = { success: [], errors: [] };
 
-        // Process each item in the cart
         for (const item of cart) {
             try {
                 await onBook({
@@ -91,7 +90,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
                         </button>
                     </header>
                     <main className="p-4 sm:p-6">
-                        ${results.success.length > 0 && html`
+                        ${results.success.length > 0 ? html`
                             <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
                                 <h4 className="font-bold text-green-800 mb-2 flex items-center gap-2">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
@@ -102,9 +101,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
                                 </ul>
                                 <p className="mt-2 text-sm text-green-800">A visszaigazolásokat elküldtük e-mailben.</p>
                             </div>
-                        `}
+                        ` : ''}
                         
-                        ${results.errors.length > 0 && html`
+                        ${results.errors.length > 0 ? html`
                             <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
                                 <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2">
                                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -114,7 +113,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
                                     ${results.errors.map(e => html`<li key=${e.item.course.id}>${e.item.course.name} - ${e.error}</li>`)}
                                 </ul>
                             </div>
-                        `}
+                        ` : ''}
                         
                         <div className="pt-4 flex justify-end">
                             <button 
@@ -155,7 +154,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
                 </div>
 
                 <main className="p-4 sm:p-6">
-                    ${error && html`<div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">${error}</div>`}
+                    ${error ? html`<div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">${error}</div>` : ''}
                     
                     <form onSubmit=${handleSubmit} className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -227,14 +226,54 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
     `;
 };
 
+// ... More code to be appended ...
+
+// --- Helper Functions ---
+
+// Get the Monday of the week for a given date string (YYYY-MM-DD)
+function getWeekKey(dateStr) {
+    const d = new Date(dateStr);
+    const day = d.getDay();
+    // In JS, 0 is Sunday, 1 is Monday...
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(d.setDate(diff));
+
+    // Format to YYYY-MM-DD
+    const year = monday.getFullYear();
+    const month = String(monday.getMonth() + 1).padStart(2, '0');
+    const date = String(monday.getDate()).padStart(2, '0');
+    return `${year}-${month}-${date}`;
+}
+
+// Format week key to display name (e.g. "Március 11. hete")
+function formatWeekName(weekKey) {
+    const d = new Date(weekKey);
+    const months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
+    return `${months[d.getMonth()]} ${d.getDate()}. hete`;
+}
+
+// Format day name
+function getDayName(dateStr) {
+    const d = new Date(dateStr);
+    const days = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
+    return `${days[d.getDay()]} (${dateStr.replace(/-/g, '. ')})`;
+}
+
+
 const StudentAppointmentsApp = () => {
     const [courses, setCourses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthReady, setIsAuthReady] = useState(false);
+
+    // Carts & UI state
     const [cart, setCart] = useState([]); // Array of { course, isWaitlist }
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+    const [quickBookItem, setQuickBookItem] = useState(null); // For instant booking Orvosi/Elsosegely
     const [toast, setToast] = useState(null);
     
+    // Category Tabs: 'kresz', 'medical', 'firstaid'
+    const [activeTab, setActiveTab] = useState('kresz');
+
     const urlParams = new URLSearchParams(window.location.search);
     const isTestView = urlParams.get('test') === 'true';
 
@@ -242,26 +281,19 @@ const StudentAppointmentsApp = () => {
         setToast({ message, type });
     };
 
-    // 1. Setup Auth (Wait for initial state, sign in anonymously if no user)
+    // 1. Setup Auth
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             try {
                 if (!user) {
-                    // Only sign in anonymously if there is truly no user after Firebase checks cache
                     await signInAnonymously(auth);
-                } else {
-                    // User is already logged in (could be an admin testing the page)
-                    setIsAuthReady(true);
                 }
             } catch (error) {
                 console.error("Auth error:", error);
                 showToast("Hiba a hitelesítés során.", "error");
             }
-            // Once auth state is determined (either way), we are ready
             setIsAuthReady(true);
         });
-
-        // Cleanup listener on unmount
         return () => unsubscribe();
     }, []);
 
@@ -270,8 +302,6 @@ const StudentAppointmentsApp = () => {
         if (!isAuthReady) return;
 
         const collectionName = isTestView ? 'courses_test' : 'courses';
-        
-        // Only get courses from today onwards
         const todayStr = new Date().toISOString().split('T')[0];
         
         const q = query(
@@ -304,13 +334,11 @@ const StudentAppointmentsApp = () => {
                     }
                 }
 
-                // Csak azokat tartjuk meg, amik még nem kezdődtek el
                 if (!isPastStartTime) {
                     coursesData.push({ id: doc.id, ...data });
                 }
             });
             
-            // Sort locally
             coursesData.sort((a, b) => {
                 if (a.date < b.date) return -1;
                 if (a.date > b.date) return 1;
@@ -348,6 +376,7 @@ const StudentAppointmentsApp = () => {
         }
     };
     
+    // Cart management
     const addToCart = (course, isWaitlist = false) => {
         if (!cart.find(item => item.course.id === course.id)) {
             setCart([...cart, { course, isWaitlist }]);
@@ -361,19 +390,146 @@ const StudentAppointmentsApp = () => {
 
     const handleCheckoutClose = (results) => {
         setIsCheckoutOpen(false);
+        setQuickBookItem(null); // Clear quick book if it was open
         if (results && results.success) {
-            // Remove successful items from cart
             const successfulIds = results.success.map(s => s.course.id);
             setCart(prevCart => prevCart.filter(item => !successfulIds.includes(item.course.id)));
         }
+    };
+
+    // Quick Book for Orvosi/FirstAid
+    const openQuickBook = (course, isWaitlist = false) => {
+        setQuickBookItem([{ course, isWaitlist }]);
+        setIsCheckoutOpen(true);
+    };
+
+    // 3. Prepare data for the 3 tabs
+    const { kreszWeeks, medicalCourses, firstAidCourses } = useMemo(() => {
+        const medical = [];
+        const firstAid = [];
+        const kresz = [];
+
+        courses.forEach(c => {
+            if (c.name === "Orvosi alkalmassági vizsgálat") {
+                medical.push(c);
+            } else if (c.name === "Elsősegély tanfolyam") {
+                firstAid.push(c);
+            } else {
+                kresz.push(c);
+            }
+        });
+
+        // Group KRESZ by week
+        const weeksMap = {};
+        kresz.forEach(c => {
+            const wKey = getWeekKey(c.date);
+            if (!weeksMap[wKey]) {
+                weeksMap[wKey] = {
+                    weekKey: wKey,
+                    name: formatWeekName(wKey),
+                    days: {}
+                };
+            }
+            if (!weeksMap[wKey].days[c.date]) {
+                weeksMap[wKey].days[c.date] = [];
+            }
+            weeksMap[wKey].days[c.date].push(c);
+        });
+
+        // Sort weeks and days
+        const sortedWeeks = Object.values(weeksMap).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+
+        return {
+            kreszWeeks: sortedWeeks,
+            medicalCourses: medical,
+            firstAidCourses: firstAid
+        };
+    }, [courses]);
+
+    // Render Helpers
+    const renderCourseCard = (course, isQuickBook = false) => {
+        const isFull = course.bookingsCount >= course.capacity;
+        const availableSeats = course.capacity - (course.bookingsCount || 0);
+        const isInCart = cart.some(item => item.course.id === course.id);
+        const isFirstAid = course.name === "Elsősegély tanfolyam";
+
+        let buttonArea = null;
+
+        if (isInCart) {
+            buttonArea = html`
+                <button
+                    onClick=${() => removeFromCart(course.id)}
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    Mégse kérem
+                </button>
+            `;
+        } else if (isFull) {
+            if (isFirstAid) {
+                buttonArea = html`
+                    <span className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-red-800 bg-red-100 cursor-not-allowed">
+                        Betelt (Nincs várólista)
+                    </span>
+                `;
+            } else {
+                buttonArea = html`
+                    <button
+                        onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
+                        className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                    >
+                        Hozzáadás várólistához
+                    </button>
+                `;
+            }
+        } else {
+            buttonArea = html`
+                <button
+                    onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                >
+                    ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
+                </button>
+            `;
+        }
+
+        return html`
+            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-red-200 bg-red-50/30' : isInCart ? 'border-indigo-400 ring-1 ring-indigo-400' : 'border-gray-200'}`}>
+                <div className="flex flex-col h-full justify-between gap-4">
+                    <div>
+                        <div className="flex justify-between items-start mb-2 gap-2">
+                            <h4 className="font-bold text-gray-900 text-lg leading-tight">${course.startTime} - ${course.endTime}</h4>
+                            ${isFull ? html`
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800 shrink-0">Betelt</span>
+                            ` : isInCart ? html`
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 shrink-0">Kiválasztva</span>
+                            ` : html`
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800 shrink-0">${availableSeats} hely</span>
+                            `}
+                        </div>
+                        <p className="text-gray-700 font-medium">${course.name}</p>
+                        ${isQuickBook && html`
+                            <div className="text-sm text-gray-500 mt-2 flex items-center gap-1">
+                                <${Icons.CalendarIcon} size=${14} />
+                                ${course.date.replace(/-/g, '. ')}
+                            </div>
+                        `}
+                    </div>
+                    <div className="mt-auto pt-2">
+                        ${buttonArea}
+                    </div>
+                </div>
+            </div>
+        `;
     };
 
     if (!isAuthReady || isLoading) {
         return html`<${LoadingOverlay} text="Időpontok betöltése..." />`;
     }
 
+    const activeCoursesList = activeTab === 'medical' ? medicalCourses : activeTab === 'firstaid' ? firstAidCourses : [];
+
     return html`
-        <div className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
             ${isTestView && html`
                 <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
                     <${Icons.AlertTriangleIcon} size=${20} />
@@ -382,165 +538,169 @@ const StudentAppointmentsApp = () => {
             `}
 
             <header className="mb-8 text-center">
-                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Foglalkozások és Időpontok</h1>
-                <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
-                    Válasszon a szabad időpontok közül és jelentkezzen be!
+                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Időpontfoglalás</h1>
+                <p className="mt-3 max-w-2xl mx-auto text-lg text-gray-500">
+                    Válasszon kategóriát, majd jelentkezzen be a szabad időpontokra!
                 </p>
             </header>
+
+            <!-- Navigation Tabs -->
+            <div className="flex justify-center mb-8">
+                <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
+                    <button
+                        onClick=${() => setActiveTab('kresz')}
+                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                    >
+                        <span>🚗</span> KRESZ & Konzultáció
+                    </button>
+                    <button
+                        onClick=${() => setActiveTab('medical')}
+                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'medical' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                    >
+                        <span>🩺</span> Orvosi vizsgálat
+                    </button>
+                    <button
+                        onClick=${() => setActiveTab('firstaid')}
+                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'firstaid' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                    >
+                        <span>🚑</span> Elsősegély
+                    </button>
+                </div>
+            </div>
             
             <div className="flex flex-col lg:flex-row gap-8 items-start">
+
+                <!-- Main Content Area -->
                 <div className="flex-1 w-full lg:w-2/3">
 
-            <div className="bg-white shadow overflow-hidden sm:rounded-md border border-gray-200">
-                <ul className="divide-y divide-gray-200">
-                    ${courses.length === 0 ? html`
-                        <li className="px-6 py-12 text-center text-gray-500">Jelenleg nincs aktív meghirdetett foglalkozás. Kérjük, nézzen vissza később!</li>
-                    ` : courses.map(course => {
-                        const isFull = course.bookingsCount >= course.capacity;
-                        const availableSeats = course.capacity - (course.bookingsCount || 0);
-                        const isInCart = cart.some(item => item.course.id === course.id);
-
-                        const isFirstAid = course.name === "Elsősegély tanfolyam";
-
-                        return html`
-                            <li key=${course.id} className=${`hover:bg-gray-50 transition-colors ${isFull ? 'opacity-75' : ''}`}>
-                                <div className="px-4 py-4 sm:px-6 flex items-center justify-between flex-wrap gap-4">
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-3 mb-1">
-                                            <p className="text-lg font-bold text-indigo-600 truncate">${course.name}</p>
-                                            ${isFull ? html`
-                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 border border-red-200">
-                                                    Betelt
-                                                </span>
-                                            ` : html`
-                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 border border-green-200">
-                                                    ${availableSeats} szabad hely
-                                                </span>
-                                            `}
-                                            ${isInCart && html`
-                                                <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800 border border-indigo-200">
-                                                    Kiválasztva
-                                                </span>
-                                            `}
-                                        </div>
-                                        <div className="mt-2 flex items-center text-sm text-gray-500 gap-6">
-                                            <p className="flex items-center gap-1">
-                                                <${Icons.CalendarIcon} size=${16} className="text-gray-400" />
-                                                ${course.date}
-                                            </p>
-                                            <p className="flex items-center gap-1 font-medium">
-                                                ${course.startTime} - ${course.endTime}
-                                            </p>
-                                        </div>
+                    <!-- KRESZ & Konzultáció View (Matrix) -->
+                    ${activeTab === 'kresz' && html`
+                        <div className="space-y-8">
+                            ${kreszWeeks.length === 0 ? html`
+                                <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+                                    <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
+                                </div>
+                            ` : kreszWeeks.map(week => html`
+                                <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                    <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+                                        <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                                            <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                            Oktatási hét: ${week.name}
+                                        </h3>
                                     </div>
-                                    <div className="mt-4 sm:mt-0 ml-4 flex flex-col sm:flex-row gap-2">
-                                        ${isInCart ? html`
-                                            <button 
-                                                onClick=${() => removeFromCart(course.id)}
-                                                className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                            >
-                                                Mégse kérem
-                                            </button>
-                                        ` : (isFull ? (isFirstAid ? html`
-                                            <span className="inline-flex items-center px-4 py-2 border border-transparent rounded-md text-sm font-medium text-red-800 bg-red-100 cursor-not-allowed">
-                                                Betelt (Nincs várólista)
-                                            </span>
-                                        ` : html`
-                                            <button 
-                                                onClick=${() => addToCart(course, true)}
-                                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-                                            >
-                                                Hozzáadás várólistához
-                                            </button>
-                                        `) : html`
-                                            <button 
-                                                onClick=${() => addToCart(course, false)}
-                                                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                                            >
-                                                Kiválasztom
-                                            </button>
+                                    <div className="p-4 sm:p-6 space-y-6">
+                                        ${Object.keys(week.days).sort().map(dateStr => html`
+                                            <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                                    ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                </div>
+                                            </div>
                                         `)}
                                     </div>
                                 </div>
-                            </li>
-                        `;
-                    })}
-                </ul>
-            </div>
-            
-            </div>
+                            `)}
+                        </div>
+                    `}
 
-            <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow sm:rounded-md p-6 border border-gray-100 mb-20">
-                <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Kiválasztott modulok</h3>
-                ${cart.length === 0 ? html`
-                    <div className="text-gray-500 text-sm italic py-4 text-center">
-                        Még nem választottál ki modult.
-                    </div>
-                ` : html`
-                    <div className="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-2">
-                        ${cart.map(item => html`
-                            <div key=${item.course.id} className="flex justify-between items-start pb-3 border-b border-gray-100 last:border-0 last:pb-0">
-                                <div className="flex-1">
-                                    <div className="font-semibold text-indigo-600 text-sm">
-                                        ${item.course.name}
-                                        ${item.isWaitlist ? html`<span className="ml-2 text-xs text-yellow-600 bg-yellow-100 px-1.5 py-0.5 rounded">(Várólista)</span>` : ''}
-                                    </div>
-                                    <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                                        <${Icons.CalendarIcon} size=${12} />
-                                        ${item.course.date.replace(/-/g, '. ')}. ${item.course.startTime} - ${item.course.endTime}
-                                    </div>
+                    <!-- Medical & First Aid View (Simple List) -->
+                    ${(activeTab === 'medical' || activeTab === 'firstaid') && html`
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-4 sm:p-6">
+                            ${activeCoursesList.length === 0 ? html`
+                                <div className="p-12 text-center">
+                                    <p className="text-gray-500 text-lg">Jelenleg nincs meghirdetett időpont ebben a kategóriában.</p>
                                 </div>
-                                <button 
-                                    onClick=${() => removeFromCart(item.course.id)}
-                                    className="ml-2 text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded p-1 transition-colors"
-                                    title="Eltávolítás"
+                            ` : html`
+                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    ${activeCoursesList.map(course => renderCourseCard(course, true))}
+                                </div>
+                            `}
+                        </div>
+                    `}
+
+                </div>
+
+                <!-- Sticky Sidebar Cart (Only for KRESZ) -->
+                ${activeTab === 'kresz' && html`
+                    <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100 mb-20">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            Kiválasztott modulok
+                        </h3>
+                        ${cart.length === 0 ? html`
+                            <div className="text-gray-500 text-sm italic py-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                                Még nem választottál ki modult.<br/>Kattints a "Kiválasztom" gombra a hozzáadáshoz.
+                            </div>
+                        ` : html`
+                            <div className="flex flex-col gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
+                                ${cart.map(item => html`
+                                    <div key=${item.course.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-indigo-200 transition-colors">
+                                        <div className="flex-1">
+                                            <div className="font-semibold text-indigo-700 text-sm">
+                                                ${item.course.name}
+                                                ${item.isWaitlist ? html`<span className="ml-2 text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded border border-yellow-200">(Várólista)</span>` : ''}
+                                            </div>
+                                            <div className="text-xs text-gray-600 mt-1.5 flex items-center gap-1.5">
+                                                <${Icons.CalendarIcon} size=${12} className="text-gray-400" />
+                                                ${item.course.date.replace(/-/g, '. ')}. <span className="font-medium text-gray-800">${item.course.startTime}</span>
+                                            </div>
+                                        </div>
+                                        <button
+                                            onClick=${() => removeFromCart(item.course.id)}
+                                            className="ml-3 text-red-500 hover:text-red-700 bg-white hover:bg-red-50 rounded shadow-sm border border-red-100 p-1.5 transition-colors"
+                                            title="Eltávolítás"
+                                        >
+                                            <${Icons.XIcon} size=${14} />
+                                        </button>
+                                    </div>
+                                `)}
+                            </div>
+                            <div className="mt-6 pt-4 border-t border-gray-200">
+                                <button
+                                    onClick=${() => setIsCheckoutOpen(true)}
+                                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover:shadow-lg"
                                 >
-                                    <${Icons.XIcon} size=${16} />
+                                    Tovább a jelentkezéshez (${cart.length})
                                 </button>
                             </div>
-                        `)}
-                    </div>
-                    <div className="mt-6 pt-4 border-t border-gray-200">
-                        <button
-                            onClick=${() => setIsCheckoutOpen(true)}
-                            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                        >
-                            Tovább a jelentkezéshez (${cart.length})
-                        </button>
+                        `}
                     </div>
                 `}
             </div>
-            
-            </div>
 
-            ${isCheckoutOpen && html`
-                <${CheckoutModal} 
-                    cart=${cart} 
-                    onClose=${handleCheckoutClose} 
-                    onBook=${handleBookAppointment}
-                    isTestView=${isTestView}
-                />
-            `}
-
-            ${cart.length > 0 && html`
-                <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] p-4 z-40 transform transition-transform duration-300 ease-in-out">
+            <!-- Sticky Bottom Cart for Mobile (Only for KRESZ) -->
+            ${activeTab === 'kresz' && cart.length > 0 && html`
+                <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] p-4 z-40 transform transition-transform duration-300 ease-in-out">
                     <div className="max-w-7xl mx-auto flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                            <div className="bg-indigo-100 text-indigo-800 px-3 py-1 rounded-full font-bold">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-indigo-100 text-indigo-800 px-3.5 py-1.5 rounded-full font-black text-lg border border-indigo-200 shadow-inner">
                                 ${cart.length}
                             </div>
-                            <span className="font-medium text-gray-700 hidden sm:inline">időpont kiválasztva</span>
+                            <div className="flex flex-col">
+                                <span className="font-bold text-gray-800 leading-tight">modul</span>
+                                <span className="text-xs text-gray-500 font-medium">kiválasztva</span>
+                            </div>
                         </div>
                         <button 
                             onClick=${() => setIsCheckoutOpen(true)}
-                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-md transition-colors flex items-center gap-2"
+                            className="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 rounded-xl font-bold shadow-lg transition-colors flex items-center gap-2"
                         >
-                            Tovább a jelentkezéshez <span className="text-xl">→</span>
+                            Jelentkezés <span className="text-xl">→</span>
                         </button>
                     </div>
                 </div>
-                <!-- Spacer for the fixed footer -->
-                <div className="h-24"></div>
+                <!-- Spacer for the fixed footer on mobile -->
+                <div className="lg:hidden h-28"></div>
+            `}
+
+            <!-- Checkout Modal -->
+            ${isCheckoutOpen && html`
+                <${CheckoutModal}
+                    cart=${quickBookItem || cart}
+                    onClose=${handleCheckoutClose}
+                    onBook=${handleBookAppointment}
+                    isTestView=${isTestView}
+                />
             `}
 
             ${toast && html`<${Toast} message=${toast.message} type=${toast.type} onClose=${() => setToast(null)} />`}
