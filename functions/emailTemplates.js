@@ -231,6 +231,104 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
     };
 };
 
+// ==========================================
+// ORVOSI ALKALMASSÁGI VIZSGÁLAT TEMPLATES
+// ==========================================
+
+exports.medicalBookingConfirmation = (courseData, bookingData) => {
+    return {
+        id: 'medicalBookingConfirmation',
+        subject: `Sikeres jelentkezés orvosi alkalmassági vizsgálatra`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sikeresen jelentkeztél az orvosi alkalmassági vizsgálatra a következő időpontban:</p>
+                <p style="margin-left: 1.2em; font-size: 1.1em; color: #e53935;">
+                    <strong>Dátum:</strong> ${courseData.date} (${courseData.startTime} - ${courseData.endTime})<br>
+                    <strong>Helyszín:</strong> Irodánk (1088 Budapest, Krúdy u. 16-18. fszt. 3.)
+                </p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Mit kell magaddal hoznod a vizsgálatra?</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.medicalWaitlistJoined = (courseData, waitlistData) => {
+    return {
+        id: 'medicalWaitlistJoined',
+        subject: `Feliratkoztál az orvosi alkalmassági vizsgálat várólistájára`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${waitlistData.firstName}!</strong></p>
+                <p>Ez egy automatikus visszaigazolás arról, hogy sikeresen feliratkoztál az alábbi orvosi alkalmassági vizsgálat <strong>VÁRÓLISTÁJÁRA</strong>:</p>
+                <p style="margin-left: 1.2em; font-size: 1.1em;">
+                    <strong>Dátum:</strong> ${courseData.date} (${courseData.startTime} - ${courseData.endTime})
+                </p>
+                <p>Ha üresedés történik, e-mailben fogunk értesíteni. Kérjük, figyeld a postafiókodat!</p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Mit kell magaddal hoznod a vizsgálatra, ha bekerülsz?</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.medicalCourseReminder1Day = (courseData, bookingData) => {
+    return {
+        id: 'medicalCourseReminder1Day',
+        subject: `Emlékeztető: Holnap orvosi alkalmassági vizsgálat`,
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Emlékeztetünk, hogy holnap orvosi alkalmassági vizsgálatra várunk az irodánkban.</p>
+                <p style="margin-left: 1.2em; font-size: 1.1em; color: #e53935;">
+                    <strong>Dátum:</strong> ${courseData.date} (${courseData.startTime} - ${courseData.endTime})<br>
+                    <strong>Helyszín:</strong> Irodánk (1088 Budapest, Krúdy u. 16-18. fszt. 3.)
+                </p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Kérjük, ne felejtsd otthon a következőket:</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p style="margin-top: 2.4em;">Várunk szeretettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.doctorMedicalReminder = (courseData) => {
+    return {
+        id: 'doctorMedicalReminder',
+        subject: `Emlékeztető: Holnapi orvosi alkalmassági vizsgálat`,
+        doctorEmail: 'dr.minta@example.com',
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Tisztelt Doktor Úr / Doktornő!</strong></p>
+                <p>Emlékeztetőül küldjük, hogy a holnapi napon orvosi alkalmassági vizsgálat lesz az irodánkban az alábbi időpontban:</p>
+                <p style="margin-left: 1.2em; font-size: 1.1em;">
+                    <strong>Dátum:</strong> ${courseData.date} (${courseData.startTime} - ${courseData.endTime})
+                </p>
+                <p>A diákokat értesítettük, hogy hozzák magukkal a szükséges iratokat és a vizsgálat díját.</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
 exports.courseReminder1Day = (bookingData) => {
     return {
         id: 'courseReminder1Day',

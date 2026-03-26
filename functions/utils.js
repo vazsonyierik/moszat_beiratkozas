@@ -117,7 +117,12 @@ const replaceTemplateVariables = (templateString, data) => {
 const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTest = false) => {
     const db = getFirestore();
 
-    if (!templateData.email) {
+    // Számítsuk ki a címzett e-mail címét (alapértelmezett: a tanuló e-mailje)
+    let recipientEmail = templateData.email;
+
+    // Ha az orvosnak küldünk emlékeztetőt, akkor a templateData.email lehet, hogy hiányzik (ha csak a kurzusadatokat kapta meg).
+    // Később ezt felülírhatjuk az adatbázisban lévő doctorEmail-lel.
+    if (!recipientEmail && templateId !== 'doctorMedicalReminder') {
         logger.error("Student data is missing email, cannot send.", {studentId: templateData.id});
         return;
     }
@@ -125,6 +130,7 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
     let finalSubject = fallbackTemplate?.subject || "";
     let finalHtml = fallbackTemplate?.html || "";
     let isEnabled = true;
+    let dbDoctorEmail = null;
 
     try {
         // Próbáljuk meg betölteni a sablont a Firestore-ból
@@ -165,6 +171,11 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
                 mappedTemplateData.courseDate = formatCourseDate(mappedTemplateData.courseDate);
             }
 
+            // Ha orvosi emlékeztetőről van szó, olvassuk ki az orvos e-mail címét az adatbázisból is.
+            if (templateId === 'doctorMedicalReminder' && dynamicTemplate.doctorEmail) {
+                dbDoctorEmail = dynamicTemplate.doctorEmail;
+            }
+
             // Csak akkor cseréljük le a beégetett sablont a db-s sablonra,
             // ha a db-ben ténylegesen VAN is elmentve valamilyen szöveg
             if (dynamicTemplate.subject && dynamicTemplate.html) {
@@ -191,6 +202,16 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
         return;
     }
 
+    // Orvosi emlékeztető esetén a címzett felülírása
+    if (templateId === 'doctorMedicalReminder') {
+        recipientEmail = dbDoctorEmail || fallbackTemplate?.doctorEmail || "dr.minta@example.com";
+    }
+
+    if (!recipientEmail) {
+        logger.error("Recipient email is missing, cannot send.", {templateId});
+        return;
+    }
+
     // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
     if (isTest) {
         try {
@@ -198,7 +219,7 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
             if (configDoc.exists) {
                 const config = configDoc.data();
                 if (config.emailsEnabled === false) {
-                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: templateData.email});
+                    logger.info("Test emails are disabled in settings. Skipping email send.", {to: recipientEmail});
                     return;
                 }
             }
@@ -210,7 +231,7 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
     const subjectPrefix = isTest ? "[TESZT] " : "";
 
     const mailPayload = {
-        to: templateData.email,
+        to: recipientEmail,
         from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
         message: {
             subject: `${subjectPrefix}${finalSubject}`,

@@ -18,11 +18,13 @@ const EmailTemplatesTab = () => {
     const [subject, setSubject] = useState('');
     const [htmlContent, setHtmlContent] = useState('');
     const [isEnabled, setIsEnabled] = useState(true);
+    const [doctorEmail, setDoctorEmail] = useState('');
     
     // Test Email Modal state
     const [isTestModalOpen, setIsTestModalOpen] = useState(false);
     const [savedSubject, setSavedSubject] = useState('');
     const [savedHtmlContent, setSavedHtmlContent] = useState('');
+    const [savedDoctorEmail, setSavedDoctorEmail] = useState('');
     
     // Drag and Drop state
     const [templateOrder, setTemplateOrder] = useState(null); // { categoryName: [templateId1, templateId2] }
@@ -120,11 +122,13 @@ const EmailTemplatesTab = () => {
             // Set initial form state for the active tab
             setSubject(mergedTemplates[activeTemplateId].subject);
             setHtmlContent(mergedTemplates[activeTemplateId].html);
+            setDoctorEmail(mergedTemplates[activeTemplateId].doctorEmail || '');
             setIsEnabled(mergedTemplates[activeTemplateId].enabled);
             
             // Set saved state tracking
             setSavedSubject(mergedTemplates[activeTemplateId].subject);
             setSavedHtmlContent(mergedTemplates[activeTemplateId].html);
+            setSavedDoctorEmail(mergedTemplates[activeTemplateId].doctorEmail || '');
 
         } catch (error) {
             console.error("Error loading templates:", error);
@@ -134,6 +138,7 @@ const EmailTemplatesTab = () => {
             setTemplates({...DEFAULT_TEMPLATES});
             setSubject(DEFAULT_TEMPLATES[activeTemplateId].subject);
             setHtmlContent(DEFAULT_TEMPLATES[activeTemplateId].html);
+            setDoctorEmail(DEFAULT_TEMPLATES[activeTemplateId].doctorEmail || '');
             setIsEnabled(DEFAULT_TEMPLATES[activeTemplateId].enabled !== false);
         } finally {
             setIsLoading(false);
@@ -176,9 +181,11 @@ const EmailTemplatesTab = () => {
         setActiveTemplateId(templateId);
         setSubject(templates[templateId].subject);
         setHtmlContent(templates[templateId].html);
+        setDoctorEmail(templates[templateId].doctorEmail || '');
         setIsEnabled(templates[templateId].enabled !== false);
         setSavedSubject(templates[templateId].subject);
         setSavedHtmlContent(templates[templateId].html);
+        setSavedDoctorEmail(templates[templateId].doctorEmail || '');
     };
 
     const handleSave = async () => {
@@ -199,6 +206,8 @@ const EmailTemplatesTab = () => {
                     ...prev[activeTemplateId],
                     subject,
                     html: htmlContent,
+                doctorEmail: doctorEmail,
+                    doctorEmail: doctorEmail,
                     enabled: isEnabled
                 }
             }));
@@ -206,6 +215,7 @@ const EmailTemplatesTab = () => {
             // Frissítjük a mentett állapotot
             setSavedSubject(subject);
             setSavedHtmlContent(htmlContent);
+            setSavedDoctorEmail(doctorEmail);
 
             showToast("Sablon sikeresen elmentve!", "success");
         } catch (error) {
@@ -263,6 +273,7 @@ const EmailTemplatesTab = () => {
                 const defaultTpl = DEFAULT_TEMPLATES[activeTemplateId];
                 setSubject(defaultTpl.subject);
                 setHtmlContent(defaultTpl.html);
+                setDoctorEmail(defaultTpl.doctorEmail || '');
                 if (quillRef.current) {
                     const delta = quillRef.current.clipboard.convert(defaultTpl.html);
                     quillRef.current.setContents(delta, 'silent');
@@ -272,12 +283,14 @@ const EmailTemplatesTab = () => {
                     await setDoc(doc(db, "email_templates", activeTemplateId), {
                         subject: defaultTpl.subject,
                         html: defaultTpl.html,
+                        doctorEmail: defaultTpl.doctorEmail || '',
                         name: defaultTpl.name,
                         enabled: isEnabled, // Keep current enabled state
                         updatedAt: new Date().toISOString()
                     }, { merge: true });
                     setSavedSubject(defaultTpl.subject);
                     setSavedHtmlContent(defaultTpl.html);
+                    setSavedDoctorEmail(defaultTpl.doctorEmail || '');
                     showToast("Alapértelmezett sablon visszaállítva.", "success");
                 } catch (e) {
                     console.error(e);
@@ -287,7 +300,7 @@ const EmailTemplatesTab = () => {
     };
 
     const handleOpenTestModal = () => {
-        const hasUnsavedChanges = subject !== savedSubject || htmlContent !== savedHtmlContent;
+        const hasUnsavedChanges = subject !== savedSubject || htmlContent !== savedHtmlContent || doctorEmail !== savedDoctorEmail;
         if (hasUnsavedChanges) {
             showConfirmation({
                 message: "Figyelem: Vannak nem mentett módosításaid! A teszt e-mail a legutóbb mentett állapotot fogja tükrözni. Biztosan folytatod?",
@@ -489,6 +502,20 @@ const EmailTemplatesTab = () => {
                         <p className="text-xs mt-1 italic">Általános változók: {{firstName}}, {{lastName}}, {{email}}</p>
                         <p className="text-xs mt-1 italic">Időpontfoglalás változói: {{courseName}}, {{courseDate}}, {{startTime}}, {{endTime}}, {{cancellation_token}}</p>
                     </div>
+
+                    ${activeTemplateId === 'doctorMedicalReminder' ? html`
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Orvos e-mail címe (Címzett)</label>
+                            <input
+                                type="email"
+                                value=${doctorEmail}
+                                onChange=${(e) => setDoctorEmail(e.target.value)}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-medium p-2 border"
+                                disabled=${!isEnabled}
+                                placeholder="dr.valaki@example.com"
+                            />
+                        </div>
+                    ` : null}
 
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">E-mail tárgya</label>

@@ -343,16 +343,34 @@ const runDailyChecks = async () => {
         for (const courseDoc of coursesSnapshot.docs) {
             const courseData = courseDoc.data();
             const isFirstAidCourse = courseData.name === "Elsősegély tanfolyam";
+            const isMedicalCourse = courseData.name === "Orvosi alkalmassági vizsgálat";
 
-            // If we are doing First Aid specific checks, skip normal courses. 
-            // If we are doing normal course checks, skip First Aid courses.
-            if (isFirstAidSpecific !== isFirstAidCourse) {
-                continue;
-            }
+            // Külön kezeljük az Elsősegély és a sima (vagy orvosi) kurzusokat
+            // Az Elsősegélyes hívásoknál csak azt, a sima hívásoknál csak a többit.
+            if (isFirstAidSpecific && !isFirstAidCourse) continue;
+            if (!isFirstAidSpecific && isFirstAidCourse) continue;
+
+            // Az orvosi vizsgálatot csak 1 nappal előtte küldjük
+            if (!isFirstAidSpecific && isMedicalCourse && daysAhead !== 1) continue;
             
             if (courseData.bookingsCount > 0) {
                 const bookingsSnap = await courseDoc.ref.collection("bookings").get();
                 
+                // Ha orvosi vizsgálatról van szó és 1 nappal előtte vagyunk,
+                // akkor az orvosnak is küldünk egy emlékeztetőt a jelentkezők nevével.
+                if (isMedicalCourse && daysAhead === 1) {
+                    studentPromises.push(sendDynamicEmail(
+                        "doctorMedicalReminder",
+                        courseData, // courseData elegendő, a sendDynamicEmail kikeresi az orvos email címét
+                        templates.doctorMedicalReminder(courseData),
+                        false
+                    ));
+                    automationLogs.push({
+                        student: "Orvos Emlékeztető",
+                        action: `Orvos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                    });
+                }
+
                 // For First Aid, we need to check global payment status
                 for (const bookingDoc of bookingsSnap.docs) {
                     const bookingData = bookingDoc.data();
@@ -381,7 +399,23 @@ const runDailyChecks = async () => {
                     }
 
                     if (shouldSend) {
-                        studentPromises.push(sendEmail(bookingData, templateFunc(bookingData)));
+                        // Kicseréljük az alap sablont, ha Orvosi Alkalmassági és 1 nappal előtte vagyunk
+                        let finalTemplateFunc = templateFunc;
+                        let templateId = "courseReminder1Day"; // Fallback normál emlékeztetőnél
+
+                        if (isMedicalCourse && daysAhead === 1) {
+                            finalTemplateFunc = templates.medicalCourseReminder1Day;
+                            templateId = "medicalCourseReminder1Day";
+                        } else if (!isFirstAidSpecific) {
+                            templateId = daysAhead === 1 ? "courseReminder1Day" : "courseReminder3Days";
+                        } else {
+                            // First Aid templates
+                            if (daysAhead === 5) templateId = "firstAidReminderDay5";
+                            if (daysAhead === 3) templateId = "firstAidReminderDay3";
+                            if (daysAhead === 1) templateId = "firstAidReminderDay1";
+                        }
+
+                        studentPromises.push(sendDynamicEmail(templateId, bookingData, finalTemplateFunc(courseData, bookingData), false));
                         automationLogs.push({
                             student: `${bookingData.lastName} ${bookingData.firstName}`, 
                             action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
