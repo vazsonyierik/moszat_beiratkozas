@@ -808,43 +808,41 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
                                                         ${booking.bookingDate ? new Date(booking.bookingDate.seconds * 1000).toLocaleString('hu-HU') : 'Folyamatban...'}
                                                     </td>
                                                     <td className="px-3 py-2 whitespace-nowrap text-center">
-                                                        ${booking.isPresent === true ? html`
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-700 ring-1 ring-inset ring-green-600/20">
-                                                                <${Icons.CheckCircleIcon} size=${14} />
-                                                                Jelen volt
-                                                            </span>
-                                                        ` : booking.isPresent === false ? html`
-                                                            <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20">
-                                                                <${Icons.XCircleIcon} size=${14} />
-                                                                Hiányzott
-                                                            </span>
-                                                        ` : html`
-                                                            <span className="text-gray-400 text-xs italic">-</span>
-                                                        `}
+                                                        <div className="flex flex-col gap-1 items-center">
+                                                            ${booking.isPresent === true ? html`
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-1 text-xs font-bold text-green-700 ring-1 ring-inset ring-green-600/20">
+                                                                    <${Icons.CheckCircleIcon} size=${14} />
+                                                                    Jelen volt
+                                                                </span>
+                                                            ` : booking.isPresent === false ? html`
+                                                                <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2 py-1 text-xs font-bold text-red-700 ring-1 ring-inset ring-red-600/20">
+                                                                    <${Icons.XCircleIcon} size=${14} />
+                                                                    Hiányzott
+                                                                </span>
+                                                            ` : html`
+                                                                <span className="text-gray-400 text-xs italic">-</span>
+                                                            `}
+                                                            
+                                                            ${booking.courseName === "Elsősegély tanfolyam" ? html`
+                                                                <div className="mt-1 flex items-center gap-1 border-t border-gray-100 pt-1 w-full justify-center">
+                                                                    <span className="text-[10px] text-gray-500 uppercase tracking-wider">Fizetve:</span>
+                                                                    ${localStudent.firstAidPaid ? html`
+                                                                        <span className="inline-flex items-center gap-0.5 rounded-full bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700" title="Díj rendezve">
+                                                                            <${Icons.CheckCircleIcon} size=${10} /> Igen
+                                                                        </span>
+                                                                    ` : html`
+                                                                        <span className="inline-flex items-center gap-0.5 rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-bold text-red-700" title="Díj nincs rendezve">
+                                                                            <${Icons.XCircleIcon} size=${10} /> Nem
+                                                                        </span>
+                                                                    `}
+                                                                </div>
+                                                            ` : null}
+                                                        </div>
                                                     </td>
                                                 </tr>
                                             `)}
                                         </tbody>
                                     </table>
-                                    
-                                    ${/* First Aid Payment specific rendering if they have an First Aid course */''}
-                                    ${classroomBookings.some(b => b.courseName === "Elsősegély tanfolyam") ? html`
-                                        <div className="bg-yellow-50 px-4 py-3 border-t border-yellow-100 flex items-center justify-between">
-                                            <div className="flex items-center gap-2">
-                                                <strong className="text-yellow-800 text-sm">Elsősegély tanfolyam díja befizetve:</strong>
-                                                ${localStudent.firstAidPaid ? html`
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-bold text-green-700">
-                                                        <${Icons.CheckCircleIcon} size=${12} /> Igen
-                                                    </span>
-                                                ` : html`
-                                                    <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700">
-                                                        <${Icons.XCircleIcon} size=${12} /> Nem
-                                                    </span>
-                                                `}
-                                            </div>
-                                            <span className="text-xs text-yellow-700 italic">Ezt a beállítást a Szerkesztés menüpontban módosíthatod.</span>
-                                        </div>
-                                    ` : null}
                                 </div>
                             `}
                         <//>
