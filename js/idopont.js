@@ -82,7 +82,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
     if (results) {
         return html`
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto">
-                <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-md transform transition-all sm:my-8 max-h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
+                <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-md transform transition-all sm:my-8 mt-16 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
                     <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
@@ -131,7 +131,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto">
-            <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-lg transform transition-all sm:my-8 mt-16 max-h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
+            <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-lg transform transition-all sm:my-8 mt-16 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
                 <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
                     <h3 className="text-xl font-bold text-gray-800">Jelentkezés véglegesítése</h3>
                     <button onClick=${() => onClose()} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
@@ -278,6 +278,47 @@ const StudentAppointmentsApp = () => {
     const [cartBump, setCartBump] = useState(false);
     const [quickBookItem, setQuickBookItem] = useState(null); // For instant booking Orvosi/Elsosegely
     const [toast, setToast] = useState(null);
+    const [touchStart, setTouchStart] = useState(null);
+    const [touchEnd, setTouchEnd] = useState(null);
+
+    useEffect(() => {
+        if (isCheckoutOpen || isMobileCartOpen) {
+            document.body.style.overflow = 'hidden';
+            document.body.style.overscrollBehavior = 'none';
+        } else {
+            document.body.style.overflow = '';
+            document.body.style.overscrollBehavior = '';
+        }
+        return () => {
+            document.body.style.overflow = '';
+            document.body.style.overscrollBehavior = '';
+        };
+    }, [isCheckoutOpen, isMobileCartOpen]);
+
+    const onTouchStart = (e) => {
+        setTouchEnd(null);
+        setTouchStart(e.targetTouches[0].clientY);
+    };
+
+    const onTouchMove = (e) => {
+        setTouchEnd(e.targetTouches[0].clientY);
+    };
+
+    const onTouchEndHandler = () => {
+        if (!touchStart || !touchEnd) return;
+        const distance = touchStart - touchEnd;
+
+        // Up swipe (negative delta Y means finger moved up)
+        if (distance > 50 && !isMobileCartOpen) {
+            setIsMobileCartOpen(true);
+        }
+
+        // Down swipe
+        if (distance < -50 && isMobileCartOpen) {
+            setIsMobileCartOpen(false);
+        }
+    };
+
     
     // Category Tabs: 'kresz', 'medical', 'firstaid'
     const [activeTab, setActiveTab] = useState('kresz');
@@ -698,17 +739,22 @@ const StudentAppointmentsApp = () => {
                         <div className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity" onClick=${() => setIsMobileCartOpen(false)}></div>
                     ` : ''}
 
-                    <div className=${`lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 transform transition-all duration-300 ease-in-out rounded-t-3xl ${isMobileCartOpen ? 'translate-y-0' : 'translate-y-0'}`}>
+                    <div
+                        className=${`lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 transform transition-transform duration-300 ease-out rounded-t-3xl pb-[env(safe-area-inset-bottom)] overscroll-none touch-pan-y ${isMobileCartOpen ? 'translate-y-0' : 'translate-y-[calc(100%-80px-env(safe-area-inset-bottom))]'}`}
+                        onTouchStart=${onTouchStart}
+                        onTouchMove=${onTouchMove}
+                        onTouchEnd=${onTouchEndHandler}
+                    >
 
                         <!-- Toggle Bar -->
                         <div
-                            className="w-full flex justify-center pt-3 pb-1 cursor-pointer"
+                            className="w-full flex justify-center pt-4 pb-2 cursor-pointer active:bg-gray-50 rounded-t-3xl"
                             onClick=${() => setIsMobileCartOpen(!isMobileCartOpen)}
                         >
-                            <div className="w-12 h-1.5 bg-gray-300 rounded-full"></div>
+                            <div className="w-14 h-1.5 bg-gray-300 rounded-full"></div>
                         </div>
 
-                        <div className="p-4 pt-2">
+                        <div className="p-4 pt-0">
                             <div className="flex items-center justify-between mb-2">
                                 <div
                                     className="flex items-center gap-3 cursor-pointer"
@@ -772,7 +818,7 @@ const StudentAppointmentsApp = () => {
                     </div>
                 </${Fragment}>
                 <!-- Spacer for the fixed footer on mobile -->
-                <div className=${`lg:hidden ${isMobileCartOpen ? 'h-[50vh]' : 'h-28'}`}></div>
+                <div className="lg:hidden h-[100px] pb-[env(safe-area-inset-bottom)]"></div>
             `}
 
             <!-- Checkout Modal -->
