@@ -327,6 +327,10 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     // Attendance loading state
     const [updatingAttendanceId, setUpdatingAttendanceId] = useState(null);
 
+    // First Aid payment loading and status states
+    const [updatingPaymentId, setUpdatingPaymentId] = useState(null);
+    const [paymentStatuses, setPaymentStatuses] = useState({});
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
 
@@ -341,13 +345,38 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
             orderBy('bookingDate', 'asc')
         );
 
-        const unsubscribeBookings = onSnapshot(qBookings, (snapshot) => {
+        const unsubscribeBookings = onSnapshot(qBookings, async (snapshot) => {
             const data = snapshot.docs.map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }));
             setBookings(data);
             setIsLoading(false);
+
+            // If this is a First Aid course, fetch payment statuses
+            if (course.name === "Elsősegély tanfolyam" && data.length > 0) {
+                const regCollection = isTestView ? 'registrations_test' : 'registrations';
+                const statuses = {};
+
+                // We fetch the registrations to get firstAidPaid status for each student
+                try {
+                    // For safety and performance, we'll fetch them individually since we have their emails.
+                    // To optimize, we run them in parallel
+                    await Promise.all(data.map(async (booking) => {
+                        const email = booking.email;
+                        const qReg = query(collection(db, regCollection), where('email', '==', email), limit(1));
+                        const regSnapshot = await getDocs(qReg);
+                        if (!regSnapshot.empty) {
+                            statuses[email] = regSnapshot.docs[0].data().firstAidPaid === true;
+                        } else {
+                            statuses[email] = false;
+                        }
+                    }));
+                    setPaymentStatuses(statuses);
+                } catch (err) {
+                    console.error("Error fetching payment statuses:", err);
+                }
+            }
         }, (error) => {
             console.error("Error fetching bookings:", error);
             showToast("Hiba történt a jelentkezők betöltésekor.", "error");
@@ -552,6 +581,44 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         } finally {
             setUpdatingAttendanceId(null);
         }
+    };
+
+    const handleFirstAidPaymentToggle = async (booking) => {
+        const currentStatus = paymentStatuses[booking.email] || false;
+        const newStatus = !currentStatus;
+
+        const actionText = newStatus ? 'fizetettre' : 'nem fizetettre';
+        showConfirmation({
+            message: `Biztosan átállítod a státuszt ${actionText}? ${newStatus ? 'Ezzel a rendszer automatikusan kiküld egy visszaigazoló e-mailt a tanulónak.' : ''}`,
+            onConfirm: async () => {
+                setUpdatingPaymentId(booking.id || booking.email);
+                try {
+                    const updatePaymentFn = httpsCallable(functions, 'updateFirstAidPaymentStatus');
+                    const result = await updatePaymentFn({
+                        studentEmail: booking.email,
+                        isPaid: newStatus,
+                        isTestView
+                    });
+
+                    if (result.data?.warning) {
+                        showToast(result.data.warning, 'warning');
+                    } else {
+                        showToast(`Fizetési státusz sikeresen mentve (${actionText}).`, 'success');
+                    }
+
+                    // Update local state immediately
+                    setPaymentStatuses(prev => ({
+                        ...prev,
+                        [booking.email]: newStatus
+                    }));
+                } catch (error) {
+                    console.error("Error updating first aid payment:", error);
+                    showToast(`Hiba a fizetés frissítésekor: ${error.message}`, 'error');
+                } finally {
+                    setUpdatingPaymentId(null);
+                }
+            }
+        });
     };
 
     const handleNotifyAbsentees = () => {
@@ -767,29 +834,52 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2 sm:gap-4">
-                                                        ${updatingAttendanceId === (booking.id || booking.email) ? html`
-                                                            <div className="flex items-center justify-center w-20">
-                                                                <span className="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></span>
+                                                        ${course.name === "Elsősegély tanfolyam" ? html`
+                                                            <div className="flex flex-col items-center mr-2 border-r pr-4 border-gray-200">
+                                                                <span className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider font-semibold">Fizetve</span>
+                                                                ${updatingPaymentId === (booking.id || booking.email) ? html`
+                                                                    <div className="h-7 w-7 flex items-center justify-center">
+                                                                        <span className="animate-spin h-4 w-4 border-2 border-indigo-500 border-t-transparent rounded-full"></span>
+                                                                    </div>
+                                                                ` : html`
+                                                                    <button
+                                                                        onClick=${() => handleFirstAidPaymentToggle(booking)}
+                                                                        className=${`p-1 rounded-full transition-all duration-200 hover:scale-110 ${paymentStatuses[booking.email] ? 'text-green-600 bg-green-50 shadow-sm ring-1 ring-green-200' : 'text-red-500 bg-red-50 shadow-sm ring-1 ring-red-200'}`}
+                                                                        title=${paymentStatuses[booking.email] ? "Fizetve - kattints a törléshez" : "Nincs fizetve - kattints a fizetés rögzítéséhez"}
+                                                                    >
+                                                                        ${paymentStatuses[booking.email] ? html`<${Icons.CheckCircleIcon} size=${20} />` : html`<${Icons.XCircleIcon} size=${20} />`}
+                                                                    </button>
+                                                                `}
                                                             </div>
-                                                        ` : html`
-                                                            <div className="flex items-center gap-1 sm:gap-2 mr-2">
-                                                                <button
-                                                                    onClick=${() => handleAttendanceToggle(booking, true)}
-                                                                    className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-green-50 hover:scale-110 ${booking.isPresent === true ? 'text-green-600 bg-green-50 shadow-sm' : 'text-gray-300'}`}
-                                                                    title="Jelen volt"
-                                                                >
-                                                                    <${Icons.CheckCircleIcon} size=${28} />
-                                                                </button>
-                                                                <button
-                                                                    onClick=${() => handleAttendanceToggle(booking, false)}
-                                                                    className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-red-50 hover:scale-110 ${booking.isPresent === false ? 'text-red-600 bg-red-50 shadow-sm' : 'text-gray-300'}`}
-                                                                    title="Hiányzott"
-                                                                >
-                                                                    <${Icons.XCircleIcon} size=${28} />
-                                                                </button>
-                                                            </div>
-                                                        `}
-                                                        <div className="w-px h-8 bg-gray-200 mx-1"></div>
+                                                        ` : null}
+
+                                                        <div className="flex flex-col items-center">
+                                                            <span className="text-[10px] text-gray-500 mb-1 uppercase tracking-wider font-semibold">Jelenlét</span>
+                                                            ${updatingAttendanceId === (booking.id || booking.email) ? html`
+                                                                <div className="flex items-center justify-center w-[64px] h-[34px]">
+                                                                    <span className="animate-spin h-5 w-5 border-2 border-indigo-500 border-t-transparent rounded-full"></span>
+                                                                </div>
+                                                            ` : html`
+                                                                <div className="flex items-center gap-1 sm:gap-2">
+                                                                    <button
+                                                                        onClick=${() => handleAttendanceToggle(booking, true)}
+                                                                        className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-green-50 hover:scale-110 ${booking.isPresent === true ? 'text-green-600 bg-green-50 shadow-sm' : 'text-gray-300'}`}
+                                                                        title="Jelen volt"
+                                                                    >
+                                                                        <${Icons.CheckCircleIcon} size=${22} />
+                                                                    </button>
+                                                                    <button
+                                                                        onClick=${() => handleAttendanceToggle(booking, false)}
+                                                                        className=${`p-1.5 rounded-full transition-all duration-200 hover:bg-red-50 hover:scale-110 ${booking.isPresent === false ? 'text-red-600 bg-red-50 shadow-sm' : 'text-gray-300'}`}
+                                                                        title="Hiányzott"
+                                                                    >
+                                                                        <${Icons.XCircleIcon} size=${22} />
+                                                                    </button>
+                                                                </div>
+                                                            `}
+                                                        </div>
+
+                                                        <div className="w-px h-8 bg-gray-200 mx-1 ml-2"></div>
                                                         <button 
                                                             onClick=${() => handleCancelBooking(booking)}
                                                             className="text-red-600 hover:text-red-900 bg-red-50 hover:bg-red-100 p-2 rounded-full transition-colors ml-1"

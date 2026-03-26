@@ -12,7 +12,7 @@ const {formatFullName, formatSingleTimestamp, isAdmin, sendEmail} = require("./u
 const {processIncomingEmails} = require("./emailProcessor");
 const {calculateDeadline} = require("./deadlineCalculator");
 const appointments = require("./appointments");
-const { sendFirstAidPaymentEmail } = require("./firstAidPayment");
+const { updateFirstAidPaymentStatus } = require("./firstAidPayment");
 
 // Firebase Admin SDK inicializálása
 initializeApp();
@@ -1077,5 +1077,5 @@ exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {
     }
 });
 
-exports.sendFirstAidPaymentEmail = sendFirstAidPaymentEmail;
+exports.updateFirstAidPaymentStatus = updateFirstAidPaymentStatus;
 
