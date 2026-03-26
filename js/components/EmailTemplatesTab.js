@@ -206,7 +206,6 @@ const EmailTemplatesTab = () => {
                     ...prev[activeTemplateId],
                     subject,
                     html: htmlContent,
-                doctorEmail: doctorEmail,
                     doctorEmail: doctorEmail,
                     enabled: isEnabled
                 }

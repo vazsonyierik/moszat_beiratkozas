@@ -418,6 +418,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
 
     try {
         let bookingDataToEmail = null;
+        let courseDataToEmail = null;
         let isLinkedToStudent = false;
 
         // 0. Check if student exists in registrations collection by email
@@ -439,6 +440,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             }
 
             const courseData = courseDoc.data();
+            courseDataToEmail = courseData;
             const currentBookings = courseData.bookingsCount || 0;
 
             if (currentBookings >= courseData.capacity && !silent) {
@@ -497,7 +499,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
             if (bookingDataToEmail.courseName === "Elsősegély tanfolyam") {
                 await sendDynamicEmail("firstAidConfirmation", bookingDataToEmail, templates.firstAidConfirmation(bookingDataToEmail), isTestView);
             } else if (bookingDataToEmail.courseName === "Orvosi alkalmassági vizsgálat") {
-                await sendDynamicEmail("medicalBookingConfirmation", bookingDataToEmail, templates.medicalBookingConfirmation(courseData, bookingDataToEmail), isTestView);
+                await sendDynamicEmail("medicalBookingConfirmation", bookingDataToEmail, templates.medicalBookingConfirmation(courseDataToEmail, bookingDataToEmail), isTestView);
             } else {
                 await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
             }
@@ -623,7 +625,12 @@ exports.bulkAddStudentToCourses = onCall({region: "europe-west1"}, async (reques
             return sendDynamicEmail("firstAidConfirmation", bookingData, templates.firstAidConfirmation(bookingData), isTestView);
         } else if (bookingData.courseName === "Orvosi alkalmassági vizsgálat") {
             // Bulk-ból hiányozhat a konkrét courseData, de a szükséges mezők megvannak a bookingData-ban.
-            return sendDynamicEmail("medicalBookingConfirmation", bookingData, templates.medicalBookingConfirmation(bookingData, bookingData), isTestView);
+            const fakeCourseData = {
+                date: bookingData.courseDate,
+                startTime: bookingData.startTime,
+                endTime: bookingData.endTime
+            };
+            return sendDynamicEmail("medicalBookingConfirmation", bookingData, templates.medicalBookingConfirmation(fakeCourseData, bookingData), isTestView);
         } else {
             return sendDynamicEmail("bookingConfirmation", bookingData, templates.bookingConfirmation(bookingData), isTestView);
         }
@@ -1012,6 +1019,7 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
 
     try {
         let bookingDataToEmail = null;
+        let courseDataToEmail = null;
 
         await db.runTransaction(async (transaction) => {
             // 1. Megnézzük a claim dokumentumot (Hogy nyitott-e még a verseny)
@@ -1026,6 +1034,7 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
                 throw new HttpsError("not-found", "A foglalkozás nem található.");
             }
             const courseData = courseDoc.data();
+            courseDataToEmail = courseData;
             if (courseData.bookingsCount >= courseData.capacity) {
                 // Ha valahogy betelt (pl. admin beírt valakit kézzel), lezárjuk a claim-et
                 transaction.update(claimRef, { isOpen: false });
@@ -1104,7 +1113,7 @@ exports.claimLastMinuteSpot = onCall({region: "europe-west1"}, async (request) =
                 await sendDynamicEmail("firstAidConfirmation", bookingDataToEmail, templates.firstAidConfirmation(bookingDataToEmail), isTestView);
             } else if (bookingDataToEmail.courseName === "Orvosi alkalmassági vizsgálat") {
                 // Last minute nem valószínű, de biztonság kedvéért kezeljük le
-                await sendDynamicEmail("medicalBookingConfirmation", bookingDataToEmail, templates.medicalBookingConfirmation(bookingDataToEmail, bookingDataToEmail), isTestView);
+                await sendDynamicEmail("medicalBookingConfirmation", bookingDataToEmail, templates.medicalBookingConfirmation(courseDataToEmail, bookingDataToEmail), isTestView);
             } else {
                 await sendDynamicEmail("bookingConfirmation", bookingDataToEmail, templates.bookingConfirmation(bookingDataToEmail), isTestView);
             }

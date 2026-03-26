@@ -402,10 +402,12 @@ const runDailyChecks = async () => {
                         // Kicseréljük az alap sablont, ha Orvosi Alkalmassági és 1 nappal előtte vagyunk
                         let finalTemplateFunc = templateFunc;
                         let templateId = "courseReminder1Day"; // Fallback normál emlékeztetőnél
+                        let isMedicalTemplate = false;
 
                         if (isMedicalCourse && daysAhead === 1) {
                             finalTemplateFunc = templates.medicalCourseReminder1Day;
                             templateId = "medicalCourseReminder1Day";
+                            isMedicalTemplate = true;
                         } else if (!isFirstAidSpecific) {
                             templateId = daysAhead === 1 ? "courseReminder1Day" : "courseReminder3Days";
                         } else {
@@ -415,7 +417,11 @@ const runDailyChecks = async () => {
                             if (daysAhead === 1) templateId = "firstAidReminderDay1";
                         }
 
-                        studentPromises.push(sendDynamicEmail(templateId, bookingData, finalTemplateFunc(courseData, bookingData), false));
+                        const templateHtml = isMedicalTemplate
+                            ? finalTemplateFunc(courseData, bookingData)
+                            : finalTemplateFunc(bookingData);
+
+                        studentPromises.push(sendDynamicEmail(templateId, bookingData, templateHtml, false));
                         automationLogs.push({
                             student: `${bookingData.lastName} ${bookingData.firstName}`, 
                             action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`

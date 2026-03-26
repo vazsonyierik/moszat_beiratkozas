@@ -255,6 +255,10 @@ exports.medicalBookingConfirmation = (courseData, bookingData) => {
                     <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
                 </ul>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+                <p style="margin-top:20px; font-size: 12px; color: #666;">
+                    Ha valamilyen oknál fogva mégsem tud részt venni a vizsgálaton, kérjük jelezze számunkra a lemondást:
+                    <a href="{{cancellation_token}}">Kattintson ide a lemondáshoz</a>.
+                </p>
             </div>
         `
     };
@@ -280,6 +284,10 @@ exports.medicalWaitlistJoined = (courseData, waitlistData) => {
                     <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
                 </ul>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+                <p style="margin-top:20px; font-size: 12px; color: #666;">
+                    Ha le szeretne iratkozni a várólistáról:
+                    <a href="{{cancellation_token}}">Kattintson ide a leiratkozáshoz</a>.
+                </p>
             </div>
         `
     };
@@ -305,6 +313,10 @@ exports.medicalCourseReminder1Day = (courseData, bookingData) => {
                     <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
                 </ul>
                 <p style="margin-top: 2.4em;">Várunk szeretettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+                <p style="margin-top:20px; font-size: 12px; color: #666;">
+                    Ha valamilyen oknál fogva mégsem tud részt venni a vizsgálaton, kérjük jelezze számunkra a lemondást:
+                    <a href="{{cancellation_token}}">Kattintson ide a lemondáshoz</a>.
+                </p>
             </div>
         `
     };
