@@ -226,7 +226,11 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
                         newStartTime: startTime,
                         newEndTime: endTime
                     };
-                    emailPromises.push(sendDynamicEmail("courseModified", combinedData, templates.courseModified(combinedData), isTestView));
+                    if (oldCourseData.name === "Orvosi alkalmassági vizsgálat") {
+                        emailPromises.push(sendDynamicEmail("medicalCourseModified", combinedData, templates.medicalCourseModified(combinedData), isTestView));
+                    } else {
+                        emailPromises.push(sendDynamicEmail("courseModified", combinedData, templates.courseModified(combinedData), isTestView));
+                    }
                 });
             }
 
@@ -244,6 +248,9 @@ exports.updateCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
                         newStartTime: startTime,
                         newEndTime: endTime
                     };
+                    // Note: Orvosi alkalmassági várólistát külön sablon is kezelhetné itt,
+                    // de a user csak medicalCourseModified-t kért rendes időpontokra.
+                    // Egyelőre használjuk a waitlistCourseModified-et várólistára.
                     emailPromises.push(sendDynamicEmail("waitlistCourseModified", combinedData, templates.waitlistCourseModified(combinedData), isTestView));
                 });
             }
@@ -318,7 +325,11 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
         if (courseData && bookingsToCancel.length > 0) {
             const emailPromises = bookingsToCancel.map(booking => {
                 // ÚJ: Használjuk a dinamikus e-mail küldőt
-                return sendDynamicEmail("courseDeleted", booking, templates.courseDeleted(booking), isTestView);
+                if (courseData.name === "Orvosi alkalmassági vizsgálat") {
+                    return sendDynamicEmail("medicalCourseDeleted", booking, templates.medicalCourseDeleted(booking), isTestView);
+                } else {
+                    return sendDynamicEmail("courseDeleted", booking, templates.courseDeleted(booking), isTestView);
+                }
             });
             await Promise.allSettled(emailPromises);
         }
@@ -376,7 +387,11 @@ exports.cancelBookingAsAdmin = onCall({region: "europe-west1"}, async (request) 
         });
 
         if (bookingData) {
-            await sendDynamicEmail("bookingCancelledByAdmin", bookingData, templates.bookingCancelledByAdmin(bookingData), isTestView);
+            if (bookingData.courseName === "Orvosi alkalmassági vizsgálat") {
+                await sendDynamicEmail("medicalBookingCancelledByAdmin", bookingData, templates.medicalBookingCancelledByAdmin(bookingData), isTestView);
+            } else {
+                await sendDynamicEmail("bookingCancelledByAdmin", bookingData, templates.bookingCancelledByAdmin(bookingData), isTestView);
+            }
             // Várólista logika meghívása
             await processWaitlist(courseId, isTestView);
         }
@@ -706,8 +721,11 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
                 });
             });
 
-            // Opcionális: itt lehetne küldeni egy emailt arról, hogy a tanuló leiratkozott a várólistáról.
-            // Egyelőre csak sikeres üzenetet adunk vissza.
+            if (bookingData.courseName === "Orvosi alkalmassági vizsgálat") {
+                await sendDynamicEmail("medicalWaitlistCancelledByStudent", bookingData, templates.medicalWaitlistCancelledByStudent(bookingData), isTestView);
+            } else {
+                await sendDynamicEmail("waitlistCancelledByStudent", bookingData, templates.waitlistCancelledByStudent(bookingData), isTestView);
+            }
             return {success: true, message: "Sikeresen leiratkoztál a várólistáról."};
         } else {
             // Normal Booking Cancellation
@@ -729,7 +747,11 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
             });
 
             if (bookingData) {
-                await sendDynamicEmail("bookingCancelledByStudent", bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
+                if (bookingData.courseName === "Orvosi alkalmassági vizsgálat") {
+                    await sendDynamicEmail("medicalBookingCancelledByStudent", bookingData, templates.medicalBookingCancelledByStudent(bookingData), isTestView);
+                } else {
+                    await sendDynamicEmail("bookingCancelledByStudent", bookingData, templates.bookingCancelledByStudent(bookingData), isTestView);
+                }
                 // Várólista logika meghívása
                 await processWaitlist(bookingData.courseId, isTestView);
             }
