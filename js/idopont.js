@@ -32,7 +32,7 @@ const Toast = ({ message, type, onClose }) => {
     `;
 };
 
-const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
+const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
     const [email, setEmail] = useState('');
@@ -143,11 +143,21 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView }) => {
                     <p className="font-semibold text-indigo-900 mb-2">Kiválasztott időpontok (${cart.length}):</p>
                     <ul className="space-y-2">
                         ${cart.map((item, index) => html`
-                            <li key=${index} className="text-sm text-indigo-800 bg-white p-2 rounded border border-indigo-200 flex justify-between items-center">
-                                <div>
-                                    <span className="font-semibold block">${item.course.name} ${item.isWaitlist ? '(Várólista)' : ''}</span>
+                            <li key=${index} className="text-sm text-indigo-800 bg-white p-2.5 rounded-lg border border-indigo-200 flex justify-between items-center gap-2">
+                                <div className="flex-1">
+                                    <span className="font-semibold block">${item.course.name} ${item.isWaitlist ? html`<span className="text-xs text-yellow-700 bg-yellow-100 px-1 py-0.5 rounded ml-1">(Várólista)</span>` : ''}</span>
                                     <span className="text-indigo-600">${item.course.date} | ${item.course.startTime} - ${item.course.endTime}</span>
                                 </div>
+                                ${onRemoveItem ? html`
+                                    <button 
+                                        type="button"
+                                        onClick=${() => onRemoveItem(item.course.id)}
+                                        className="text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 rounded-md p-1.5 transition-colors shrink-0"
+                                        title="Eltávolítás"
+                                    >
+                                        <${Icons.XIcon} size=${16} />
+                                    </button>
+                                ` : ''}
                             </li>
                         `)}
                     </ul>
@@ -274,15 +284,11 @@ const StudentAppointmentsApp = () => {
     // Carts & UI state
     const [cart, setCart] = useState([]); // Array of { course, isWaitlist }
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-    const [isMobileCartOpen, setIsMobileCartOpen] = useState(false);
     const [cartBump, setCartBump] = useState(false);
     const [quickBookItem, setQuickBookItem] = useState(null); // For instant booking Orvosi/Elsosegely
     const [toast, setToast] = useState(null);
-    const [touchStart, setTouchStart] = useState(null);
-    const [touchEnd, setTouchEnd] = useState(null);
-
     useEffect(() => {
-        if (isCheckoutOpen || isMobileCartOpen) {
+        if (isCheckoutOpen) {
             document.body.style.overflow = 'hidden';
             document.body.style.overscrollBehavior = 'none';
         } else {
@@ -293,31 +299,7 @@ const StudentAppointmentsApp = () => {
             document.body.style.overflow = '';
             document.body.style.overscrollBehavior = '';
         };
-    }, [isCheckoutOpen, isMobileCartOpen]);
-
-    const onTouchStart = (e) => {
-        setTouchEnd(null);
-        setTouchStart(e.targetTouches[0].clientY);
-    };
-
-    const onTouchMove = (e) => {
-        setTouchEnd(e.targetTouches[0].clientY);
-    };
-
-    const onTouchEndHandler = () => {
-        if (!touchStart || !touchEnd) return;
-        const distance = touchStart - touchEnd;
-        
-        // Up swipe (negative delta Y means finger moved up)
-        if (distance > 50 && !isMobileCartOpen) {
-            setIsMobileCartOpen(true);
-        }
-        
-        // Down swipe
-        if (distance < -50 && isMobileCartOpen) {
-            setIsMobileCartOpen(false);
-        }
-    };
+    }, [isCheckoutOpen]);
 
     
     // Category Tabs: 'kresz', 'medical', 'firstaid'
@@ -444,7 +426,7 @@ const StudentAppointmentsApp = () => {
     const removeFromCart = (courseId) => {
         const newCart = cart.filter(item => item.course.id !== courseId);
         setCart(newCart);
-        if (newCart.length === 0) setIsMobileCartOpen(false);
+        if (newCart.length === 0) setIsCheckoutOpen(false);
     };
 
     const handleCheckoutClose = (results) => {
@@ -612,19 +594,19 @@ const StudentAppointmentsApp = () => {
             <div className="flex justify-center mb-8">
                 <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
                     <button 
-                        onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMobileCartOpen(false); }}
+                        onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🚗</span> KRESZ & Konzultáció
                     </button>
                     <button 
-                        onClick=${() => { setActiveTab('medical'); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMobileCartOpen(false); }}
+                        onClick=${() => { setActiveTab('medical'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'medical' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🩺</span> Orvosi vizsgálat
                     </button>
                     <button 
-                        onClick=${() => { setActiveTab('firstaid'); window.scrollTo({ top: 0, behavior: 'smooth' }); setIsMobileCartOpen(false); }}
+                        onClick=${() => { setActiveTab('firstaid'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'firstaid' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🚑</span> Elsősegély
@@ -732,93 +714,21 @@ const StudentAppointmentsApp = () => {
                 `}
             </div>
 
-            <!-- Sticky Bottom Cart for Mobile (Only for KRESZ) -->
+            <!-- Floating Pill Button for Mobile (Only for KRESZ) -->
             ${activeTab === 'kresz' && cart.length > 0 && html`
-                <${Fragment}>
-                    ${isMobileCartOpen ? html`
-                        <div className="lg:hidden fixed inset-0 bg-black/50 z-30 transition-opacity" onClick=${() => setIsMobileCartOpen(false)}></div>
-                    ` : ''}
-                    
-                    <div 
-                        className=${`lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-10px_15px_-3px_rgba(0,0,0,0.1)] z-40 transform transition-transform duration-300 ease-out rounded-t-3xl pb-[env(safe-area-inset-bottom)] overscroll-none touch-pan-y ${isMobileCartOpen ? 'translate-y-0' : 'translate-y-[calc(100%-80px-env(safe-area-inset-bottom))]'}`}
-                        onTouchStart=${onTouchStart}
-                        onTouchMove=${onTouchMove}
-                        onTouchEnd=${onTouchEndHandler}
+                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] pointer-events-none w-full px-4 flex justify-center">
+                    <button 
+                        onClick=${() => setIsCheckoutOpen(true)}
+                        className=${`pointer-events-auto bg-indigo-600 hover:bg-indigo-700 text-white pl-2 pr-6 py-2.5 rounded-full font-bold shadow-[0_8px_30px_rgb(0,0,0,0.25)] flex items-center gap-4 active:scale-95 transition-transform border border-indigo-400/50 backdrop-blur-sm`}
                     >
-                        
-                        <!-- Toggle Bar -->
-                        <div 
-                            className="w-full flex justify-center pt-4 pb-2 cursor-pointer active:bg-gray-50 rounded-t-3xl"
-                            onClick=${() => setIsMobileCartOpen(!isMobileCartOpen)}
-                        >
-                            <div className="w-14 h-1.5 bg-gray-300 rounded-full"></div>
+                        <div className=${`bg-white text-indigo-700 w-9 h-9 flex items-center justify-center rounded-full font-black text-lg shadow-sm transition-transform duration-300 ${cartBump ? 'scale-125' : 'scale-100'}`}>
+                            ${cart.length}
                         </div>
-
-                        <div className="p-4 pt-0">
-                            <div className="flex items-center justify-between mb-2">
-                                <div 
-                                    className="flex items-center gap-3 cursor-pointer"
-                                    onClick=${() => setIsMobileCartOpen(!isMobileCartOpen)}
-                                >
-                                    <div className=${`bg-indigo-100 text-indigo-800 px-3.5 py-1.5 rounded-full font-black text-lg border border-indigo-200 shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125' : 'scale-100'}`}>
-                                        ${cart.length}
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="font-bold text-gray-800 leading-tight">kiválasztott modul</span>
-                                        <span className="text-xs text-indigo-600 font-medium flex items-center gap-1">
-                                            Részletek ${isMobileCartOpen ? 'elrejtése ↓' : 'mutatása ↑'}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                ${!isMobileCartOpen ? html`
-                                    <button 
-                                        onClick=${() => setIsCheckoutOpen(true)}
-                                        className="bg-indigo-600 text-white px-5 py-3 rounded-xl font-bold shadow-lg flex items-center gap-2 active:scale-95 transition-transform"
-                                    >
-                                        Tovább <span className="text-xl">→</span>
-                                    </button>
-                                ` : ''}
-                            </div>
-                            
-                            <!-- Expanded Content -->
-                            ${isMobileCartOpen ? html`
-                                <div className="mt-4 pt-4 border-t border-gray-100">
-                                    <div className="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-1 custom-scrollbar mb-4">
-                                        ${cart.map(item => html`
-                                            <div key=${item.course.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-xl border border-gray-100">
-                                                <div className="flex-1">
-                                                    <div className="font-bold text-indigo-800 text-sm">
-                                                        ${item.course.name}
-                                                        ${item.isWaitlist ? html`<span className="ml-2 text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded border border-yellow-200">(Várólista)</span>` : ''}
-                                                    </div>
-                                                    <div className="text-xs text-gray-600 mt-1 flex items-center gap-1">
-                                                        <${Icons.CalendarIcon} size=${12} className="text-gray-400" />
-                                                        ${item.course.date.replace(/-/g, '. ')}. <span className="font-bold text-gray-800">${item.course.startTime}</span>
-                                                    </div>
-                                                </div>
-                                                <button 
-                                                    onClick=${() => removeFromCart(item.course.id)}
-                                                    className="ml-3 text-red-500 bg-white rounded-full shadow-sm border border-red-100 p-2 active:bg-red-50"
-                                                >
-                                                    <${Icons.XIcon} size=${16} />
-                                                </button>
-                                            </div>
-                                        `)}
-                                    </div>
-                                    <button 
-                                        onClick=${() => { setIsMobileCartOpen(false); setIsCheckoutOpen(true); }}
-                                        className="w-full bg-indigo-600 text-white py-3.5 rounded-xl font-bold shadow-lg flex justify-center items-center gap-2 active:scale-95 transition-transform"
-                                    >
-                                        Jelentkezés véglegesítése
-                                    </button>
-                                </div>
-                            ` : ''}
-                        </div>
-                    </div>
-                </${Fragment}>
-                <!-- Spacer for the fixed footer on mobile -->
-                <div className="lg:hidden h-[100px] pb-[env(safe-area-inset-bottom)]"></div>
+                        <span className="tracking-wide">Tovább a jelentkezéshez <span className="text-xl ml-1">→</span></span>
+                    </button>
+                </div>
+                <!-- Spacer for the floating button so content isn't covered at the bottom -->
+                <div className="lg:hidden h-28 pb-[env(safe-area-inset-bottom)]"></div>
             `}
 
             <!-- Checkout Modal -->
@@ -828,6 +738,7 @@ const StudentAppointmentsApp = () => {
                     onClose=${handleCheckoutClose} 
                     onBook=${handleBookAppointment}
                     isTestView=${isTestView}
+                    onRemoveItem=${quickBookItem ? null : removeFromCart}
                 />
             `}
 
