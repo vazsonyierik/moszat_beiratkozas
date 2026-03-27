@@ -408,6 +408,9 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     }, [course, isTestView, showToast]);
 
     const handleCancelBooking = (booking) => {
+        const reason = window.prompt("Opcionális: Adj meg egy indoklást a törléshez (ez bekerül a kiküldött e-mailbe):");
+        if (reason === null) return;
+
         showConfirmation({
             message: `Biztosan törölni szeretnéd ${booking.firstName} ${booking.lastName} jelentkezését erről a foglalkozásról?`,
             onConfirm: async () => {
@@ -416,7 +419,8 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     await cancelBookingFn({
                         courseId: course.id,
                         studentEmail: booking.email,
-                        isTestView
+                        isTestView,
+                        reason
                     });
                     showToast('Jelentkezés sikeresen törölve.', 'success');
                 } catch (error) {
@@ -1126,11 +1130,14 @@ const AppointmentsTab = ({ isTestView }) => {
     };
 
     const handleDeleteCourse = async (courseId, courseName) => {
+        const reason = window.prompt("Opcionális: Adj meg egy indoklást a törléshez (ez bekerül a hallgatóknak kiküldött e-mailbe):");
+        if (reason === null) return;
+
         const deleteAction = async () => {
             try {
                 // Hívjuk a backend funkciót a biztonságos törléshez (és majdani email küldéshez, stb.)
                 const deleteCourseFn = httpsCallable(functions, 'deleteCourseAsAdmin');
-                await deleteCourseFn({ courseId, isTestView });
+                await deleteCourseFn({ courseId, isTestView, reason });
                 showToast('Foglalkozás sikeresen törölve!', 'success');
             } catch (error) {
                 console.error("Error deleting course:", error);
