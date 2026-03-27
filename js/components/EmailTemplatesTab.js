@@ -8,6 +8,107 @@ import TestEmailModal from './modals/TestEmailModal.js';
 const React = window.React;
 const { useState, useEffect, useRef, Fragment } = React;
 
+// Modális ablak a gomb beszúrásához (színválasztóval)
+const InsertButtonModal = ({ isOpen, onClose, onInsert }) => {
+    const [url, setUrl] = useState('https://moszat.hu');
+    const [text, setText] = useState('Kattints ide');
+    const [bgColor, setBgColor] = useState('#4f46e5'); // Alapértelmezett kék
+    const [textColor, setTextColor] = useState('#ffffff');
+
+    if (!isOpen) return null;
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onInsert(url, text, bgColor, textColor);
+        onClose();
+    };
+
+    return html`
+        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-60 p-4">
+            <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl flex flex-col">
+                <div className="flex items-center justify-between rounded-t-xl border-b p-4 bg-gray-50">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                        Gomb beszúrása
+                    </h3>
+                    <button onClick=${onClose} className="text-gray-400 hover:text-gray-900 bg-transparent hover:bg-gray-200 rounded-lg p-1.5 transition-colors">
+                        <${Icons.XIcon} size=${20} />
+                    </button>
+                </div>
+
+                <form onSubmit=${handleSubmit} className="p-5 space-y-4">
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Gomb felirata</label>
+                        <input
+                            type="text"
+                            value=${text}
+                            onChange=${(e) => setText(e.target.value)}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-medium p-2 border"
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-1">Hivatkozás (URL)</label>
+                        <input
+                            type="url"
+                            value=${url}
+                            onChange=${(e) => setUrl(e.target.value)}
+                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                            required
+                            placeholder="https://"
+                        />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Háttérszín</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value=${bgColor}
+                                    onChange=${(e) => setBgColor(e.target.value)}
+                                    className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                />
+                                <span className="text-xs text-gray-500 font-mono">${bgColor}</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Szövegszín</label>
+                            <div className="flex items-center gap-2">
+                                <input
+                                    type="color"
+                                    value=${textColor}
+                                    onChange=${(e) => setTextColor(e.target.value)}
+                                    className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                />
+                                <span className="text-xs text-gray-500 font-mono">${textColor}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="mt-6 pt-4 border-t border-gray-100">
+                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Előnézet:</label>
+                        <div className="p-4 bg-gray-50 rounded-lg flex justify-center border border-gray-200 border-dashed">
+                            <a href="#" onClick=${e=>e.preventDefault()} style=${{ display: 'inline-block', padding: '10px 20px', backgroundColor: bgColor, color: textColor, textDecoration: 'none', borderRadius: '5px', fontWeight: 'bold' }}>
+                                ${text}
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className="pt-4 flex justify-end gap-3">
+                        <button type="button" onClick=${onClose} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors">
+                            Mégse
+                        </button>
+                        <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-bold transition-colors">
+                            Beszúrás
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    `;
+};
+
 const EmailTemplatesTab = () => {
     const [templates, setTemplates] = useState({});
     const [activeTemplateId, setActiveTemplateId] = useState('registrationConfirmation');
@@ -30,6 +131,9 @@ const EmailTemplatesTab = () => {
     const [templateOrder, setTemplateOrder] = useState(null); // { categoryName: [templateId1, templateId2] }
     const [draggedItem, setDraggedItem] = useState(null); // { category, index, id }
     const [draggedOverItem, setDraggedOverItem] = useState(null); // { category, index }
+
+    // Custom Button Modal state
+    const [isButtonModalOpen, setIsButtonModalOpen] = useState(false);
 
     const showToast = useToast();
     const showConfirmation = useConfirmation();
@@ -154,6 +258,20 @@ const EmailTemplatesTab = () => {
             const quillIcons = window.Quill.import('ui/icons');
             quillIcons['insertButton'] = '<svg viewbox="0 0 18 18"><rect class="ql-stroke" height="10" width="14" x="2" y="4" rx="3" ry="3"></rect><line class="ql-stroke" x1="5" x2="13" y1="9" y2="9"></line></svg>';
 
+            // CSS beszúrása a sorközökhöz, hogy a Quill szerkesztőben látszódjon a változás
+            if (!document.getElementById('quill-custom-styles')) {
+                const styleEl = document.createElement('style');
+                styleEl.id = 'quill-custom-styles';
+                styleEl.innerHTML = `
+                    .ql-editor .ql-line-height-1-0 { line-height: 1.0; }
+                    .ql-editor .ql-line-height-1-2 { line-height: 1.2; }
+                    .ql-editor .ql-line-height-1-5 { line-height: 1.5; }
+                    .ql-editor .ql-line-height-1-6 { line-height: 1.6; }
+                    .ql-editor .ql-line-height-2-0 { line-height: 2.0; }
+                `;
+                document.head.appendChild(styleEl);
+            }
+
             // Register custom line-height format
             const Parchment = window.Quill.import('parchment');
             const lineHeightConfig = {
@@ -165,27 +283,8 @@ const EmailTemplatesTab = () => {
             window.Quill.register(LineHeightClass, true);
             window.Quill.register(LineHeightStyle, true);
 
-            // Register custom button blot
-            const Inline = window.Quill.import('blots/inline');
-            class ButtonBlot extends Inline {
-                static create(value) {
-                    const node = super.create();
-                    node.setAttribute('href', value.url);
-                    node.setAttribute('target', '_blank');
-                    node.setAttribute('style', `display: inline-block; padding: 10px 20px; background-color: ${value.bgColor}; color: ${value.textColor}; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;`);
-                    return node;
-                }
-                static formats(node) {
-                    return {
-                        url: node.getAttribute('href'),
-                        bgColor: node.style.backgroundColor,
-                        textColor: node.style.color
-                    };
-                }
-            }
-            ButtonBlot.blotName = 'customButton';
-            ButtonBlot.tagName = 'a';
-            window.Quill.register(ButtonBlot, true);
+            // A gombok beszúrását nem egyedi Blot-tal oldjuk meg, mert az összeakadt a linkekkel.
+            // Inkább egy raw HTML blokkot szúrunk be a kurzorhoz, ami biztonságosabb a meglévő linkek szempontjából.
 
             quillRef.current = new window.Quill(editorContainerRef.current, {
                 theme: 'snow',
@@ -203,26 +302,11 @@ const EmailTemplatesTab = () => {
                         ],
                         handlers: {
                             insertButton: function() {
-                                const url = prompt("Add meg a gomb hivatkozását (URL):");
-                                if (!url) return;
-
-                                const text = prompt("Add meg a gomb feliratát:", "Kattints ide");
-                                if (!text) return;
-
-                                const color = prompt("Add meg a gomb színét (hexkód vagy név, pl. #d9534f):", "#4f46e5");
-                                const textColor = prompt("Add meg a gomb szövegszínét (hexkód vagy név, pl. #ffffff):", "#ffffff");
-
-                                const range = this.quill.getSelection(true);
-
-                                this.quill.insertText(range.index, text, 'user');
-                                this.quill.formatText(range.index, text.length, 'customButton', {
-                                    url: url,
-                                    bgColor: color || '#4f46e5',
-                                    textColor: textColor || '#ffffff'
-                                }, 'user');
-
-                                // Move cursor past the new button
-                                this.quill.setSelection(range.index + text.length);
+                                // Eltároljuk a fókuszt, majd kinyitjuk a modálist a React state segítségével
+                                // A callbacket átadjuk, amibe a modális visszadobja az adatokat.
+                                // Mivel ez egy hagyományos eseménykezelő, a state-et trükkösen kell módosítanunk.
+                                // Ehelyett csak triggerelünk egy egyedi eseményt, amit a React komponens elkap.
+                                document.dispatchEvent(new CustomEvent('openInsertButtonModal'));
                             }
                         }
                     }
@@ -239,7 +323,32 @@ const EmailTemplatesTab = () => {
             quillRef.current.setContents(delta, 'silent');
         }
 
+        // Event listener a modális megnyitásához a Quillből
+        const handleOpenModal = () => setIsButtonModalOpen(true);
+        document.addEventListener('openInsertButtonModal', handleOpenModal);
+
+        return () => {
+            document.removeEventListener('openInsertButtonModal', handleOpenModal);
+        };
+
     }, [isLoading, activeTemplateId, htmlContent]);
+
+    // Gomb tényleges beszúrása a React állapotból
+    const handleInsertButton = (url, text, bgColor, textColor) => {
+        if (!quillRef.current) return;
+        const quill = quillRef.current;
+        const range = quill.getSelection(true);
+
+        // Nyers HTML beszúrása
+        const buttonHtml = `<a href="${url}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: ${bgColor}; color: ${textColor}; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 15px 0;">${text}</a>&nbsp;`;
+
+        quill.clipboard.dangerouslyPasteHTML(range.index, buttonHtml, 'api');
+
+        // Kurzort elvisszük a gomb utánra
+        setTimeout(() => {
+            quill.setSelection(range.index + text.length + 2); // +2 for the spaces/tags approximation
+        }, 10);
+    };
 
     const handleTemplateSelect = (templateId) => {
         setActiveTemplateId(templateId);
@@ -637,6 +746,11 @@ const EmailTemplatesTab = () => {
                 savedTemplate=${{ subject: savedSubject, html: savedHtmlContent }}
                 isOpen=${isTestModalOpen}
                 onClose=${() => setIsTestModalOpen(false)}
+            />
+            <${InsertButtonModal}
+                isOpen=${isButtonModalOpen}
+                onClose=${() => setIsButtonModalOpen(false)}
+                onInsert=${handleInsertButton}
             />
         </div>
     `;

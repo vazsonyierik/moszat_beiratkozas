@@ -396,7 +396,7 @@ const DEFAULT_TEMPLATES = {
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
-                {{reason}}
+                {{reason_formatted}}
                 <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
@@ -471,7 +471,7 @@ const DEFAULT_TEMPLATES = {
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
                     <li><strong>Eredeti időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
-                {{reason}}
+                {{reason_formatted}}
                 <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
                 <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
@@ -922,7 +922,7 @@ const DEFAULT_TEMPLATES = {
                 <ul>
                     <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
-                {{reason}}
+                {{reason_formatted}}
                 <p>Kérjük, vedd fel velünk a kapcsolatot, ha kérdésed van, vagy új időpontot szeretnél foglalni.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
             </div>
@@ -940,7 +940,7 @@ const DEFAULT_TEMPLATES = {
                 <ul>
                     <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
-                {{reason}}
+                {{reason_formatted}}
                 <p>Kérjük, látogass el a jelentkezési felületre egy új időpont foglalásához. Elnézést kérünk az okozott kellemetlenségért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
             </div>
@@ -1014,7 +1014,7 @@ const DEFAULT_TEMPLATES = {
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
-                {{reason}}
+                {{reason_formatted}}
                 <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
@@ -1089,7 +1089,7 @@ const DEFAULT_TEMPLATES = {
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
                     <li><strong>Eredeti időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
-                {{reason}}
+                {{reason_formatted}}
                 <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
                 <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
