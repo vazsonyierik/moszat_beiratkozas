@@ -40,6 +40,15 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
     const [results, setResults] = useState(null);
+    const [step, setStep] = useState(1); // For 2-step wizard on mobile
+
+    // Always show summary on desktop. On mobile, show wizard if 3 or more items.
+    const isMobile = window.innerWidth < 640;
+    const needsWizard = isMobile && cart.length >= 3;
+
+    // Determine what to render based on wizard step
+    const showSummaryList = !needsWizard || step === 1;
+    const showForm = !needsWizard || step === 2;
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -132,112 +141,125 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto">
             <div className="bg-white sm:rounded-2xl rounded-t-3xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-lg transform transition-all sm:my-8 mt-16 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
-                <header className="p-5 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-white sm:rounded-t-2xl rounded-t-3xl shrink-0">
-                    <h3 className="text-xl font-extrabold text-gray-800 tracking-tight">Jelentkezés véglegesítése</h3>
-                    <button onClick=${() => onClose()} className="text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors">
+                <header className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-white sm:rounded-t-2xl rounded-t-3xl shrink-0">
+                    <div className="flex items-center gap-3">
+                        ${needsWizard && step === 2 ? html`
+                            <button onClick=${() => setStep(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
+                                <${Icons.ChevronRightIcon} size=${24} className="rotate-180" />
+                            </button>
+                        ` : ''}
+                        <h3 className="text-lg sm:text-xl font-extrabold text-gray-800 tracking-tight">Jelentkezés véglegesítése</h3>
+                    </div>
+                    <button onClick=${() => onClose()} className="text-gray-400 hover:text-gray-700 p-2 rounded-full hover:bg-gray-100 transition-colors -mr-2">
                         <${Icons.XIcon} size=${24} />
                     </button>
                 </header>
                 
-                <div className="px-5 py-4 sm:px-6 bg-gray-50/50 border-b border-gray-100 max-h-[220px] overflow-y-auto shrink-0 custom-scrollbar">
-                    <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott modulok (${cart.length})</p>
-                    <ul className="space-y-2.5">
-                        ${cart.map((item, index) => html`
-                            <li key=${index} className="text-sm bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-indigo-100">
-                                <div className="flex-1 min-w-0">
-                                    <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                    <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                        <${Icons.CalendarIcon} size=${14} className="text-indigo-400" />
-                                        <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-indigo-600 ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
+                ${showSummaryList ? html`
+                    <div className="px-4 py-4 sm:px-6 bg-gray-50/50 border-b border-gray-100 flex-1 sm:flex-none overflow-y-auto sm:max-h-[220px] custom-scrollbar">
+                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott modulok (${cart.length})</p>
+                        <ul className="space-y-2.5">
+                            ${cart.map((item, index) => html`
+                                <li key=${index} className="text-sm bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-indigo-100">
+                                    <div className="flex-1 min-w-0">
+                                        <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
+                                        <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
+                                            <${Icons.CalendarIcon} size=${14} className="text-indigo-400" />
+                                            <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-indigo-600 ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
+                                        </div>
                                     </div>
+                                    ${onRemoveItem ? html`
+                                        <button
+                                            type="button"
+                                            onClick=${() => onRemoveItem(item.course.id)}
+                                            className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
+                                            title="Eltávolítás"
+                                        >
+                                            <${Icons.XIcon} size=${18} />
+                                        </button>
+                                    ` : ''}
+                                </li>
+                            `)}
+                        </ul>
+                        ${needsWizard && step === 1 ? html`
+                            <div className="mt-6">
+                                <button
+                                    onClick=${() => setStep(2)}
+                                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-[0_4px_10px_rgba(79,_70,_229,_0.2)] flex items-center justify-center gap-2"
+                                >
+                                    Tovább az adatokhoz <span className="text-xl leading-none">→</span>
+                                </button>
+                            </div>
+                        ` : ''}
+                    </div>
+                ` : ''}
+
+                ${showForm ? html`
+                    <main className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white">
+                        ${error ? html`<div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
+
+                        <form onSubmit=${handleSubmit} className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Vezetéknév</label>
+                                    <input
+                                        type="text"
+                                        value=${lastName}
+                                        onChange=${e => setLastName(e.target.value)}
+                                        className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                        required
+                                        placeholder="Kovács"
+                                    />
                                 </div>
-                                ${onRemoveItem ? html`
-                                    <button 
-                                        type="button"
-                                        onClick=${() => onRemoveItem(item.course.id)}
-                                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
-                                        title="Eltávolítás"
-                                    >
-                                        <${Icons.XIcon} size=${18} />
-                                    </button>
-                                ` : ''}
-                            </li>
-                        `)}
-                    </ul>
-                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Keresztnév</label>
+                                    <input
+                                        type="text"
+                                        value=${firstName}
+                                        onChange=${e => setFirstName(e.target.value)}
+                                        className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                        required
+                                        placeholder="János"
+                                    />
+                                </div>
+                            </div>
 
-                <main className="p-5 sm:p-6 overflow-y-auto custom-scrollbar">
-                    ${error ? html`<div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
-                    
-                    <form onSubmit=${handleSubmit} className="space-y-5">
-                        <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Vezetéknév</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím</label>
                                 <input 
-                                    type="text" 
-                                    value=${lastName} 
-                                    onChange=${e => setLastName(e.target.value)}
-                                    className="w-full p-3.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                    type="email"
+                                    value=${email}
+                                    onChange=${e => setEmail(e.target.value)}
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
                                     required
-                                    placeholder="Kovács"
+                                    placeholder="pelda@email.hu"
                                 />
                             </div>
+
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Keresztnév</label>
+                                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím megerősítése</label>
                                 <input 
-                                    type="text" 
-                                    value=${firstName} 
-                                    onChange=${e => setFirstName(e.target.value)}
-                                    className="w-full p-3.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                    type="email"
+                                    value=${emailConfirm}
+                                    onChange=${e => setEmailConfirm(e.target.value)}
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
                                     required
-                                    placeholder="János"
+                                    placeholder="pelda@email.hu"
                                 />
                             </div>
-                        </div>
-                        
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím</label>
-                            <input 
-                                type="email" 
-                                value=${email} 
-                                onChange=${e => setEmail(e.target.value)}
-                                className="w-full p-3.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
-                                required
-                                placeholder="pelda@email.hu"
-                            />
-                        </div>
-                        
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím megerősítése</label>
-                            <input 
-                                type="email" 
-                                value=${emailConfirm} 
-                                onChange=${e => setEmailConfirm(e.target.value)}
-                                className="w-full p-3.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
-                                required
-                                placeholder="pelda@email.hu"
-                            />
-                        </div>
 
-                        <div className="pt-2 flex justify-end gap-3 mt-4">
-                            <button 
-                                type="button" 
-                                onClick=${() => onClose()}
-                                disabled=${isSubmitting}
-                                className="px-5 py-3 text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 hover:text-gray-900 rounded-xl font-bold transition-colors"
-                            >
-                                Mégse
-                            </button>
-                            <button 
-                                type="submit"
-                                disabled=${isSubmitting}
-                                className="flex-1 sm:flex-none px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2 shadow-[0_8px_16px_rgba(79,_70,_229,_0.2)] hover:shadow-[0_8px_20px_rgba(79,_70,_229,_0.3)] hover:-translate-y-0.5 active:translate-y-0"
-                            >
-                                ${isSubmitting ? html`<span className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span> <span className="text-xl ml-1 leading-none">→</span>`}
-                            </button>
-                        </div>
-                    </form>
-                </main>
+                            <div className="pt-4 flex justify-end gap-3 mt-2">
+                                <button
+                                    type="submit"
+                                    disabled=${isSubmitting}
+                                    className="w-full sm:flex-none px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2 shadow-[0_8px_16px_rgba(79,_70,_229,_0.2)] hover:shadow-[0_8px_20px_rgba(79,_70,_229,_0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                                >
+                                    ${isSubmitting ? html`<span className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span> <span className="text-xl ml-1 leading-none">→</span>`}
+                                </button>
+                            </div>
+                        </form>
+                    </main>
+                ` : ''}
             </div>
         </div>
     `;
@@ -296,15 +318,26 @@ const StudentAppointmentsApp = () => {
     const [toast, setToast] = useState(null);
     useEffect(() => {
         if (isCheckoutOpen) {
+            // Apply iOS safe scroll locking
             document.body.style.overflow = 'hidden';
-            document.body.style.overscrollBehavior = 'none';
+            document.body.style.position = 'fixed';
+            document.body.style.top = `-${window.scrollY}px`;
+            document.body.style.width = '100%';
         } else {
+            const scrollY = document.body.style.top;
             document.body.style.overflow = '';
-            document.body.style.overscrollBehavior = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
+            if (scrollY) {
+                window.scrollTo(0, parseInt(scrollY || '0') * -1);
+            }
         }
         return () => {
             document.body.style.overflow = '';
-            document.body.style.overscrollBehavior = '';
+            document.body.style.position = '';
+            document.body.style.top = '';
+            document.body.style.width = '';
         };
     }, [isCheckoutOpen]);
 

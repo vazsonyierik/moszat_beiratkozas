@@ -324,6 +324,11 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     // Linking state
     const [bookingToLink, setBookingToLink] = useState(null);
 
+    // Cancel modal state
+    const [cancelModal, setCancelModal] = useState({ isOpen: false, item: null, type: null }); // type: 'booking' | 'waitlist'
+    const [cancelReason, setCancelReason] = useState('');
+    const [isCancelling, setIsCancelling] = useState(false);
+
     // Attendance loading state
     const [updatingAttendanceId, setUpdatingAttendanceId] = useState(null);
     
@@ -408,47 +413,47 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
     }, [course, isTestView, showToast]);
 
     const handleCancelBooking = (booking) => {
-        const reason = window.prompt("Opcionális: Adj meg egy indoklást a törléshez (ez bekerül a kiküldött e-mailbe):");
-        if (reason === null) return;
-
-        showConfirmation({
-            message: `Biztosan törölni szeretnéd ${booking.firstName} ${booking.lastName} jelentkezését erről a foglalkozásról?`,
-            onConfirm: async () => {
-                try {
-                    const cancelBookingFn = httpsCallable(functions, 'cancelBookingAsAdmin');
-                    await cancelBookingFn({
-                        courseId: course.id,
-                        studentEmail: booking.email,
-                        isTestView,
-                        reason
-                    });
-                    showToast('Jelentkezés sikeresen törölve.', 'success');
-                } catch (error) {
-                    console.error("Error cancelling booking:", error);
-                    showToast(`Hiba a törlés során: ${error.message}`, 'error');
-                }
-            }
-        });
+        setCancelModal({ isOpen: true, item: booking, type: 'booking' });
+        setCancelReason('');
     };
 
     const handleRemoveWaitlist = (entry) => {
-        showConfirmation({
-            message: `Biztosan törölni szeretnéd ${entry.firstName} ${entry.lastName} tanulót a várólistáról?`,
-            onConfirm: async () => {
-                try {
-                    const removeWaitlistFn = httpsCallable(functions, 'removeWaitlistEntryAsAdmin');
-                    await removeWaitlistFn({
-                        courseId: course.id,
-                        email: entry.email,
-                        isTestView
-                    });
-                    showToast('Sikeresen eltávolítva a várólistáról.', 'success');
-                } catch (error) {
-                    console.error("Error removing from waitlist:", error);
-                    showToast(`Hiba a törlés során: ${error.message}`, 'error');
-                }
+        setCancelModal({ isOpen: true, item: entry, type: 'waitlist' });
+        setCancelReason('');
+    };
+
+    const confirmCancellation = async () => {
+        setIsCancelling(true);
+        const { item, type } = cancelModal;
+
+        try {
+            if (type === 'booking') {
+                const cancelBookingFn = httpsCallable(functions, 'cancelBookingAsAdmin');
+                await cancelBookingFn({
+                    courseId: course.id,
+                    studentEmail: item.email,
+                    isTestView,
+                    reason: cancelReason
+                });
+                showToast('Jelentkezés sikeresen törölve.', 'success');
+            } else if (type === 'waitlist') {
+                const removeWaitlistFn = httpsCallable(functions, 'removeWaitlistEntryAsAdmin');
+                await removeWaitlistFn({
+                    courseId: course.id,
+                    email: item.email,
+                    isTestView,
+                    // Note: waitlist cancellation might not use reason in backend yet, but we pass it anyway
+                    reason: cancelReason
+                });
+                showToast('Sikeresen eltávolítva a várólistáról.', 'success');
             }
-        });
+            setCancelModal({ isOpen: false, item: null, type: null });
+        } catch (error) {
+            console.error("Error cancelling:", error);
+            showToast(`Hiba a törlés során: ${error.message}`, 'error');
+        } finally {
+            setIsCancelling(false);
+        }
     };
 
     const handlePrintCourseBookings = () => {
@@ -958,6 +963,53 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     onSuccess=${() => setBookingToLink(null)}
                 />
             `}
+
+            ${cancelModal.isOpen && html`
+                <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-60 p-4">
+                    <div className="relative w-full max-w-md rounded-lg bg-white shadow-2xl flex flex-col">
+                        <div className="flex items-center justify-between rounded-t border-b p-4 bg-red-50">
+                            <h3 className="text-lg font-semibold text-red-900 flex items-center gap-2">
+                                <${Icons.AlertTriangleIcon} size=${20} className="text-red-600" />
+                                Törlés megerősítése
+                            </h3>
+                            <button onClick=${() => setCancelModal({ isOpen: false, item: null, type: null })} className="text-gray-400 hover:text-gray-900">
+                                <${Icons.XIcon} size=${20} />
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <p className="text-gray-700 mb-4 text-sm">
+                                Biztosan törölni szeretnéd <strong>${cancelModal.item?.lastName} ${cancelModal.item?.firstName}</strong>
+                                ${cancelModal.type === 'booking' ? ' jelentkezését' : ' várólistás feliratkozását'}?
+                            </p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Törlés indoka (opcionális)
+                            </label>
+                            <textarea
+                                rows="3"
+                                value=${cancelReason}
+                                onChange=${(e) => setCancelReason(e.target.value)}
+                                placeholder="Ez az indoklás bekerül a kiküldött e-mailbe..."
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                            ></textarea>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 rounded-b border-t p-4 bg-gray-50">
+                            <button
+                                onClick=${() => setCancelModal({ isOpen: false, item: null, type: null })}
+                                className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            >
+                                Mégse
+                            </button>
+                            <button
+                                onClick=${confirmCancellation}
+                                disabled=${isCancelling}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                ${isCancelling ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Törlés...` : 'Törlés'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `}
         </div>
     `;
 };
@@ -992,6 +1044,11 @@ const AppointmentsTab = ({ isTestView }) => {
 
     // Bulk student registration states
     const [isBulkStudentRegistrationOpen, setIsBulkStudentRegistrationOpen] = useState(false);
+
+    // Cancel Course Modal state
+    const [cancelCourseModal, setCancelCourseModal] = useState({ isOpen: false, courseId: null, courseName: '' });
+    const [cancelCourseReason, setCancelCourseReason] = useState('');
+    const [isCancellingCourse, setIsCancellingCourse] = useState(false);
 
     // Új állapotok az Archív/Aktív fülekhez és a lapozáshoz
     const [activeTab, setActiveTab] = useState('active'); // 'active' vagy 'archived'
@@ -1129,26 +1186,28 @@ const AppointmentsTab = ({ isTestView }) => {
         }
     };
 
-    const handleDeleteCourse = async (courseId, courseName) => {
-        const reason = window.prompt("Opcionális: Adj meg egy indoklást a törléshez (ez bekerül a hallgatóknak kiküldött e-mailbe):");
-        if (reason === null) return;
+    const handleDeleteCourse = (courseId, courseName) => {
+        setCancelCourseModal({ isOpen: true, courseId, courseName });
+        setCancelCourseReason('');
+    };
 
-        const deleteAction = async () => {
-            try {
-                // Hívjuk a backend funkciót a biztonságos törléshez (és majdani email küldéshez, stb.)
-                const deleteCourseFn = httpsCallable(functions, 'deleteCourseAsAdmin');
-                await deleteCourseFn({ courseId, isTestView, reason });
-                showToast('Foglalkozás sikeresen törölve!', 'success');
-            } catch (error) {
-                console.error("Error deleting course:", error);
-                showToast(`Hiba a törlés során: ${error.message}`, 'error');
-            }
-        };
-
-        showConfirmation({
-            message: `Biztosan törölni szeretnéd a(z) "${courseName}" foglalkozást? Ez a művelet nem vonható vissza.`,
-            onConfirm: deleteAction
-        });
+    const confirmCourseCancellation = async () => {
+        setIsCancellingCourse(true);
+        try {
+            const deleteCourseFn = httpsCallable(functions, 'deleteCourseAsAdmin');
+            await deleteCourseFn({
+                courseId: cancelCourseModal.courseId,
+                isTestView,
+                reason: cancelCourseReason
+            });
+            showToast('Foglalkozás sikeresen törölve!', 'success');
+            setCancelCourseModal({ isOpen: false, courseId: null, courseName: '' });
+        } catch (error) {
+            console.error("Error deleting course:", error);
+            showToast(`Hiba a törlés során: ${error.message}`, 'error');
+        } finally {
+            setIsCancellingCourse(false);
+        }
     };
 
     const startEditingCourse = (course) => {
@@ -1877,6 +1936,53 @@ const AppointmentsTab = ({ isTestView }) => {
                     onClose=${() => setIsBulkStudentRegistrationOpen(false)}
                     isTestView=${isTestView}
                 />
+            `}
+
+            ${cancelCourseModal.isOpen && html`
+                <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-60 p-4">
+                    <div className="relative w-full max-w-md rounded-lg bg-white shadow-2xl flex flex-col">
+                        <div className="flex items-center justify-between rounded-t border-b p-4 bg-red-50">
+                            <h3 className="text-lg font-semibold text-red-900 flex items-center gap-2">
+                                <${Icons.AlertTriangleIcon} size=${20} className="text-red-600" />
+                                Foglalkozás törlése
+                            </h3>
+                            <button onClick=${() => setCancelCourseModal({ isOpen: false, courseId: null, courseName: '' })} className="text-gray-400 hover:text-gray-900">
+                                <${Icons.XIcon} size=${20} />
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <p className="text-gray-700 mb-4 text-sm">
+                                Biztosan törölni szeretnéd a(z) <strong>${cancelCourseModal.courseName}</strong> foglalkozást?
+                                A művelet nem vonható vissza, és minden jelentkező értesítést kap.
+                            </p>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                Törlés indoka (opcionális)
+                            </label>
+                            <textarea
+                                rows="3"
+                                value=${cancelCourseReason}
+                                onChange=${(e) => setCancelCourseReason(e.target.value)}
+                                placeholder="Ez az indoklás bekerül a hallgatóknak kiküldött e-mailbe..."
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-red-500 focus:ring-red-500 sm:text-sm"
+                            ></textarea>
+                        </div>
+                        <div className="flex items-center justify-end gap-3 rounded-b border-t p-4 bg-gray-50">
+                            <button
+                                onClick=${() => setCancelCourseModal({ isOpen: false, courseId: null, courseName: '' })}
+                                className="rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 border border-gray-300 hover:bg-gray-100"
+                            >
+                                Mégse
+                            </button>
+                            <button
+                                onClick=${confirmCourseCancellation}
+                                disabled=${isCancellingCourse}
+                                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+                            >
+                                ${isCancellingCourse ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span> Törlés...` : 'Foglalkozás törlése'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `}
         </div>
     `;
