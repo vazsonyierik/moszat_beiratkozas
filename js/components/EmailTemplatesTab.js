@@ -150,18 +150,82 @@ const EmailTemplatesTab = () => {
         if (isLoading || !window.Quill || !editorContainerRef.current) return;
 
         if (!quillRef.current) {
+            // Register custom button icon
+            const quillIcons = window.Quill.import('ui/icons');
+            quillIcons['insertButton'] = '<svg viewbox="0 0 18 18"><rect class="ql-stroke" height="10" width="14" x="2" y="4" rx="3" ry="3"></rect><line class="ql-stroke" x1="5" x2="13" y1="9" y2="9"></line></svg>';
+
+            // Register custom line-height format
+            const Parchment = window.Quill.import('parchment');
+            const lineHeightConfig = {
+                scope: Parchment.Scope.BLOCK,
+                whitelist: ['1.0', '1.2', '1.5', '1.6', '2.0']
+            };
+            const LineHeightClass = new Parchment.Attributor.Class('lineheight', 'ql-line-height', lineHeightConfig);
+            const LineHeightStyle = new Parchment.Attributor.Style('lineheight', 'line-height', lineHeightConfig);
+            window.Quill.register(LineHeightClass, true);
+            window.Quill.register(LineHeightStyle, true);
+
+            // Register custom button blot
+            const Inline = window.Quill.import('blots/inline');
+            class ButtonBlot extends Inline {
+                static create(value) {
+                    const node = super.create();
+                    node.setAttribute('href', value.url);
+                    node.setAttribute('target', '_blank');
+                    node.setAttribute('style', `display: inline-block; padding: 10px 20px; background-color: ${value.bgColor}; color: ${value.textColor}; text-decoration: none; border-radius: 5px; font-weight: bold; margin: 10px 0;`);
+                    return node;
+                }
+                static formats(node) {
+                    return {
+                        url: node.getAttribute('href'),
+                        bgColor: node.style.backgroundColor,
+                        textColor: node.style.color
+                    };
+                }
+            }
+            ButtonBlot.blotName = 'customButton';
+            ButtonBlot.tagName = 'a';
+            window.Quill.register(ButtonBlot, true);
+
             quillRef.current = new window.Quill(editorContainerRef.current, {
                 theme: 'snow',
                 modules: {
-                    toolbar: [
-                        ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-                        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                        [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                        [{ 'align': [] }],
-                        ['link'],
-                        ['clean']                                         // remove formatting button
-                    ]
+                    toolbar: {
+                        container: [
+                            ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
+                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                            [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
+                            [{ 'align': [] }],
+                            [{ 'lineheight': ['1.0', '1.2', '1.5', '1.6', '2.0'] }],
+                            ['link', 'insertButton'], // added custom button
+                            ['clean']                                         // remove formatting button
+                        ],
+                        handlers: {
+                            insertButton: function() {
+                                const url = prompt("Add meg a gomb hivatkozását (URL):");
+                                if (!url) return;
+
+                                const text = prompt("Add meg a gomb feliratát:", "Kattints ide");
+                                if (!text) return;
+
+                                const color = prompt("Add meg a gomb színét (hexkód vagy név, pl. #d9534f):", "#4f46e5");
+                                const textColor = prompt("Add meg a gomb szövegszínét (hexkód vagy név, pl. #ffffff):", "#ffffff");
+
+                                const range = this.quill.getSelection(true);
+
+                                this.quill.insertText(range.index, text, 'user');
+                                this.quill.formatText(range.index, text.length, 'customButton', {
+                                    url: url,
+                                    bgColor: color || '#4f46e5',
+                                    textColor: textColor || '#ffffff'
+                                }, 'user');
+
+                                // Move cursor past the new button
+                                this.quill.setSelection(range.index + text.length);
+                            }
+                        }
+                    }
                 }
             });
             

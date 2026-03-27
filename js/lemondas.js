@@ -11,8 +11,9 @@ const ReactDOM = window.ReactDOM;
 const { useState, useEffect } = React;
 
 const CancellationApp = () => {
-    const [status, setStatus] = useState('confirm'); // 'confirm', 'loading', 'success', 'error'
+    const [status, setStatus] = useState('loading_info'); // 'loading_info', 'confirm', 'loading', 'success', 'error'
     const [errorMessage, setErrorMessage] = useState('');
+    const [bookingInfo, setBookingInfo] = useState(null);
     
     const urlParams = new URLSearchParams(window.location.search);
     const token = urlParams.get('token');
@@ -21,10 +22,31 @@ const CancellationApp = () => {
         if (!token) {
             setStatus('error');
             setErrorMessage('Hiányzó vagy érvénytelen lemondási azonosító a hivatkozásban.');
+            return;
         }
+
+        // Fetch booking info to determine if it's a waitlist or normal booking
+        const fetchBookingInfo = async () => {
+            try {
+                const checkStatusFn = httpsCallable(functions, 'checkCancellationStatus');
+                const result = await checkStatusFn({ token });
+                setBookingInfo(result.data);
+                setStatus('confirm');
+            } catch (error) {
+                console.error("Hiba az azonosító ellenőrzésekor:", error);
+                setStatus('error');
+                let msg = error.message;
+                if (msg.includes('nem található') || msg.includes('not-found')) {
+                    msg = 'A jelentkezés nem található. Lehet, hogy már korábban lemondtad, leiratkoztál a várólistáról, vagy a foglalkozás elmaradt.';
+                }
+                setErrorMessage(msg || 'Hiba történt a hivatkozás ellenőrzése közben.');
+            }
+        };
+
+        fetchBookingInfo();
     }, [token]);
 
-    const [successMessage, setSuccessMessage] = useState('A jelentkezésedet sikeresen töröltük a rendszerből. Köszönjük, hogy időben jelezted felénk!');
+    const [successMessage, setSuccessMessage] = useState('');
 
     const handleCancel = async () => {
         setStatus('loading');
@@ -48,6 +70,10 @@ const CancellationApp = () => {
     };
 
     const renderContent = () => {
+        if (status === 'loading_info') {
+            return html`<${LoadingOverlay} text="Azonosító ellenőrzése..." />`;
+        }
+
         if (status === 'loading') {
             return html`<${LoadingOverlay} text="Lemondás feldolgozása..." />`;
         }
@@ -78,19 +104,33 @@ const CancellationApp = () => {
             `;
         }
 
+        const isWaitlist = bookingInfo?.isWaitlist;
+        const title = isWaitlist ? "Leiratkozás a várólistáról" : "Időpont lemondása";
+        const description = isWaitlist
+            ? "Biztosan szeretnél leiratkozni a várólistáról? Ezzel elveszíted az esélyt, hogy bekerülj, ha felszabadul egy hely."
+            : "Biztosan szeretnéd lemondani ezt az időpontot? A lemondás nem vonható vissza.";
+
+        const confirmBtnText = isWaitlist ? "Igen, leiratkozom" : "Igen, lemondom";
+
         return html`
             <div className="bg-white p-8 rounded-xl shadow-lg border border-gray-100 text-center max-w-md mx-auto">
                 <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600">
                     <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
-                <h2 className="text-2xl font-bold text-gray-800 mb-2">Jelentkezés lemondása</h2>
-                <p className="text-gray-600 mb-8">Biztosan szeretnéd lemondani az időpontodat, vagy leiratkozni a várólistáról? Ez a művelet nem vonható vissza.</p>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">${title}</h2>
+                ${bookingInfo?.courseName ? html`
+                    <div className="bg-gray-50 rounded p-3 mb-4 text-sm text-gray-700 font-medium">
+                        ${bookingInfo.courseName}<br/>
+                        <span className="text-gray-500 font-normal">${bookingInfo.courseDate}</span>
+                    </div>
+                ` : ''}
+                <p className="text-gray-600 mb-8">${description}</p>
                 <div className="flex flex-col gap-3">
                     <button 
                         onClick=${handleCancel}
                         className="w-full py-3 px-4 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg transition-colors focus:ring-4 focus:ring-red-300"
                     >
-                        Igen, lemondom / leiratkozom
+                        ${confirmBtnText}
                     </button>
                     <a 
                         href="idopont.html" 
