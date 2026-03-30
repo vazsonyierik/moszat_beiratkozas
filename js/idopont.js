@@ -41,11 +41,11 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [error, setError] = useState('');
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
-    
+
     // Always show summary on desktop. On mobile, show wizard if 3 or more items.
     const isMobile = window.innerWidth < 640;
     const needsWizard = isMobile && cart.length >= 3;
-    
+
     // Determine what to render based on wizard step
     const showSummaryList = !needsWizard || step === 1;
     const showForm = !needsWizard || step === 2;
@@ -169,7 +169,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                         </div>
                                     </div>
                                     ${onRemoveItem ? html`
-                                        <button 
+                                        <button
                                             type="button"
                                             onClick=${() => onRemoveItem(item.course.id)}
                                             className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
@@ -183,7 +183,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         </ul>
                         ${needsWizard && step === 1 ? html`
                             <div className="mt-6">
-                                <button 
+                                <button
                                     onClick=${() => setStep(2)}
                                     className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-[0_4px_10px_rgba(79,_70,_229,_0.2)] flex items-center justify-center gap-2"
                                 >
@@ -197,14 +197,14 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 ${showForm ? html`
                     <main className="p-4 sm:p-6 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white">
                         ${error ? html`<div className="mb-5 p-3.5 bg-red-50 border border-red-100 text-red-700 rounded-xl text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
-                        
+
                         <form onSubmit=${handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-3 sm:gap-4">
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Vezetéknév</label>
-                                    <input 
-                                        type="text" 
-                                        value=${lastName} 
+                                    <input
+                                        type="text"
+                                        value=${lastName}
                                         onChange=${e => setLastName(e.target.value)}
                                         className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
                                         required
@@ -213,9 +213,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Keresztnév</label>
-                                    <input 
-                                        type="text" 
-                                        value=${firstName} 
+                                    <input
+                                        type="text"
+                                        value=${firstName}
                                         onChange=${e => setFirstName(e.target.value)}
                                         className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
                                         required
@@ -223,24 +223,24 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     />
                                 </div>
                             </div>
-                            
+
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím</label>
                                 <input 
-                                    type="email" 
-                                    value=${email} 
+                                    type="email"
+                                    value=${email}
                                     onChange=${e => setEmail(e.target.value)}
                                     className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
                                     required
                                     placeholder="pelda@email.hu"
                                 />
                             </div>
-                            
+
                             <div>
                                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím megerősítése</label>
                                 <input 
-                                    type="email" 
-                                    value=${emailConfirm} 
+                                    type="email"
+                                    value=${emailConfirm}
                                     onChange=${e => setEmailConfirm(e.target.value)}
                                     className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
                                     required
@@ -249,7 +249,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             </div>
 
                             <div className="pt-4 flex justify-end gap-3 mt-2">
-                                <button 
+                                <button
                                     type="submit"
                                     disabled=${isSubmitting}
                                     className="w-full sm:flex-none px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2 shadow-[0_8px_16px_rgba(79,_70,_229,_0.2)] hover:shadow-[0_8px_20px_rgba(79,_70,_229,_0.3)] hover:-translate-y-0.5 active:translate-y-0"
@@ -344,6 +344,28 @@ const StudentAppointmentsApp = () => {
     
     // Category Tabs: 'kresz', 'medical', 'firstaid'
     const [activeTab, setActiveTab] = useState('kresz');
+
+    // Advanced filtering state for Desktop (where tabs are replaced by filters)
+    const [selectedCategories, setSelectedCategories] = useState({
+        consultation: false,
+        medical: false,
+        firstaid: false
+    });
+    const [selectedModules, setSelectedModules] = useState({
+        mod1: false,
+        mod2: false,
+        mod3: false,
+        mod4: false
+    });
+    const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
+    const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     const urlParams = new URLSearchParams(window.location.search);
     const isTestView = urlParams.get('test') === 'true';
@@ -484,48 +506,106 @@ const StudentAppointmentsApp = () => {
         setIsCheckoutOpen(true);
     };
 
-    // 3. Prepare data for the 3 tabs
-    const { kreszWeeks, medicalCourses, firstAidCourses } = useMemo(() => {
+    // 3. Prepare data and filter based on device view
+    const { kreszWeeks, medicalCourses, firstAidCourses, desktopWeeks } = useMemo(() => {
         const medical = [];
         const firstAid = [];
         const kresz = [];
+        
+        const desktopFilteredCourses = [];
 
         courses.forEach(c => {
-            if (c.name === "Orvosi alkalmassági vizsgálat") {
-                medical.push(c);
-            } else if (c.name === "Elsősegély tanfolyam") {
-                firstAid.push(c);
-            } else {
-                kresz.push(c);
+            const isMedical = c.name === "Orvosi alkalmassági vizsgálat";
+            const isFirstAid = c.name === "Elsősegély tanfolyam";
+            const isConsultation = c.name.toLowerCase().includes("konzultáció");
+            const isModule = !isMedical && !isFirstAid && !isConsultation;
+
+            // Base categorizations for Mobile (Tabs)
+            if (isMedical) medical.push(c);
+            else if (isFirstAid) firstAid.push(c);
+            else kresz.push(c);
+
+            // Filtering for Desktop (Unified list)
+            let matchesTime = true;
+            if (timeFilter !== 'all') {
+                const hour = parseInt(c.startTime.split(':')[0], 10);
+                if (timeFilter === 'am' && hour >= 12) matchesTime = false;
+                if (timeFilter === 'pm' && hour < 12) matchesTime = false;
+            }
+
+            if (matchesTime) {
+                const noFiltersActive = 
+                    !selectedCategories.medical && 
+                    !selectedCategories.firstaid && 
+                    !selectedCategories.consultation && 
+                    !selectedModules.mod1 && 
+                    !selectedModules.mod2 && 
+                    !selectedModules.mod3 && 
+                    !selectedModules.mod4;
+
+                if (noFiltersActive) {
+                    desktopFilteredCourses.push(c);
+                } else {
+                    if (isMedical && selectedCategories.medical) desktopFilteredCourses.push(c);
+                    else if (isFirstAid && selectedCategories.firstaid) desktopFilteredCourses.push(c);
+                    else if (isConsultation && selectedCategories.consultation) desktopFilteredCourses.push(c);
+                    else if (isModule) {
+                        const name = c.name.toLowerCase();
+                        const isMod1 = name.includes('1.');
+                        const isMod2 = name.includes('2.');
+                        const isMod3 = name.includes('3.');
+                        const isMod4 = name.includes('4.');
+
+                        if (
+                            (isMod1 && selectedModules.mod1) ||
+                            (isMod2 && selectedModules.mod2) ||
+                            (isMod3 && selectedModules.mod3) ||
+                            (isMod4 && selectedModules.mod4) ||
+                            // Fallback: If it's a module but doesn't have a clear number, and ANY module filter is on, show it
+                            (!isMod1 && !isMod2 && !isMod3 && !isMod4 && (selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4))
+                        ) {
+                            desktopFilteredCourses.push(c);
+                        }
+                    }
+                }
             }
         });
 
-        // Group KRESZ by week
+        // Group KRESZ by week (Mobile)
         const weeksMap = {};
         kresz.forEach(c => {
             const wKey = getWeekKey(c.date);
             if (!weeksMap[wKey]) {
-                weeksMap[wKey] = {
-                    weekKey: wKey,
-                    name: formatWeekName(wKey),
-                    days: {}
-                };
+                weeksMap[wKey] = { weekKey: wKey, name: formatWeekName(wKey), days: {} };
             }
             if (!weeksMap[wKey].days[c.date]) {
                 weeksMap[wKey].days[c.date] = [];
             }
             weeksMap[wKey].days[c.date].push(c);
         });
-
-        // Sort weeks and days
         const sortedWeeks = Object.values(weeksMap).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+
+        // Group ALL filtered courses by week (Desktop)
+        const desktopWeeksMap = {};
+        desktopFilteredCourses.forEach(c => {
+            const wKey = getWeekKey(c.date);
+            if (!desktopWeeksMap[wKey]) {
+                desktopWeeksMap[wKey] = { weekKey: wKey, name: formatWeekName(wKey), days: {} };
+            }
+            if (!desktopWeeksMap[wKey].days[c.date]) {
+                desktopWeeksMap[wKey].days[c.date] = [];
+            }
+            desktopWeeksMap[wKey].days[c.date].push(c);
+        });
+        const desktopSortedWeeks = Object.values(desktopWeeksMap).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
         
         return {
             kreszWeeks: sortedWeeks,
             medicalCourses: medical,
-            firstAidCourses: firstAid
+            firstAidCourses: firstAid,
+            desktopWeeks: desktopSortedWeeks
         };
-    }, [courses]);
+    }, [courses, timeFilter, selectedCategories]);
 
     // Render Helpers
     const renderCourseCard = (course, isQuickBook = false) => {
@@ -614,8 +694,12 @@ const StudentAppointmentsApp = () => {
 
     const activeCoursesList = activeTab === 'medical' ? medicalCourses : activeTab === 'firstaid' ? firstAidCourses : [];
 
+    const toggleCategory = (cat) => {
+        setSelectedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+    };
+
     return html`
-        <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
             ${isTestView && html`
                 <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
                     <${Icons.AlertTriangleIcon} size=${20} />
@@ -630,8 +714,8 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-            <!-- Navigation Tabs -->
-            <div className="flex justify-center mb-8">
+            <!-- Navigation Tabs (Mobile Only) -->
+            <div className="flex lg:hidden justify-center mb-8">
                 <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
                     <button 
                         onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -659,56 +743,170 @@ const StudentAppointmentsApp = () => {
                 <!-- Main Content Area -->
                 <div className="flex-1 w-full lg:w-2/3">
 
-                    <!-- KRESZ & Konzultáció View (Matrix) -->
-                    ${activeTab === 'kresz' && html`
-                        <div className="space-y-8">
-                            ${kreszWeeks.length === 0 ? html`
-                                <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
-                                    <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
-                                </div>
-                            ` : kreszWeeks.map(week => html`
-                                <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                    <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
-                                        <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                                            <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
-                                            Oktatási hét: ${week.name}
-                                        </h3>
+                    <!-- Mobile Content Rendering (Tab based) -->
+                    <div className="block lg:hidden space-y-8">
+                        ${activeTab === 'kresz' && html`
+                            <div className="space-y-8">
+                                ${kreszWeeks.length === 0 ? html`
+                                    <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+                                        <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
                                     </div>
-                                    <div className="p-4 sm:p-6 space-y-6">
-                                        ${Object.keys(week.days).sort().map(dateStr => html`
-                                            <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
-                                                <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                                    ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                ` : kreszWeeks.map(week => html`
+                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+                                            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                                Oktatási hét: ${week.name}
+                                            </h3>
+                                        </div>
+                                        <div className="p-4 sm:p-6 space-y-6">
+                                            ${Object.keys(week.days).sort().map(dateStr => html`
+                                                <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                    <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        `)}
+                                            `)}
+                                        </div>
                                     </div>
-                                </div>
-                            `)}
-                        </div>
-                    `}
+                                `)}
+                            </div>
+                        `}
 
-                    <!-- Medical & First Aid View (Simple List) -->
-                    ${(activeTab === 'medical' || activeTab === 'firstaid') && html`
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-4 sm:p-6">
-                            ${activeCoursesList.length === 0 ? html`
-                                <div className="p-12 text-center">
-                                    <p className="text-gray-500 text-lg">Jelenleg nincs meghirdetett időpont ebben a kategóriában.</p>
-                                </div>
-                            ` : html`
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    ${activeCoursesList.map(course => renderCourseCard(course, true))}
-                                </div>
-                            `}
-                        </div>
-                    `}
+                        ${(activeTab === 'medical' || activeTab === 'firstaid') && html`
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-4 sm:p-6">
+                                ${activeCoursesList.length === 0 ? html`
+                                    <div className="p-12 text-center">
+                                        <p className="text-gray-500 text-lg">Jelenleg nincs meghirdetett időpont ebben a kategóriában.</p>
+                                    </div>
+                                ` : html`
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        ${activeCoursesList.map(course => renderCourseCard(course, false))}
+                                    </div>
+                                `}
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Desktop Content Rendering (Filter based) -->
+                    <div className="hidden lg:block space-y-8">
+                        ${(desktopWeeks.length > 0) && html`
+                            <div className="space-y-8">
+                                ${desktopWeeks.map(week => html`
+                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+                                            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                                Oktatási hét: ${week.name}
+                                            </h3>
+                                        </div>
+                                        <div className="p-4 sm:p-6 space-y-6">
+                                            ${Object.keys(week.days).sort().map(dateStr => html`
+                                                <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                    <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
+                                                        ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                    </div>
+                                                </div>
+                                            `)}
+                                        </div>
+                                    </div>
+                                `)}
+                            </div>
+                        `}
+
+                        ${(desktopWeeks.length === 0) && html`
+                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+                                <p className="text-gray-500 text-lg">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                            </div>
+                        `}
+                    </div>
 
                 </div>
 
-                <!-- Sticky Sidebar Cart (Only for KRESZ) -->
-                ${activeTab === 'kresz' && html`
-                    <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100 mb-20">
+                <!-- Sticky Sidebar (Filter & Cart) -->
+                ${(isDesktop || activeTab === 'kresz') && html`
+                    <div className=${`w-full lg:w-1/3 sticky top-6 mb-20 space-y-6 ${!isDesktop ? 'hidden lg:block' : ''}`}>
+                        
+                        <!-- Filter Panel (Desktop Only) -->
+                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden">
+                            <div className="bg-white px-5 py-4 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
+                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <${Icons.SearchIcon} size=${20} className="text-indigo-600" />
+                                    Szűrés
+                                </h3>
+                                <div className="flex items-center gap-4">
+                                    ${(selectedCategories.consultation || selectedCategories.medical || selectedCategories.firstaid || selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4 || timeFilter !== 'all') ? html`
+                                        <button 
+                                            onClick=${(e) => {
+                                                e.stopPropagation();
+                                                setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                                setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                                setTimeFilter('all');
+                                            }} 
+                                            className="flex items-center gap-1.5 text-sm font-bold text-red-500 hover:text-red-700 transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full"
+                                            title="Szűrők törlése"
+                                        >
+                                            <span className="bg-red-100 text-red-600 rounded-full p-0.5"><${Icons.XIcon} size=${14} /></span>
+                                            Törlés
+                                        </button>
+                                    ` : ''}
+                                    <span className=${`text-gray-400 transition-transform duration-300 ${isFilterExpanded ? 'rotate-180' : ''}`}>
+                                        <${Icons.ChevronRightIcon} size=${24} className="rotate-90" />
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            ${isFilterExpanded ? html`
+                                <div className="p-5 bg-white">
+                                    <div className="mb-5">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">KRESZ Modulok</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                1. modul
+                                            </button>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                2. modul
+                                            </button>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                3. modul
+                                            </button>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                4. modul
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="mb-5 border-t border-gray-100 pt-5">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Típusok</p>
+                                        <div className="flex flex-wrap gap-2">
+                                            <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
+                                            </button>
+                                            <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
+                                            </button>
+                                            <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="border-t border-gray-100 pt-5">
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
+                                        <div className="flex bg-gray-100 p-1 rounded-lg">
+                                            <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'all' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Mind</button>
+                                            <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'am' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Délelőtt</button>
+                                            <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'pm' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Délután</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Cart Panel -->
+                        <div className="bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100">
                         <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 flex items-center gap-2">
                             <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             Kiválasztott modulok
@@ -750,12 +948,13 @@ const StudentAppointmentsApp = () => {
                                 </button>
                             </div>
                         `}
+                        </div>
                     </div>
                 `}
             </div>
 
-            <!-- Floating Pill Button for Mobile (Only for KRESZ) -->
-            ${activeTab === 'kresz' && cart.length > 0 && html`
+            <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
+            ${cart.length > 0 && html`
                 <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] pointer-events-none w-full px-4 flex justify-center">
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
