@@ -347,10 +347,15 @@ const StudentAppointmentsApp = () => {
 
     // Advanced filtering state for Desktop (where tabs are replaced by filters)
     const [selectedCategories, setSelectedCategories] = useState({
-        modules: true,
         consultation: true,
         medical: true,
         firstaid: true
+    });
+    const [selectedModules, setSelectedModules] = useState({
+        mod1: true,
+        mod2: true,
+        mod3: true,
+        mod4: true
     });
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
@@ -530,8 +535,24 @@ const StudentAppointmentsApp = () => {
             if (matchesTime) {
                 if (isMedical && selectedCategories.medical) desktopFilteredCourses.push(c);
                 if (isFirstAid && selectedCategories.firstaid) desktopFilteredCourses.push(c);
-                if ((isModule && selectedCategories.modules) || (isConsultation && selectedCategories.consultation)) {
-                    desktopFilteredCourses.push(c);
+                if (isConsultation && selectedCategories.consultation) desktopFilteredCourses.push(c);
+                if (isModule) {
+                    const name = c.name.toLowerCase();
+                    const isMod1 = name.includes('1.');
+                    const isMod2 = name.includes('2.');
+                    const isMod3 = name.includes('3.');
+                    const isMod4 = name.includes('4.');
+
+                    if (
+                        (isMod1 && selectedModules.mod1) ||
+                        (isMod2 && selectedModules.mod2) ||
+                        (isMod3 && selectedModules.mod3) ||
+                        (isMod4 && selectedModules.mod4) ||
+                        // If it doesn't match 1-4, just show it if any module filter is on (fallback)
+                        (!isMod1 && !isMod2 && !isMod3 && !isMod4 && (selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4))
+                    ) {
+                        desktopFilteredCourses.push(c);
+                    }
                 }
             }
         });
@@ -796,17 +817,26 @@ const StudentAppointmentsApp = () => {
 
                         <!-- Filter Panel (Desktop Only) -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl p-5 border border-gray-100">
-                            <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2 flex items-center gap-2">
-                                <${Icons.SearchIcon} size=${20} className="text-indigo-600" />
-                                Szűrés
-                            </h3>
+                            <div className="flex justify-between items-center mb-4 border-b pb-2">
+                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                                    <${Icons.SearchIcon} size=${20} className="text-indigo-600" />
+                                    Szűrés
+                                </h3>
+                                <button
+                                    onClick=${() => {
+                                        setSelectedCategories({ consultation: true, medical: true, firstaid: true });
+                                        setSelectedModules({ mod1: true, mod2: true, mod3: true, mod4: true });
+                                        setTimeFilter('all');
+                                    }}
+                                    className="text-sm text-gray-500 hover:text-indigo-600 font-medium transition-colors"
+                                >
+                                    Szűrők törlése
+                                </button>
+                            </div>
 
                             <div className="mb-5">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Típusok</p>
                                 <div className="flex flex-wrap gap-2">
-                                    <button onClick=${() => toggleCategory('modules')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.modules ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                        ${selectedCategories.modules ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} KRESZ Modulok
-                                    </button>
                                     <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                         ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
                                     </button>
@@ -815,6 +845,27 @@ const StudentAppointmentsApp = () => {
                                     </button>
                                     <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                         ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="mb-5 border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">KRESZ Modulok</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick=${() => setSelectedModules({ mod1: true, mod2: true, mod3: true, mod4: true })} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${(selectedModules.mod1 && selectedModules.mod2 && selectedModules.mod3 && selectedModules.mod4) ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        Mind
+                                    </button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        1. modul
+                                    </button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        2. modul
+                                    </button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        3. modul
+                                    </button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        4. modul
                                     </button>
                                 </div>
                             </div>
