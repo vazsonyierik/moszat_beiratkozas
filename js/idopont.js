@@ -345,6 +345,22 @@ const StudentAppointmentsApp = () => {
     // Category Tabs: 'kresz', 'medical', 'firstaid'
     const [activeTab, setActiveTab] = useState('kresz');
 
+    // Advanced filtering state for Desktop (where tabs are replaced by filters)
+    const [selectedCategories, setSelectedCategories] = useState({
+        modules: true,
+        consultation: true,
+        medical: true,
+        firstaid: true
+    });
+    const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
+    const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+
+    useEffect(() => {
+        const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+
     const urlParams = new URLSearchParams(window.location.search);
     const isTestView = urlParams.get('test') === 'true';
 
@@ -484,48 +500,77 @@ const StudentAppointmentsApp = () => {
         setIsCheckoutOpen(true);
     };
 
-    // 3. Prepare data for the 3 tabs
-    const { kreszWeeks, medicalCourses, firstAidCourses } = useMemo(() => {
+    // 3. Prepare data and filter based on device view
+    const { kreszWeeks, medicalCourses, firstAidCourses, desktopWeeks } = useMemo(() => {
         const medical = [];
         const firstAid = [];
         const kresz = [];
 
+        const desktopFilteredCourses = [];
+
         courses.forEach(c => {
-            if (c.name === "Orvosi alkalmassági vizsgálat") {
-                medical.push(c);
-            } else if (c.name === "Elsősegély tanfolyam") {
-                firstAid.push(c);
-            } else {
-                kresz.push(c);
+            const isMedical = c.name === "Orvosi alkalmassági vizsgálat";
+            const isFirstAid = c.name === "Elsősegély tanfolyam";
+            const isConsultation = c.name.toLowerCase().includes("konzultáció");
+            const isModule = !isMedical && !isFirstAid && !isConsultation;
+
+            // Base categorizations for Mobile (Tabs)
+            if (isMedical) medical.push(c);
+            else if (isFirstAid) firstAid.push(c);
+            else kresz.push(c);
+
+            // Filtering for Desktop (Unified list)
+            let matchesTime = true;
+            if (timeFilter !== 'all') {
+                const hour = parseInt(c.startTime.split(':')[0], 10);
+                if (timeFilter === 'am' && hour >= 12) matchesTime = false;
+                if (timeFilter === 'pm' && hour < 12) matchesTime = false;
+            }
+
+            if (matchesTime) {
+                if (isMedical && selectedCategories.medical) desktopFilteredCourses.push(c);
+                if (isFirstAid && selectedCategories.firstaid) desktopFilteredCourses.push(c);
+                if ((isModule && selectedCategories.modules) || (isConsultation && selectedCategories.consultation)) {
+                    desktopFilteredCourses.push(c);
+                }
             }
         });
 
-        // Group KRESZ by week
+        // Group KRESZ by week (Mobile)
         const weeksMap = {};
         kresz.forEach(c => {
             const wKey = getWeekKey(c.date);
             if (!weeksMap[wKey]) {
-                weeksMap[wKey] = {
-                    weekKey: wKey,
-                    name: formatWeekName(wKey),
-                    days: {}
-                };
+                weeksMap[wKey] = { weekKey: wKey, name: formatWeekName(wKey), days: {} };
             }
             if (!weeksMap[wKey].days[c.date]) {
                 weeksMap[wKey].days[c.date] = [];
             }
             weeksMap[wKey].days[c.date].push(c);
         });
-
-        // Sort weeks and days
         const sortedWeeks = Object.values(weeksMap).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
+
+        // Group ALL filtered courses by week (Desktop)
+        const desktopWeeksMap = {};
+        desktopFilteredCourses.forEach(c => {
+            const wKey = getWeekKey(c.date);
+            if (!desktopWeeksMap[wKey]) {
+                desktopWeeksMap[wKey] = { weekKey: wKey, name: formatWeekName(wKey), days: {} };
+            }
+            if (!desktopWeeksMap[wKey].days[c.date]) {
+                desktopWeeksMap[wKey].days[c.date] = [];
+            }
+            desktopWeeksMap[wKey].days[c.date].push(c);
+        });
+        const desktopSortedWeeks = Object.values(desktopWeeksMap).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
         
         return {
             kreszWeeks: sortedWeeks,
             medicalCourses: medical,
-            firstAidCourses: firstAid
+            firstAidCourses: firstAid,
+            desktopWeeks: desktopSortedWeeks
         };
-    }, [courses]);
+    }, [courses, timeFilter, selectedCategories]);
 
     // Render Helpers
     const renderCourseCard = (course, isQuickBook = false) => {
@@ -614,6 +659,10 @@ const StudentAppointmentsApp = () => {
 
     const activeCoursesList = activeTab === 'medical' ? medicalCourses : activeTab === 'firstaid' ? firstAidCourses : [];
 
+    const toggleCategory = (cat) => {
+        setSelectedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+    };
+
     return html`
         <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
             ${isTestView && html`
@@ -630,8 +679,8 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-            <!-- Navigation Tabs -->
-            <div className="flex justify-center mb-8">
+            <!-- Navigation Tabs (Mobile Only) -->
+            <div className="flex lg:hidden justify-center mb-8">
                 <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
                     <button 
                         onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -659,56 +708,129 @@ const StudentAppointmentsApp = () => {
                 <!-- Main Content Area -->
                 <div className="flex-1 w-full lg:w-2/3">
 
-                    <!-- KRESZ & Konzultáció View (Matrix) -->
-                    ${activeTab === 'kresz' && html`
-                        <div className="space-y-8">
-                            ${kreszWeeks.length === 0 ? html`
-                                <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
-                                    <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
-                                </div>
-                            ` : kreszWeeks.map(week => html`
-                                <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                    <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
-                                        <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                                            <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
-                                            Oktatási hét: ${week.name}
-                                        </h3>
+                    <!-- Mobile Content Rendering (Tab based) -->
+                    <div className="block lg:hidden space-y-8">
+                        ${activeTab === 'kresz' && html`
+                            <div className="space-y-8">
+                                ${kreszWeeks.length === 0 ? html`
+                                    <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+                                        <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
                                     </div>
-                                    <div className="p-4 sm:p-6 space-y-6">
-                                        ${Object.keys(week.days).sort().map(dateStr => html`
-                                            <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
-                                                <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                                    ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                ` : kreszWeeks.map(week => html`
+                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+                                            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                                Oktatási hét: ${week.name}
+                                            </h3>
+                                        </div>
+                                        <div className="p-4 sm:p-6 space-y-6">
+                                            ${Object.keys(week.days).sort().map(dateStr => html`
+                                                <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                    <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                        ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        `)}
+                                            `)}
+                                        </div>
                                     </div>
-                                </div>
-                            `)}
-                        </div>
-                    `}
+                                `)}
+                            </div>
+                        `}
 
-                    <!-- Medical & First Aid View (Simple List) -->
-                    ${(activeTab === 'medical' || activeTab === 'firstaid') && html`
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-4 sm:p-6">
-                            ${activeCoursesList.length === 0 ? html`
-                                <div className="p-12 text-center">
-                                    <p className="text-gray-500 text-lg">Jelenleg nincs meghirdetett időpont ebben a kategóriában.</p>
-                                </div>
-                            ` : html`
-                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    ${activeCoursesList.map(course => renderCourseCard(course, true))}
-                                </div>
-                            `}
-                        </div>
-                    `}
+                        ${(activeTab === 'medical' || activeTab === 'firstaid') && html`
+                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-4 sm:p-6">
+                                ${activeCoursesList.length === 0 ? html`
+                                    <div className="p-12 text-center">
+                                        <p className="text-gray-500 text-lg">Jelenleg nincs meghirdetett időpont ebben a kategóriában.</p>
+                                    </div>
+                                ` : html`
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        ${activeCoursesList.map(course => renderCourseCard(course, false))}
+                                    </div>
+                                `}
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Desktop Content Rendering (Filter based) -->
+                    <div className="hidden lg:block space-y-8">
+                        ${(desktopWeeks.length > 0) && html`
+                            <div className="space-y-8">
+                                ${desktopWeeks.map(week => html`
+                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
+                                            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                                Oktatási hét: ${week.name}
+                                            </h3>
+                                        </div>
+                                        <div className="p-4 sm:p-6 space-y-6">
+                                            ${Object.keys(week.days).sort().map(dateStr => html`
+                                                <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                    <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                                        ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                    </div>
+                                                </div>
+                                            `)}
+                                        </div>
+                                    </div>
+                                `)}
+                            </div>
+                        `}
+
+                        ${(desktopWeeks.length === 0) && html`
+                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
+                                <p className="text-gray-500 text-lg">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                            </div>
+                        `}
+                    </div>
 
                 </div>
 
-                <!-- Sticky Sidebar Cart (Only for KRESZ) -->
-                ${activeTab === 'kresz' && html`
-                    <div className="hidden lg:block w-full lg:w-1/3 sticky top-6 bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100 mb-20">
+                <!-- Sticky Sidebar (Filter & Cart) -->
+                ${(isDesktop || activeTab === 'kresz') && html`
+                    <div className=${`w-full lg:w-1/3 sticky top-6 mb-20 space-y-6 ${!isDesktop ? 'hidden lg:block' : ''}`}>
+
+                        <!-- Filter Panel (Desktop Only) -->
+                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl p-5 border border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-900 mb-4 border-b pb-2 flex items-center gap-2">
+                                <${Icons.SearchIcon} size=${20} className="text-indigo-600" />
+                                Szűrés
+                            </h3>
+
+                            <div className="mb-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Típusok</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick=${() => toggleCategory('modules')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.modules ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        ${selectedCategories.modules ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} KRESZ Modulok
+                                    </button>
+                                    <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
+                                    </button>
+                                    <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
+                                    </button>
+                                    <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                        ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div>
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
+                                <div className="flex bg-gray-100 p-1 rounded-lg">
+                                    <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'all' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Mind</button>
+                                    <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'am' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'pm' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Délután</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Cart Panel -->
+                        <div className="bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100">
                         <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 flex items-center gap-2">
                             <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             Kiválasztott modulok
@@ -750,12 +872,13 @@ const StudentAppointmentsApp = () => {
                                 </button>
                             </div>
                         `}
+                        </div>
                     </div>
                 `}
             </div>
 
-            <!-- Floating Pill Button for Mobile (Only for KRESZ) -->
-            ${activeTab === 'kresz' && cart.length > 0 && html`
+            <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
+            ${cart.length > 0 && html`
                 <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] pointer-events-none w-full px-4 flex justify-center">
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
