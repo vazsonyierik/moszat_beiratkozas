@@ -284,6 +284,9 @@ const EmailTemplatesTab = () => {
                     'removeformat | customInsertButton | help',
                 line_height_formats: '1.0 1.2 1.4 1.5 1.6 2.0',
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                convert_urls: false,
+                relative_urls: false,
+                remove_script_host: false,
                 setup: (editor) => {
                     editorInstance = editor;
 
