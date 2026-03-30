@@ -147,7 +147,7 @@ const EmailTemplatesTab = () => {
     useEffect(() => {
         if (!window.tinymce) {
             const script = document.createElement('script');
-            script.src = "https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js";
+            script.src = "https://cdn.tiny.cloud/1/ntihde9iskk6k7ukxpdwv61q6nnmdfglug52dfl3xln8839j/tinymce/6/tinymce.min.js";
             document.head.appendChild(script);
 
             script.onload = loadTemplates;
