@@ -1018,6 +1018,7 @@ exports.deleteCourseAsAdmin = appointments.deleteCourseAsAdmin;
 exports.cancelBookingAsAdmin = appointments.cancelBookingAsAdmin;
 exports.bookAppointment = appointments.bookAppointment;
 exports.cancelBookingByStudent = appointments.cancelBookingByStudent;
+exports.checkCancellationStatus = appointments.checkCancellationStatus;
 exports.joinWaitlist = appointments.joinWaitlist;
 exports.claimLastMinuteSpot = appointments.claimLastMinuteSpot;
 exports.removeWaitlistEntryAsAdmin = appointments.removeWaitlistEntryAsAdmin;
