@@ -432,6 +432,13 @@ input[type="checkbox"]:checked {
   background-repeat: no-repeat;
 }
 
+/* Toggle gombok elrejtett checkboxainál ne jelenjen meg a pipa háttere */
+input[type="checkbox"].sr-only:checked {
+  background-image: none !important;
+  background-color: transparent !important;
+  border: none !important;
+}
+
 input[type="radio"]:checked {
   border-color: var(--primary-color);
   background-color: var(--primary-color);

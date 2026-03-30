@@ -135,27 +135,32 @@ const EmailTemplatesTab = () => {
     // Custom Button Modal state
     const [isButtonModalOpen, setIsButtonModalOpen] = useState(false);
 
+    // Dynamic variables state
+    const [dynamicVariables, setDynamicVariables] = useState([]);
+
     const showToast = useToast();
     const showConfirmation = useConfirmation();
-    const quillRef = useRef(null);
+    const editorRef = useRef(null);
     const editorContainerRef = useRef(null);
 
-    // 1. Betöltjük a külső Quill library-t dinamikusan, ha még nincs
+    // 1. Betöltjük a külső TinyMCE library-t dinamikusan, ha még nincs
     useEffect(() => {
-        if (!window.Quill) {
+        if (!window.tinymce) {
             const script = document.createElement('script');
-            script.src = "https://cdn.quilljs.com/1.3.7/quill.min.js";
+            script.src = "https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js";
             document.head.appendChild(script);
-
-            const style = document.createElement('link');
-            style.rel = "stylesheet";
-            style.href = "https://cdn.quilljs.com/1.3.7/quill.snow.css";
-            document.head.appendChild(style);
 
             script.onload = loadTemplates;
         } else {
             loadTemplates();
         }
+
+        // Cleanup function tinymce-re
+        return () => {
+            if (window.tinymce) {
+                window.tinymce.remove();
+            }
+        };
     }, []);
 
     // 2. Betöltjük az adatbázisból a mentett sablonokat
@@ -249,81 +254,74 @@ const EmailTemplatesTab = () => {
         }
     };
 
-    // 3. Quill editor inicializálása vagy tartalmának frissítése amikor váltunk a sablonok között
+    // 3. TinyMCE editor inicializálása vagy tartalmának frissítése amikor váltunk a sablonok között
     useEffect(() => {
-        if (isLoading || !window.Quill || !editorContainerRef.current) return;
+        if (isLoading || !window.tinymce || !editorContainerRef.current) return;
 
-        if (!quillRef.current) {
-            // Register custom button icon
-            const quillIcons = window.Quill.import('ui/icons');
-            quillIcons['insertButton'] = '<svg viewbox="0 0 18 18"><rect class="ql-stroke" height="10" width="14" x="2" y="4" rx="3" ry="3"></rect><line class="ql-stroke" x1="5" x2="13" y1="9" y2="9"></line></svg>';
+        let editorInstance = null;
 
-            // CSS beszúrása a sorközökhöz, hogy a Quill szerkesztőben látszódjon a változás
-            if (!document.getElementById('quill-custom-styles')) {
-                const styleEl = document.createElement('style');
-                styleEl.id = 'quill-custom-styles';
-                styleEl.innerHTML = `
-                    .ql-editor .ql-line-height-1-0 { line-height: 1.0; }
-                    .ql-editor .ql-line-height-1-2 { line-height: 1.2; }
-                    .ql-editor .ql-line-height-1-5 { line-height: 1.5; }
-                    .ql-editor .ql-line-height-1-6 { line-height: 1.6; }
-                    .ql-editor .ql-line-height-2-0 { line-height: 2.0; }
-                `;
-                document.head.appendChild(styleEl);
-            }
+        // Adjunk a containernek egy id-t, ha még nincs
+        if (!editorContainerRef.current.id) {
+            editorContainerRef.current.id = 'tinymce-editor-' + Math.random().toString(36).substr(2, 9);
+        }
 
-            // Register custom line-height format
-            const Parchment = window.Quill.import('parchment');
-            const lineHeightConfig = {
-                scope: Parchment.Scope.BLOCK,
-                whitelist: ['1.0', '1.2', '1.5', '1.6', '2.0']
-            };
-            const LineHeightClass = new Parchment.Attributor.Class('lineheight', 'ql-line-height', lineHeightConfig);
-            const LineHeightStyle = new Parchment.Attributor.Style('lineheight', 'line-height', lineHeightConfig);
-            window.Quill.register(LineHeightClass, true);
-            window.Quill.register(LineHeightStyle, true);
+        // Ha már van létező editor ezen az ID-n, ne inicializáljuk újra
+        const existingEditor = window.tinymce.get(editorContainerRef.current.id);
 
-            // A gombok beszúrását nem egyedi Blot-tal oldjuk meg, mert az összeakadt a linkekkel.
-            // Inkább egy raw HTML blokkot szúrunk be a kurzorhoz, ami biztonságosabb a meglévő linkek szempontjából.
+        if (!existingEditor) {
+            window.tinymce.init({
+                target: editorContainerRef.current,
+                height: 400,
+                menubar: false,
+                plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                ],
+                toolbar: 'undo redo | blocks | ' +
+                    'bold italic forecolor backcolor | alignleft aligncenter ' +
+                    'alignright alignjustify | lineheight | bullist numlist outdent indent | ' +
+                    'removeformat | customInsertButton | help',
+                line_height_formats: '1.0 1.2 1.4 1.5 1.6 2.0',
+                content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
+                setup: (editor) => {
+                    editorInstance = editor;
 
-            quillRef.current = new window.Quill(editorContainerRef.current, {
-                theme: 'snow',
-                modules: {
-                    toolbar: {
-                        container: [
-                            ['bold', 'italic', 'underline', 'strike'],        // toggled buttons
-                            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                            [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                            [{ 'color': [] }, { 'background': [] }],          // dropdown with defaults from theme
-                            [{ 'align': [] }],
-                            [{ 'lineheight': ['1.0', '1.2', '1.5', '1.6', '2.0'] }],
-                            ['link', 'insertButton'], // added custom button
-                            ['clean']                                         // remove formatting button
-                        ],
-                        handlers: {
-                            insertButton: function() {
-                                // Eltároljuk a fókuszt, majd kinyitjuk a modálist a React state segítségével
-                                // A callbacket átadjuk, amibe a modális visszadobja az adatokat.
-                                // Mivel ez egy hagyományos eseménykezelő, a state-et trükkösen kell módosítanunk.
-                                // Ehelyett csak triggerelünk egy egyedi eseményt, amit a React komponens elkap.
-                                document.dispatchEvent(new CustomEvent('openInsertButtonModal'));
-                            }
+                    // Custom Button plugin
+                    editor.ui.registry.addButton('customInsertButton', {
+                        text: 'Gomb beszúrása',
+                        icon: 'plus',
+                        tooltip: 'Gomb beszúrása',
+                        onAction: () => {
+                            // Nyissuk meg a React modális ablakot
+                            document.dispatchEvent(new CustomEvent('openInsertButtonModal'));
                         }
-                    }
+                    });
+
+                    // Tartalom változás figyelése
+                    editor.on('Change KeyUp', () => {
+                        const content = editor.getContent();
+                        setHtmlContent(content);
+                    });
+
+                    // Kezdeti tartalom beállítása, ha az editor már kész
+                    editor.on('init', () => {
+                        editor.setContent(htmlContent);
+                    });
                 }
             });
             
-            quillRef.current.on('text-change', () => {
-                setHtmlContent(quillRef.current.root.innerHTML);
-            });
+            // Mivel a editorRef egy generic ref volt az editorhoz,
+            // most ide mentjük el, hogy a handleInsertButton elhívhassa
+            editorRef.current = 'tinymce';
+        } else if (existingEditor.getContent() !== htmlContent && existingEditor.initialized) {
+            // Update tartalmat, ha megváltozott (pl. sablon váltás)
+            // de csak akkor, ha nem ő maga triggerelte (hogy ne legyen kurzor ugrálás)
+            // Itt most egyszerűsítve:
+            existingEditor.setContent(htmlContent);
         }
 
-        if (quillRef.current.root.innerHTML !== htmlContent) {
-            const delta = quillRef.current.clipboard.convert(htmlContent);
-            quillRef.current.setContents(delta, 'silent');
-        }
-
-        // Event listener a modális megnyitásához a Quillből
+        // Event listener a modális megnyitásához a TinyMCEből
         const handleOpenModal = () => setIsButtonModalOpen(true);
         document.addEventListener('openInsertButtonModal', handleOpenModal);
 
@@ -331,23 +329,43 @@ const EmailTemplatesTab = () => {
             document.removeEventListener('openInsertButtonModal', handleOpenModal);
         };
 
-    }, [isLoading, activeTemplateId, htmlContent]);
+    }, [isLoading, activeTemplateId]); // Itt kivettük a htmlContent-et a dependencykből, hogy gépeléskor ne frissüljön újra
 
-    // Gomb tényleges beszúrása a React állapotból
+    // Kigyűjtjük az összes dinamikus változót a betöltött sablonokból
+    useEffect(() => {
+        if (isLoading || Object.keys(templates).length === 0) return;
+
+        const variableSet = new Set();
+        const variableRegex = /\{\{([\s\S]*?)\}\}/g;
+
+        Object.values(templates).forEach(tpl => {
+            if (!tpl) return;
+            const contentToScan = (tpl.html || '') + ' ' + (tpl.subject || '');
+            let match;
+            while ((match = variableRegex.exec(contentToScan)) !== null) {
+                // Megtisztítjuk a HTML tagektől és szóközöktől (ugyanaz a logika, mint a utils.js-ben)
+                const varName = match[1].replace(/<[^>]*>?/gm, '').trim();
+                if (varName && varName.length > 0) {
+                    variableSet.add(varName);
+                }
+            }
+        });
+
+        const sortedVariables = Array.from(variableSet).sort();
+        setDynamicVariables(sortedVariables);
+    }, [templates, isLoading]);
+
+    // Gomb tényleges beszúrása a React állapotból a TinyMCE-be
     const handleInsertButton = (url, text, bgColor, textColor) => {
-        if (!quillRef.current) return;
-        const quill = quillRef.current;
-        const range = quill.getSelection(true);
+        if (!editorContainerRef.current || !editorContainerRef.current.id) return;
+
+        const editor = window.tinymce.get(editorContainerRef.current.id);
+        if (!editor) return;
 
         // Nyers HTML beszúrása
         const buttonHtml = `<a href="${url}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: ${bgColor}; color: ${textColor}; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 15px 0;">${text}</a>&nbsp;`;
 
-        quill.clipboard.dangerouslyPasteHTML(range.index, buttonHtml, 'api');
-
-        // Kurzort elvisszük a gomb utánra
-        setTimeout(() => {
-            quill.setSelection(range.index + text.length + 2); // +2 for the spaces/tags approximation
-        }, 10);
+        editor.insertContent(buttonHtml);
     };
 
     const handleTemplateSelect = (templateId) => {
@@ -446,9 +464,12 @@ const EmailTemplatesTab = () => {
                 setSubject(defaultTpl.subject);
                 setHtmlContent(defaultTpl.html);
                 setDoctorEmail(defaultTpl.doctorEmail || '');
-                if (quillRef.current) {
-                    const delta = quillRef.current.clipboard.convert(defaultTpl.html);
-                    quillRef.current.setContents(delta, 'silent');
+
+                if (editorContainerRef.current && editorContainerRef.current.id) {
+                    const editor = window.tinymce.get(editorContainerRef.current.id);
+                    if (editor) {
+                        editor.setContent(defaultTpl.html);
+                    }
                 }
                 
                 try {
@@ -670,9 +691,23 @@ const EmailTemplatesTab = () => {
                 <div className="space-y-6 flex-grow">
                     <div className="bg-blue-50 border border-blue-200 p-4 rounded-md text-blue-800 text-sm">
                         <p className="font-bold mb-1 flex items-center gap-2"><${Icons.InfoIcon} size=${16} /> Dinamikus változók használata</p>
-                        <p className="mb-2">A szövegben lévő dupla kapcsos zárójelek közötti szavakat a rendszer küldéskor automatikusan kicseréli a tanuló adataira. <strong>Kérlek ezeket ne töröld ki!</strong></p>
-                        <p className="text-xs mt-1 italic">Általános változók: {{firstName}}, {{lastName}}, {{email}}</p>
-                        <p className="text-xs mt-1 italic">Időpontfoglalás változói: {{courseName}}, {{courseDate}}, {{startTime}}, {{endTime}}, {{cancellation_token}}</p>
+                        <p className="mb-3">A szövegben lévő dupla kapcsos zárójelek közötti szavakat a rendszer küldéskor automatikusan kicseréli a tanuló adataira. Kattints egy változóra a másoláshoz, majd illeszd be a szövegbe!</p>
+                        <div className="flex flex-wrap gap-2">
+                            ${dynamicVariables.map(variable => html`
+                                <span
+                                    key=${variable}
+                                    className="inline-block bg-white px-2 py-1 rounded border border-blue-300 text-xs font-mono cursor-pointer hover:bg-blue-100 transition-colors"
+                                    onClick=${() => {
+                                        navigator.clipboard.writeText('{{' + variable + '}}');
+                                        showToast('Másolva: {{' + variable + '}}', 'success');
+                                    }}
+                                    title="Kattints a másoláshoz"
+                                >
+                                    {{${variable}}}
+                                </span>
+                            `)}
+                            ${dynamicVariables.length === 0 ? html`<span className="text-xs italic">Nincsenek elérhető változók.</span>` : null}
+                        </div>
                     </div>
 
                     ${activeTemplateId === 'doctorMedicalReminder' ? html`
