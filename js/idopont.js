@@ -18,7 +18,7 @@ const Toast = ({ message, type, onClose }) => {
         return () => clearTimeout(timer);
     }, [onClose]);
 
-    const bgClass = type === 'error' ? 'bg-red-500' : type === 'warning' ? 'bg-yellow-500' : type === 'success' ? 'bg-green-500' : 'bg-blue-500';
+    const bgClass = type === 'error' ? 'bg-red-500' : type === 'warning' ? 'bg-yellow-500' : type === 'success' ? 'bg-green-500' : 'bg-gray-800';
 
     return html`
         <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
@@ -161,12 +161,12 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott szolgáltatások (${cart.length})</p>
                         <ul className="space-y-2.5">
                             ${cart.map((item, index) => html`
-                                <li key=${index} className="text-sm bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-indigo-100">
+                                <li key=${index} className="text-sm bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
                                     <div className="flex-1 min-w-0">
                                         <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
                                         <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                            <${Icons.CalendarIcon} size=${14} className="text-indigo-400" />
-                                            <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-indigo-600 ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
+                                            <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
+                                            <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                         </div>
                                     </div>
                                     ${onRemoveItem ? html`
@@ -207,7 +207,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                         type="text"
                                         value=${lastName}
                                         onChange=${e => setLastName(e.target.value)}
-                                        className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                        className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none"
                                         required
                                         placeholder="Kovács"
                                     />
@@ -218,7 +218,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                         type="text"
                                         value=${firstName}
                                         onChange=${e => setFirstName(e.target.value)}
-                                        className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                        className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none"
                                         required
                                         placeholder="János"
                                     />
@@ -231,7 +231,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     type="email"
                                     value=${email}
                                     onChange=${e => setEmail(e.target.value)}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none"
                                     required
                                     placeholder="pelda@email.hu"
                                 />
@@ -243,7 +243,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     type="email"
                                     value=${emailConfirm}
                                     onChange=${e => setEmailConfirm(e.target.value)}
-                                    className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 focus:bg-white transition-colors font-medium outline-none"
+                                    className="w-full p-3 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none"
                                     required
                                     placeholder="pelda@email.hu"
                                 />
@@ -359,7 +359,7 @@ const StudentAppointmentsApp = () => {
         mod4: false
     });
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
-    const [isFilterExpanded, setIsFilterExpanded] = useState(false);
+    const [isFilterExpanded, setIsFilterExpanded] = useState(true);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
     useEffect(() => {
@@ -478,11 +478,6 @@ const StudentAppointmentsApp = () => {
             // Trigger animation
             setCartBump(true);
             setTimeout(() => setCartBump(false), 300);
-
-            // Only show toast on desktop (width >= 1024px, the lg breakpoint in Tailwind)
-            if (window.innerWidth >= 1024) {
-                showToast('Hozzáadva a kiválasztottakhoz', 'success');
-            }
         }
     };
 
@@ -562,9 +557,7 @@ const StudentAppointmentsApp = () => {
                             (isMod1 && selectedModules.mod1) ||
                             (isMod2 && selectedModules.mod2) ||
                             (isMod3 && selectedModules.mod3) ||
-                            (isMod4 && selectedModules.mod4) ||
-                            // Fallback: If it's a module but doesn't have a clear number, and ANY module filter is on, show it
-                            (!isMod1 && !isMod2 && !isMod3 && !isMod4 && (selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4))
+                            (isMod4 && selectedModules.mod4)
                         ) {
                             desktopFilteredCourses.push(c);
                         }
@@ -626,7 +619,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => removeFromCart(course.id)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#ea9f21]"
                 >
                     Mégse kérem
                 </button>
@@ -737,7 +730,7 @@ const StudentAppointmentsApp = () => {
                         onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                         className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
-                        <span>🚗</span> Elméleti oktatás
+                        <span>🚗</span> Elméleti tanfolyam
                     </button>
                     <button 
                         onClick=${() => { setActiveTab('medical'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
@@ -769,15 +762,15 @@ const StudentAppointmentsApp = () => {
                                     </div>
                                 ` : kreszWeeks.map(week => html`
                                     <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
-                                            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                                                <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                        <div className="bg-[#efefef] border-b border-gray-200 px-6 py-4">
+                                            <h3 className="text-lg font-bold text-[#333333] flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${20} className="text-[#333333]"/>
                                                 Oktatási hét: ${week.name}
                                             </h3>
                                         </div>
                                         <div className="p-4 sm:p-6 space-y-6">
                                             ${Object.keys(week.days).sort().map(dateStr => html`
-                                                <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-6">
                                                     <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                                         ${week.days[dateStr].map(course => renderCourseCard(course, false))}
@@ -811,15 +804,15 @@ const StudentAppointmentsApp = () => {
                             <div className="space-y-8">
                                 ${desktopWeeks.map(week => html`
                                     <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                        <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
-                                            <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                                                <${Icons.CalendarIcon} size=${20} className="text-indigo-600"/>
+                                        <div className="bg-[#efefef] border-b border-gray-200 px-6 py-4">
+                                            <h3 className="text-lg font-bold text-[#333333] flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${20} className="text-[#333333]"/>
                                                 Oktatási hét: ${week.name}
                                             </h3>
                                         </div>
                                         <div className="p-4 sm:p-6 space-y-6">
                                             ${Object.keys(week.days).sort().map(dateStr => html`
-                                                <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
+                                                <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-6">
                                                     <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
                                                     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                                                         ${week.days[dateStr].map(course => renderCourseCard(course, false))}
@@ -849,7 +842,7 @@ const StudentAppointmentsApp = () => {
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden">
                             <div className="bg-white px-5 py-4 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
                                 <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                    <${Icons.SearchIcon} size=${20} className="text-indigo-600" />
+                                    <${Icons.SearchIcon} size=${20} className="text-[#333333]" />
                                     Szűrés
                                 </h3>
                                 <div className="flex items-center gap-4">
@@ -882,7 +875,7 @@ const StudentAppointmentsApp = () => {
                             ${isFilterExpanded ? html`
                                 <div className="p-5 bg-white">
                                     <div className="mb-5">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti oktatás</p>
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
                                         <div className="flex flex-wrap gap-2">
                                             <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 1. modul
@@ -929,7 +922,7 @@ const StudentAppointmentsApp = () => {
                         <!-- Cart Panel -->
                         <div className="bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100 flex flex-col max-h-[calc(100vh-120px)]">
                         <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 shrink-0 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            <svg className="w-5 h-5 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             Kiválasztott szolgáltatások
                         </h3>
                         ${cart.length === 0 ? html`

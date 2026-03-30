@@ -39,8 +39,8 @@ def run():
         print("Saved filtered layout as desktop_modules_filtered_mod1.png")
 
         # Click Clear filters
-        print("Clicking Szűrők törlése...")
-        vid_page.click('button:has-text("Szűrők törlése")')
+        print("Clicking Összes szűrés törlése...")
+        vid_page.click('button:has-text("Összes szűrés törlése")')
         time.sleep(1)
 
         vid_page.screenshot(path='desktop_modules_cleared.png')
