@@ -664,7 +664,7 @@ const StudentAppointmentsApp = () => {
     };
 
     return html`
-        <div className="max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
             ${isTestView && html`
                 <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
                     <${Icons.AlertTriangleIcon} size=${20} />
@@ -770,7 +770,7 @@ const StudentAppointmentsApp = () => {
                                             ${Object.keys(week.days).sort().map(dateStr => html`
                                                 <div key=${dateStr} className="border-l-4 border-indigo-200 pl-4 sm:pl-6">
                                                     <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
                                                         ${week.days[dateStr].map(course => renderCourseCard(course, false))}
                                                     </div>
                                                 </div>
