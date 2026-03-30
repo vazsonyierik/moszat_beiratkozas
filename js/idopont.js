@@ -501,14 +501,12 @@ const StudentAppointmentsApp = () => {
     };
 
     // 3. Prepare data and filter based on device view
-    const { kreszWeeks, medicalCourses, firstAidCourses, desktopWeeks, desktopMedical, desktopFirstAid } = useMemo(() => {
+    const { kreszWeeks, medicalCourses, firstAidCourses, desktopWeeks } = useMemo(() => {
         const medical = [];
         const firstAid = [];
         const kresz = [];
 
-        const desktopMedicalList = [];
-        const desktopFirstAidList = [];
-        const desktopKreszList = [];
+        const desktopFilteredCourses = [];
 
         courses.forEach(c => {
             const isMedical = c.name === "Orvosi alkalmassági vizsgálat";
@@ -521,7 +519,7 @@ const StudentAppointmentsApp = () => {
             else if (isFirstAid) firstAid.push(c);
             else kresz.push(c);
 
-            // Filtering for Desktop
+            // Filtering for Desktop (Unified list)
             let matchesTime = true;
             if (timeFilter !== 'all') {
                 const hour = parseInt(c.startTime.split(':')[0], 10);
@@ -530,10 +528,10 @@ const StudentAppointmentsApp = () => {
             }
 
             if (matchesTime) {
-                if (isMedical && selectedCategories.medical) desktopMedicalList.push(c);
-                if (isFirstAid && selectedCategories.firstaid) desktopFirstAidList.push(c);
+                if (isMedical && selectedCategories.medical) desktopFilteredCourses.push(c);
+                if (isFirstAid && selectedCategories.firstaid) desktopFilteredCourses.push(c);
                 if ((isModule && selectedCategories.modules) || (isConsultation && selectedCategories.consultation)) {
-                    desktopKreszList.push(c);
+                    desktopFilteredCourses.push(c);
                 }
             }
         });
@@ -552,9 +550,9 @@ const StudentAppointmentsApp = () => {
         });
         const sortedWeeks = Object.values(weeksMap).sort((a, b) => a.weekKey.localeCompare(b.weekKey));
 
-        // Group KRESZ by week (Desktop)
+        // Group ALL filtered courses by week (Desktop)
         const desktopWeeksMap = {};
-        desktopKreszList.forEach(c => {
+        desktopFilteredCourses.forEach(c => {
             const wKey = getWeekKey(c.date);
             if (!desktopWeeksMap[wKey]) {
                 desktopWeeksMap[wKey] = { weekKey: wKey, name: formatWeekName(wKey), days: {} };
@@ -570,9 +568,7 @@ const StudentAppointmentsApp = () => {
             kreszWeeks: sortedWeeks,
             medicalCourses: medical,
             firstAidCourses: firstAid,
-            desktopWeeks: desktopSortedWeeks,
-            desktopMedical: desktopMedicalList,
-            desktopFirstAid: desktopFirstAidList
+            desktopWeeks: desktopSortedWeeks
         };
     }, [courses, timeFilter, selectedCategories]);
 
@@ -751,7 +747,7 @@ const StudentAppointmentsApp = () => {
                                     </div>
                                 ` : html`
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        ${activeCoursesList.map(course => renderCourseCard(course, true))}
+                                        ${activeCoursesList.map(course => renderCourseCard(course, false))}
                                     </div>
                                 `}
                             </div>
@@ -760,20 +756,6 @@ const StudentAppointmentsApp = () => {
 
                     <!-- Desktop Content Rendering (Filter based) -->
                     <div className="hidden lg:block space-y-8">
-                        ${(desktopMedical.length > 0 || desktopFirstAid.length > 0) && html`
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-8">
-                                <div className="bg-indigo-50 border-b border-indigo-100 px-6 py-4">
-                                    <h3 className="text-lg font-bold text-indigo-900 flex items-center gap-2">
-                                        🩺 Orvosi vizsgálat & 🚑 Elsősegély
-                                    </h3>
-                                </div>
-                                <div className="p-4 sm:p-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                                    ${desktopMedical.map(course => renderCourseCard(course, true))}
-                                    ${desktopFirstAid.map(course => renderCourseCard(course, true))}
-                                </div>
-                            </div>
-                        `}
-
                         ${(desktopWeeks.length > 0) && html`
                             <div className="space-y-8">
                                 ${desktopWeeks.map(week => html`
@@ -799,7 +781,7 @@ const StudentAppointmentsApp = () => {
                             </div>
                         `}
 
-                        ${(desktopWeeks.length === 0 && desktopMedical.length === 0 && desktopFirstAid.length === 0) && html`
+                        ${(desktopWeeks.length === 0) && html`
                             <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
                                 <p className="text-gray-500 text-lg">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
                             </div>
@@ -895,8 +877,8 @@ const StudentAppointmentsApp = () => {
                 `}
             </div>
 
-            <!-- Floating Pill Button for Mobile (Only for KRESZ) -->
-            ${activeTab === 'kresz' && cart.length > 0 && html`
+            <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
+            ${cart.length > 0 && html`
                 <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] pointer-events-none w-full px-4 flex justify-center">
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
