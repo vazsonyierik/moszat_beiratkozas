@@ -42,13 +42,14 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
 
-    // Always show summary on desktop. On mobile, show wizard if 3 or more items.
+    // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
+    const isDesktop = window.innerWidth >= 1024;
     const isMobile = window.innerWidth < 640;
     const needsWizard = isMobile && cart.length >= 3;
 
-    // Determine what to render based on wizard step
-    const showSummaryList = !needsWizard || step === 1;
-    const showForm = !needsWizard || step === 2;
+    // Determine what to render based on wizard step and view mode
+    const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
+    const showForm = isDesktop ? true : (!needsWizard || step === 2);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -127,7 +128,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         <div className="pt-4 flex justify-end">
                             <button 
                                 onClick=${() => onClose(results)}
-                                className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-medium transition-colors"
+                                className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-md font-medium transition-colors"
                             >
                                 Bezárás
                             </button>
@@ -157,15 +158,15 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 
                 ${showSummaryList ? html`
                     <div className="px-4 py-4 sm:px-6 bg-gray-50/50 border-b border-gray-100 flex-1 sm:flex-none overflow-y-auto sm:max-h-[220px] custom-scrollbar">
-                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott modulok (${cart.length})</p>
+                        <p className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                         <ul className="space-y-2.5">
                             ${cart.map((item, index) => html`
                                 <li key=${index} className="text-sm bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-indigo-100">
                                     <div className="flex-1 min-w-0">
                                         <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                        <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                            <${Icons.CalendarIcon} size=${14} className="text-indigo-400" />
-                                            <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-indigo-600 ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
+                                        <div className="text-[#888888] mt-0.5 flex items-center gap-1.5 text-sm">
+                                            <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
+                                            <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                         </div>
                                     </div>
                                     ${onRemoveItem ? html`
@@ -185,7 +186,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             <div className="mt-6">
                                 <button
                                     onClick=${() => setStep(2)}
-                                    className="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-[0_4px_10px_rgba(79,_70,_229,_0.2)] flex items-center justify-center gap-2"
+                                    className="w-full py-3.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-[0_4px_10px_rgba(224,_153,_0,_0.2)] flex items-center justify-center gap-2"
                                 >
                                     Tovább az adatokhoz <span className="text-xl leading-none">→</span>
                                 </button>
@@ -252,7 +253,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <button
                                     type="submit"
                                     disabled=${isSubmitting}
-                                    className="w-full sm:flex-none px-6 py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-indigo-600 flex items-center justify-center gap-2 shadow-[0_8px_16px_rgba(79,_70,_229,_0.2)] hover:shadow-[0_8px_20px_rgba(79,_70,_229,_0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                                    className="w-full sm:flex-none px-6 py-3.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-[0_8px_16px_rgba(224,_153,_0,_0.2)] hover:shadow-[0_8px_20px_rgba(224,_153,_0,_0.3)] hover:-translate-y-0.5 active:translate-y-0"
                                 >
                                     ${isSubmitting ? html`<span className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span> <span className="text-xl ml-1 leading-none">→</span>`}
                                 </button>
@@ -511,7 +512,7 @@ const StudentAppointmentsApp = () => {
         const medical = [];
         const firstAid = [];
         const kresz = [];
-        
+
         const desktopFilteredCourses = [];
 
         courses.forEach(c => {
@@ -534,13 +535,13 @@ const StudentAppointmentsApp = () => {
             }
 
             if (matchesTime) {
-                const noFiltersActive = 
-                    !selectedCategories.medical && 
-                    !selectedCategories.firstaid && 
-                    !selectedCategories.consultation && 
-                    !selectedModules.mod1 && 
-                    !selectedModules.mod2 && 
-                    !selectedModules.mod3 && 
+                const noFiltersActive =
+                    !selectedCategories.medical &&
+                    !selectedCategories.firstaid &&
+                    !selectedCategories.consultation &&
+                    !selectedModules.mod1 &&
+                    !selectedModules.mod2 &&
+                    !selectedModules.mod3 &&
                     !selectedModules.mod4;
 
                 if (noFiltersActive) {
@@ -551,10 +552,11 @@ const StudentAppointmentsApp = () => {
                     else if (isConsultation && selectedCategories.consultation) desktopFilteredCourses.push(c);
                     else if (isModule) {
                         const name = c.name.toLowerCase();
-                        const isMod1 = name.includes('1.');
-                        const isMod2 = name.includes('2.');
-                        const isMod3 = name.includes('3.');
-                        const isMod4 = name.includes('4.');
+                        // Make filtering more robust by checking multiple common naming patterns for modules
+                        const isMod1 = name.includes('1. ') || name.includes('1.modul') || name.includes('első') || name.includes('1. nap');
+                        const isMod2 = name.includes('2. ') || name.includes('2.modul') || name.includes('második') || name.includes('2. nap');
+                        const isMod3 = name.includes('3. ') || name.includes('3.modul') || name.includes('harmadik') || name.includes('3. nap');
+                        const isMod4 = name.includes('4. ') || name.includes('4.modul') || name.includes('negyedik') || name.includes('4. nap');
 
                         if (
                             (isMod1 && selectedModules.mod1) ||
@@ -615,6 +617,7 @@ const StudentAppointmentsApp = () => {
         const isInCart = !!cartItem;
         const isWaitlistInCart = cartItem && cartItem.isWaitlist;
 
+        const isMedical = course.name === "Orvosi alkalmassági vizsgálat";
         const isFirstAid = course.name === "Elsősegély tanfolyam";
 
         let buttonArea = null;
@@ -639,9 +642,10 @@ const StudentAppointmentsApp = () => {
                 buttonArea = html`
                     <button 
                         onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
-                        className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
+                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-4 py-2 border border-yellow-200 rounded-md shadow-sm text-sm font-medium text-yellow-800 bg-yellow-50 hover:bg-yellow-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 transition-colors"
                     >
-                        Hozzáadás várólistához
+                        <${Icons.ClockIcon} size=${16} />
+                        Várólistára jelentkezés
                     </button>
                 `;
             }
@@ -649,7 +653,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
                 >
                     ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
                 </button>
@@ -657,30 +661,42 @@ const StudentAppointmentsApp = () => {
         }
 
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-red-200 bg-red-50/30' : isInCart ? (isWaitlistInCart ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-indigo-400 ring-1 ring-indigo-400 bg-indigo-50/10') : 'border-gray-200'}`}>
+            <div key=${course.id} className=${`bg-white border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-red-200 bg-red-50/30' : isInCart ? (isWaitlistInCart ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'}`}>
                 <div className="flex flex-col h-full justify-between gap-4">
                     <div>
                         <div className="flex justify-between items-start mb-2 gap-2">
-                            <h4 className="font-bold text-gray-900 text-lg leading-tight">${course.startTime} - ${course.endTime}</h4>
+                            <h4 className="font-extrabold text-[#333333] text-lg leading-tight pr-2">${course.name}</h4>
                             ${isFull ? html`
                                 <span className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-800 shrink-0">Betelt</span>
                             ` : isInCart ? (isWaitlistInCart ? html`
                                 <span className="px-2 py-1 rounded text-xs font-semibold bg-yellow-100 text-yellow-800 shrink-0">Várólistán</span>
                             ` : html`
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-indigo-100 text-indigo-800 shrink-0">Kiválasztva</span>
+                                <span className="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-[#c98900] shrink-0">Kiválasztva</span>
                             `) : html`
                                 <span className="px-2 py-1 rounded text-xs font-semibold bg-green-100 text-green-800 shrink-0">${availableSeats} hely</span>
                             `}
                         </div>
-                        <p className="text-gray-700 font-medium">${course.name}</p>
+
+                        <div className="text-[#888888] font-medium text-sm flex items-center gap-1.5 mb-2 mt-1">
+                            <${Icons.ClockIcon} size=${16} className="text-[#888888]" />
+                            <span>${course.startTime} - ${course.endTime}</span>
+                        </div>
+                        
+                        ${(isMedical || isFirstAid) && html`
+                            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#efefef] border border-gray-200 text-xs font-semibold text-[#888888]">
+                                <${Icons.CreditCardIcon} size=${14} className="text-[#888888]" />
+                                ${isFirstAid ? 'Előre fizetős' : 'Fizetős'}
+                            </div>
+                        `}
+
                         ${isQuickBook && html`
-                            <div className="text-sm text-gray-500 mt-2 flex items-center gap-1">
-                                <${Icons.CalendarIcon} size=${14} />
+                            <div className="text-sm text-[#888888] mt-2 flex items-center gap-1.5">
+                                <${Icons.CalendarIcon} size=${16} />
                                 ${course.date.replace(/-/g, '. ')}
                             </div>
                         `}
                     </div>
-                    <div className="mt-auto pt-2">
+                    <div className="mt-auto pt-3 border-t border-[#efefef]">
                         ${buttonArea}
                     </div>
                 </div>
@@ -719,19 +735,19 @@ const StudentAppointmentsApp = () => {
                 <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
                     <button 
                         onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
-                        <span>🚗</span> KRESZ & Konzultáció
+                        <span>🚗</span> Elméleti oktatás
                     </button>
                     <button 
                         onClick=${() => { setActiveTab('medical'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'medical' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'medical' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🩺</span> Orvosi vizsgálat
                     </button>
                     <button 
                         onClick=${() => { setActiveTab('firstaid'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'firstaid' ? 'bg-white text-indigo-700 shadow shadow-indigo-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
+                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'firstaid' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
                     >
                         <span>🚑</span> Elsősegély
                     </button>
@@ -828,7 +844,7 @@ const StudentAppointmentsApp = () => {
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${(isDesktop || activeTab === 'kresz') && html`
                     <div className=${`w-full lg:w-1/3 sticky top-6 mb-20 space-y-6 ${!isDesktop ? 'hidden lg:block' : ''}`}>
-                        
+
                         <!-- Filter Panel (Desktop Only) -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden">
                             <div className="bg-white px-5 py-4 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
@@ -837,57 +853,62 @@ const StudentAppointmentsApp = () => {
                                     Szűrés
                                 </h3>
                                 <div className="flex items-center gap-4">
-                                    ${(selectedCategories.consultation || selectedCategories.medical || selectedCategories.firstaid || selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4 || timeFilter !== 'all') ? html`
-                                        <button 
-                                            onClick=${(e) => {
-                                                e.stopPropagation();
-                                                setSelectedCategories({ consultation: false, medical: false, firstaid: false });
-                                                setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
-                                                setTimeFilter('all');
-                                            }} 
-                                            className="flex items-center gap-1.5 text-sm font-bold text-red-500 hover:text-red-700 transition-colors bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-full"
-                                            title="Szűrők törlése"
-                                        >
-                                            <span className="bg-red-100 text-red-600 rounded-full p-0.5"><${Icons.XIcon} size=${14} /></span>
-                                            Törlés
-                                        </button>
-                                    ` : ''}
-                                    <span className=${`text-gray-400 transition-transform duration-300 ${isFilterExpanded ? 'rotate-180' : ''}`}>
+                                    ${(() => {
+                                        const isAnyFilterActive = selectedCategories.consultation || selectedCategories.medical || selectedCategories.firstaid || selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4 || timeFilter !== 'all';
+                                        return html`
+                                            <button
+                                                onClick=${(e) => {
+                                                    e.stopPropagation();
+                                                    if (!isAnyFilterActive) return;
+                                                    setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                                    setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                                    setTimeFilter('all');
+                                                }}
+                                                disabled=${!isAnyFilterActive}
+                                                className=${`flex items-center gap-1.5 text-sm font-bold px-3 py-1.5 rounded-full transition-colors ${isAnyFilterActive ? 'text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
+                                                title="Összes szűrés törlése"
+                                            >
+                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-red-100 text-red-600' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${14} /></span>
+                                                Összes szűrés törlése
+                                            </button>
+                                        `;
+                                    })()}
+                                    <span className=${`text-[#888888] transition-transform duration-300 ${isFilterExpanded ? 'rotate-180' : ''}`}>
                                         <${Icons.ChevronRightIcon} size=${24} className="rotate-90" />
                                     </span>
                                 </div>
                             </div>
-                            
+
                             ${isFilterExpanded ? html`
                                 <div className="p-5 bg-white">
                                     <div className="mb-5">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">KRESZ Modulok</p>
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti oktatás</p>
                                         <div className="flex flex-wrap gap-2">
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 1. modul
                                             </button>
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 2. modul
                                             </button>
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 3. modul
                                             </button>
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 4. modul
                                             </button>
                                         </div>
                                     </div>
 
                                     <div className="mb-5 border-t border-gray-100 pt-5">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Típusok</p>
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
                                         <div className="flex flex-wrap gap-2">
-                                            <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
                                             </button>
-                                            <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
                                             </button>
-                                            <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
                                             </button>
                                         </div>
@@ -895,10 +916,10 @@ const StudentAppointmentsApp = () => {
 
                                     <div className="border-t border-gray-100 pt-5">
                                         <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
-                                        <div className="flex bg-gray-100 p-1 rounded-lg">
-                                            <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'all' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Mind</button>
-                                            <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'am' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Délelőtt</button>
-                                            <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'pm' ? 'bg-white text-indigo-700 shadow-sm' : 'text-gray-600 hover:text-gray-900'}`}>Délután</button>
+                                        <div className="flex bg-[#efefef] p-1 rounded-lg">
+                                            <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                            <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                            <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                         </div>
                                     </div>
                                 </div>
@@ -906,27 +927,27 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- Cart Panel -->
-                        <div className="bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                            Kiválasztott modulok
+                        <div className="bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100 flex flex-col max-h-[calc(100vh-120px)]">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 shrink-0 flex items-center gap-2">
+                            <svg className="w-5 h-5 text-[#e09900]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                            Kiválasztott időpontok
                         </h3>
                         ${cart.length === 0 ? html`
                             <div className="text-gray-500 text-sm italic py-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                                Még nem választottál ki modult.<br/>Kattints a "Kiválasztom" gombra a hozzáadáshoz.
+                                Még nem választottál ki időpontot.<br/>Kattints a "Kiválasztom" gombra a hozzáadáshoz.
                             </div>
                         ` : html`
                             <div className="flex flex-col gap-3 max-h-[50vh] overflow-y-auto pr-2 custom-scrollbar">
                                 ${cart.map(item => html`
-                                    <div key=${item.course.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-indigo-200 transition-colors">
+                                    <div key=${item.course.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors">
                                         <div className="flex-1">
-                                            <div className="font-semibold text-indigo-700 text-sm">
+                                            <div className="font-semibold text-[#e09900] text-sm">
                                                 ${item.course.name}
                                                 ${item.isWaitlist ? html`<span className="ml-2 text-xs text-yellow-700 bg-yellow-100 px-1.5 py-0.5 rounded border border-yellow-200">(Várólista)</span>` : ''}
                                             </div>
-                                            <div className="text-xs text-gray-600 mt-1.5 flex items-center gap-1.5">
-                                                <${Icons.CalendarIcon} size=${12} className="text-gray-400" />
-                                                ${item.course.date.replace(/-/g, '. ')}. <span className="font-medium text-gray-800">${item.course.startTime}</span>
+                                            <div className="text-xs text-[#888888] mt-1.5 flex items-center gap-1.5">
+                                                <${Icons.CalendarIcon} size=${12} className="text-[#888888]" />
+                                                ${item.course.date.replace(/-/g, '. ')}. <span className="font-medium text-[#333333]">${item.course.startTime}</span>
                                             </div>
                                         </div>
                                         <button 
@@ -939,10 +960,10 @@ const StudentAppointmentsApp = () => {
                                     </div>
                                 `)}
                             </div>
-                            <div className="mt-6 pt-4 border-t border-gray-200">
+                            <div className="mt-6 pt-4 border-t border-gray-200 shrink-0">
                                 <button
                                     onClick=${() => setIsCheckoutOpen(true)}
-                                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all hover:shadow-lg"
+                                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-lg"
                                 >
                                     Tovább a jelentkezéshez (${cart.length})
                                 </button>
@@ -955,12 +976,12 @@ const StudentAppointmentsApp = () => {
 
             <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
             ${cart.length > 0 && html`
-                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-inset-bottom)] pointer-events-none w-full px-4 flex justify-center">
+                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-bottom)] pointer-events-none w-full px-4 flex justify-center">
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
-                        className=${`pointer-events-auto bg-gray-900 hover:bg-black text-white pl-2 pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(0,0,0,0.3)] flex items-center gap-4 active:scale-95 transition-all border border-gray-700 backdrop-blur-md`}
+                        className=${`pointer-events-auto bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-4 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md`}
                     >
-                        <div className=${`bg-indigo-500 text-white w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125 bg-indigo-400' : 'scale-100'}`}>
+                        <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
                             ${cart.length}
                         </div>
                         <span className="tracking-wide text-[15px]">Tovább a jelentkezéshez <span className="text-xl ml-1 font-normal opacity-80">→</span></span>
