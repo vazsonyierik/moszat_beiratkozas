@@ -114,6 +114,69 @@ const replaceTemplateVariables = (templateString, data) => {
  * @param {object} fallbackTemplate A beégetett sablon (subject, html), ha az adatbázisban nincs meg.
  * @param {boolean} isTest Teszt üzemmód jelző.
  */
+
+/**
+ * Generates an iCalendar (.ics) string for a given course.
+ * @param {Object} courseData - Must contain name, date (YYYY-MM-DD), startTime (HH:MM), endTime (HH:MM)
+ * @param {string} studentEmail - Used to generate a unique UID
+ * @returns {string|null} - The .ics file content or null if data is missing
+ */
+const generateIcsFile = (courseData, studentEmail) => {
+    if (!courseData || !courseData.date || !courseData.startTime || !courseData.endTime) {
+        return null;
+    }
+
+    try {
+        const [year, month, day] = courseData.date.split('-');
+        const [startHour, startMin] = courseData.startTime.split(':');
+        const [endHour, endMin] = courseData.endTime.split(':');
+
+        // Note: Dates in .ics should ideally be UTC (ending in Z) or timezone-aware.
+        // For simplicity and to avoid timezone offset bugs, we use floating local time (no Z, no TZID),
+        // which means it will apply to the user's current timezone.
+        // Format: YYYYMMDDTHHMMSS
+        const dtStart = `${year}${month}${day}T${startHour}${startMin}00`;
+        const dtEnd = `${year}${month}${day}T${endHour}${endMin}00`;
+        
+        // Generate a unique ID based on the course ID and student email so that updates to the same event override it
+        const safeCourseId = courseData.id || `${year}${month}${day}-${startHour}${startMin}`;
+        const uid = `mosolyzona-${safeCourseId}-${studentEmail}`;
+
+        // DTSTAMP is required and must be UTC. We just use the current UTC time.
+        const now = new Date();
+        const dtStamp = now.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+        const icsContent = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Mosolyzóna Autósiskola//Naptár//HU',
+            'CALSCALE:GREGORIAN',
+            'METHOD:PUBLISH',
+            'BEGIN:VEVENT',
+            `UID:${uid}`,
+            `DTSTAMP:${dtStamp}`,
+            `DTSTART:${dtStart}`,
+            `DTEND:${dtEnd}`,
+            `SUMMARY:${courseData.name || 'Mosolyzóna Tanfolyam'}`,
+            'LOCATION:Mosolyzóna Autósiskola',
+            `DESCRIPTION:Jelentkezés megerősítve.\n\nCím: Mosolyzóna Autósiskola\nTanfolyam: ${courseData.name}`,
+            'STATUS:CONFIRMED',
+            'BEGIN:VALARM',
+            'TRIGGER:-PT24H',
+            'ACTION:DISPLAY',
+            'DESCRIPTION:Emlékeztető',
+            'END:VALARM',
+            'END:VEVENT',
+            'END:VCALENDAR'
+        ].join('\r\n');
+
+        return icsContent;
+    } catch (e) {
+        console.error("Error generating ICS file:", e);
+        return null;
+    }
+};
+
 const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTest = false) => {
     const db = getFirestore();
 
@@ -245,6 +308,38 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
             html: finalHtml,
         },
     };
+
+    // --- Add ICS Calendar Attachment logic ---
+    // Only add calendar for confirmations, modifications, and reminders. NOT waitlists or cancellations.
+    const icsTriggerTemplates = [
+        'firstAidConfirmation', 'medicalBookingConfirmation', 'consultationBookingConfirmation', 'bookingConfirmation',
+        'courseModified', 'medicalCourseModified', 'consultationCourseModified',
+        'courseReminder3Days', 'courseReminder1Day', 'medicalCourseReminder1Day'
+    ];
+
+    if (icsTriggerTemplates.includes(templateId) && templateData.courseDate && templateData.courseStartTime && templateData.courseEndTime && !templateData.isWaitlist) {
+        // Construct a mock courseData object for the generator
+        const courseData = {
+            id: templateData.courseId || templateData.id,
+            name: templateData.courseName || templateData.moduleName || templateData.name,
+            date: templateData.courseDate,
+            startTime: templateData.courseStartTime,
+            endTime: templateData.courseEndTime
+        };
+
+        const icsContent = generateIcsFile(courseData, recipientEmail);
+        if (icsContent) {
+            // Because Firebase Extensions (Send Email) expects attachments to be an array of Nodemailer Attachment objects
+            mailPayload.message.attachments = [
+                {
+                    filename: 'mosolyzona_idopont.ics',
+                    content: Buffer.from(icsContent).toString('base64'),
+                    encoding: 'base64',
+                    contentType: 'text/calendar'
+                }
+            ];
+        }
+    }
     if (isUnder18(templateData.birthDate) && templateData.guardian_email) {
         mailPayload.cc = templateData.guardian_email;
     }
