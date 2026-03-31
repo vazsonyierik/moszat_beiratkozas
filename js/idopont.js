@@ -91,8 +91,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     if (results) {
         return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins]">
-                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
                     <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
@@ -140,8 +140,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     }
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins]">
-            <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none" onClick=${e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
                 <header className="p-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-2xl shrink-0">
                     <div className="flex items-center gap-3">
                         ${needsWizard && step === 2 ? html`
@@ -311,8 +311,8 @@ const InfoModal = ({ onClose }) => {
     const [activeTab, setActiveTab] = useState('kresz');
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins]">
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none" onClick=${e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] animate-fade-in">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
                 
                 <header className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-2xl shrink-0">
                     <h3 className="text-xl font-extrabold text-gray-800 flex items-center gap-2">
@@ -600,6 +600,12 @@ const StudentAppointmentsApp = () => {
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
+    const isAnyFilterActive = useMemo(() => {
+        return selectedCategories.consultation || selectedCategories.medical || selectedCategories.firstaid ||
+               selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4 ||
+               timeFilter !== 'all';
+    }, [selectedCategories, selectedModules, timeFilter]);
+
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
         window.addEventListener('resize', handleResize);
@@ -857,7 +863,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => removeFromCart(course.id)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] active:scale-95 transition-transform"
                 >
                     Mégse kérem
                 </button>
@@ -873,7 +879,7 @@ const StudentAppointmentsApp = () => {
                 buttonArea = html`
                     <button 
                         onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
-                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
+                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition-colors active:scale-95"
                     >
                         <${Icons.ClockIcon} size=${14} className="text-[#e09900]" />
                         Várólistára jelentkezés
@@ -884,15 +890,18 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-colors"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] transition-colors active:scale-95"
                 >
                     ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
                 </button>
             `;
         }
 
+        // A kártya csak akkor legyen elhalványítva (opacity-60), ha betelt, ÉS nincs lehetőség várólistára (pl. Elsősegély)
+        const isCompletelyFull = isFull && isFirstAid;
+
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'}`}>
+            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
                 <div className="flex flex-col h-full justify-between gap-3">
                     <div>
                         <div className="flex justify-between items-start mb-1.5 gap-2">
@@ -927,7 +936,7 @@ const StudentAppointmentsApp = () => {
                             </div>
                         `}
                     </div>
-                    <div className="mt-auto pt-2.5 border-t border-[#efefef]">
+                    <div className="mt-auto pt-3 pb-0.5 border-t border-gray-100 bg-gray-50/50 -mx-4 px-4 rounded-b-lg">
                         ${buttonArea}
                     </div>
                 </div>
@@ -1009,18 +1018,20 @@ const StudentAppointmentsApp = () => {
                                                 <${Icons.ChevronRightIcon} size=${24} />
                                             </span>
                                         </div>
-                                        ${!collapsedWeeks[week.weekKey] ? html`
-                                            <div className="p-4 sm:p-5 space-y-5 animate-fade-in">
-                                                ${Object.keys(week.days).sort().map(dateStr => html`
-                                                    <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
-                                                        <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
-                                                            ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                        <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${collapsedWeeks[week.weekKey] ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}>
+                                            <div className="overflow-hidden">
+                                                <div className="p-4 sm:p-5 space-y-5">
+                                                    ${Object.keys(week.days).sort().map(dateStr => html`
+                                                        <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
+                                                            <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
+                                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
+                                                                ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                `)}
+                                                    `)}
+                                                </div>
                                             </div>
-                                        ` : ''}
+                                        </div>
                                     </div>
                                 `)}
                             </div>
@@ -1175,10 +1186,13 @@ const StudentAppointmentsApp = () => {
                 <!-- Filter Button -->
                 <button 
                     onClick=${() => setIsMobileFilterModalOpen(true)}
-                    className="pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
+                    className="relative pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
                     title="Szűrés és kategóriák"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    ${isAnyFilterActive ? html`
+                        <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full"></span>
+                    ` : ''}
                 </button>
 
                 <!-- Floating Pill Button (Véglegesítés) -->
@@ -1234,8 +1248,8 @@ const StudentAppointmentsApp = () => {
             
             <!-- Mobile Filter Modal -->
             ${isMobileFilterModalOpen && html`
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-[60] font-[Poppins]" onClick=${() => setIsMobileFilterModalOpen(false)}>
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-[60] font-[Poppins] animate-fade-in" onClick=${() => setIsMobileFilterModalOpen(false)}>
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
                         <header className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-3xl shrink-0">
                             <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>

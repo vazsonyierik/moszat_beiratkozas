@@ -21,14 +21,17 @@ def run_cuj(page):
     page.wait_for_timeout(1000)
     page.screenshot(path="/home/jules/verification/screenshots/info_modal.png")
     page.get_by_role("button", name="Bezárás").click()
-    page.wait_for_timeout(500)
+    page.wait_for_timeout(1000)
 
     # Click Filter to see the modal
     page.get_by_title("Szűrés és kategóriák").click()
     page.wait_for_timeout(1000)
     page.screenshot(path="/home/jules/verification/screenshots/filter_modal.png")
-    page.locator('button:has(svg:has(polygon))').last.click() # Close filter
-    page.wait_for_timeout(500)
+
+    # Look for the modal close button, it should be the second button in the header or similar
+    # In the code: <button onClick=${() => setIsMobileFilterModalOpen(false)} ...> <XIcon /> </button>
+    page.locator('header button').last.click()
+    page.wait_for_timeout(1000)
 
 if __name__ == "__main__":
     os.makedirs("/home/jules/verification/videos", exist_ok=True)
