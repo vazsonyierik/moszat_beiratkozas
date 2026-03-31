@@ -91,7 +91,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     if (results) {
         return html`
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins]">
                 <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-md transform transition-all sm:my-8 mt-16 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
                     <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
@@ -140,7 +140,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     }
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins]">
             <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none" onClick=${e => e.stopPropagation()}>
                 <header className="p-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-2xl shrink-0">
                     <div className="flex items-center gap-3">
@@ -310,6 +310,7 @@ const StudentAppointmentsApp = () => {
     const [courses, setCourses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isAuthReady, setIsAuthReady] = useState(false);
+    const [collapsedWeeks, setCollapsedWeeks] = useState({});
     
     // Carts & UI state
     const [cart, setCart] = useState([]); // Array of { course, isWaitlist }
@@ -619,7 +620,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => removeFromCart(course.id)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
                 >
                     Mégse kérem
                 </button>
@@ -627,7 +628,7 @@ const StudentAppointmentsApp = () => {
         } else if (isFull) {
             if (isFirstAid) {
                 buttonArea = html`
-                    <span className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-gray-200 rounded-md text-sm font-medium text-[#888888] bg-[#efefef] cursor-not-allowed">
+                    <span className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-200 rounded-md text-xs font-medium text-[#888888] bg-[#efefef] cursor-not-allowed">
                         Betelt (Nincs várólista)
                     </span>
                 `;
@@ -635,9 +636,9 @@ const StudentAppointmentsApp = () => {
                 buttonArea = html`
                     <button 
                         onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
-                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-4 py-2 border border-[#e09900] rounded-md shadow-sm text-sm font-medium text-[#e09900] bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-colors"
+                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-[#e09900] rounded-md shadow-sm text-xs font-medium text-[#e09900] bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-colors"
                     >
-                        <${Icons.ClockIcon} size=${16} />
+                        <${Icons.ClockIcon} size=${14} />
                         Várólistára jelentkezés
                     </button>
                 `;
@@ -646,7 +647,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
                 >
                     ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
                 </button>
@@ -654,42 +655,42 @@ const StudentAppointmentsApp = () => {
         }
 
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-5 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'}`}>
-                <div className="flex flex-col h-full justify-between gap-4">
+            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'}`}>
+                <div className="flex flex-col h-full justify-between gap-3">
                     <div>
-                        <div className="flex justify-between items-start mb-2 gap-2">
-                            <h4 className="font-extrabold text-[#333333] text-lg leading-tight pr-2">${course.name}</h4>
+                        <div className="flex justify-between items-start mb-1.5 gap-2">
+                            <h4 className="font-extrabold text-[#333333] text-base leading-tight pr-2">${course.name}</h4>
                             ${isFull ? html`
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
                             ` : isInCart ? (isWaitlistInCart ? html`
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-orange-50 text-[#c98900] shrink-0">Várólistán</span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-[#c98900] shrink-0">Várólistán</span>
                             ` : html`
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-orange-100 text-[#c98900] shrink-0">Kiválasztva</span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-[#c98900] shrink-0">Kiválasztva</span>
                             `) : html`
-                                <span className="px-2 py-1 rounded text-xs font-semibold bg-[#efefef] text-[#333333] shrink-0">${availableSeats} hely</span>
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#333333] shrink-0">${availableSeats} hely</span>
                             `}
                         </div>
 
-                        <div className="text-[#888888] font-medium text-sm flex items-center gap-1.5 mb-2 mt-1">
-                            <${Icons.ClockIcon} size=${16} className="text-[#888888]" />
+                        <div className="text-[#888888] font-medium text-[13px] flex items-center gap-1 mb-1.5 mt-1">
+                            <${Icons.ClockIcon} size=${14} className="text-[#888888]" />
                             <span>${course.startTime} - ${course.endTime}</span>
                         </div>
 
                         ${(isMedical || isFirstAid) && html`
-                            <div className="mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-[#efefef] border border-gray-200 text-xs font-semibold text-[#888888]">
-                                <${Icons.CreditCardIcon} size=${14} className="text-[#888888]" />
+                            <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#efefef] border border-gray-200 text-[11px] font-semibold text-[#888888]">
+                                <${Icons.CreditCardIcon} size=${12} className="text-[#888888]" />
                                 ${isFirstAid ? 'Előre fizetős' : 'Fizetős'}
                             </div>
                         `}
 
                         ${isQuickBook && html`
-                            <div className="text-sm text-[#888888] mt-2 flex items-center gap-1.5">
-                                <${Icons.CalendarIcon} size=${16} />
+                            <div className="text-xs text-[#888888] mt-1.5 flex items-center gap-1">
+                                <${Icons.CalendarIcon} size=${14} />
                                 ${course.date.replace(/-/g, '. ')}
                             </div>
                         `}
                     </div>
-                    <div className="mt-auto pt-3 border-t border-[#efefef]">
+                    <div className="mt-auto pt-2.5 border-t border-[#efefef]">
                         ${buttonArea}
                     </div>
                 </div>
@@ -707,8 +708,15 @@ const StudentAppointmentsApp = () => {
         setSelectedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
     };
 
+    const toggleWeek = (weekKey) => {
+        setCollapsedWeeks(prev => ({
+            ...prev,
+            [weekKey]: !prev[weekKey]
+        }));
+    };
+
     return html`
-        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8">
+        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-[Poppins]">
             ${isTestView && html`
                 <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
                     <${Icons.AlertTriangleIcon} size=${20} />
@@ -761,23 +769,31 @@ const StudentAppointmentsApp = () => {
                                         <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
                                     </div>
                                 ` : kreszWeeks.map(week => html`
-                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                        <div className="bg-[#efefef] border-b border-gray-200 px-6 py-4">
-                                            <h3 className="text-lg font-bold text-[#333333] flex items-center gap-2">
-                                                <${Icons.CalendarIcon} size=${20} className="text-[#333333]"/>
+                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                                        <div
+                                            className="bg-[#efefef] border-b border-gray-200 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-200 transition-colors"
+                                            onClick=${() => toggleWeek(week.weekKey)}
+                                        >
+                                            <h3 className="text-base sm:text-lg font-bold text-[#333333] flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${18} className="text-[#333333]"/>
                                                 ${week.name}
                                             </h3>
+                                            <span className=${`text-gray-500 transition-transform duration-300 ${collapsedWeeks[week.weekKey] ? '' : 'rotate-90'}`}>
+                                                <${Icons.ChevronRightIcon} size=${24} />
+                                            </span>
                                         </div>
-                                        <div className="p-4 sm:p-6 space-y-6">
-                                            ${Object.keys(week.days).sort().map(dateStr => html`
-                                                <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-6">
-                                                    <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                        ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                        ${!collapsedWeeks[week.weekKey] ? html`
+                                            <div className="p-4 sm:p-5 space-y-5 animate-fade-in">
+                                                ${Object.keys(week.days).sort().map(dateStr => html`
+                                                    <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
+                                                        <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                                            ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            `)}
-                                        </div>
+                                                `)}
+                                            </div>
+                                        ` : ''}
                                     </div>
                                 `)}
                             </div>
@@ -803,23 +819,31 @@ const StudentAppointmentsApp = () => {
                         ${(desktopWeeks.length > 0) && html`
                             <div className="space-y-8">
                                 ${desktopWeeks.map(week => html`
-                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                                        <div className="bg-[#efefef] border-b border-gray-200 px-6 py-4">
-                                            <h3 className="text-lg font-bold text-[#333333] flex items-center gap-2">
-                                                <${Icons.CalendarIcon} size=${20} className="text-[#333333]"/>
+                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                                        <div
+                                            className="bg-[#efefef] border-b border-gray-200 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-200 transition-colors"
+                                            onClick=${() => toggleWeek(week.weekKey)}
+                                        >
+                                            <h3 className="text-base sm:text-lg font-bold text-[#333333] flex items-center gap-2">
+                                                <${Icons.CalendarIcon} size=${18} className="text-[#333333]"/>
                                                 ${week.name}
                                             </h3>
+                                            <span className=${`text-gray-500 transition-transform duration-300 ${collapsedWeeks[week.weekKey] ? '' : 'rotate-90'}`}>
+                                                <${Icons.ChevronRightIcon} size=${24} />
+                                            </span>
                                         </div>
-                                        <div className="p-4 sm:p-6 space-y-6">
-                                            ${Object.keys(week.days).sort().map(dateStr => html`
-                                                <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-6">
-                                                    <h4 className="font-semibold text-gray-800 mb-4 text-md">${getDayName(dateStr)}</h4>
-                                                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
-                                                        ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                        ${!collapsedWeeks[week.weekKey] ? html`
+                                            <div className="p-4 sm:p-5 space-y-5 animate-fade-in">
+                                                ${Object.keys(week.days).sort().map(dateStr => html`
+                                                    <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
+                                                        <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
+                                                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
+                                                            ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                        </div>
                                                     </div>
-                                                </div>
-                                            `)}
-                                        </div>
+                                                `)}
+                                            </div>
+                                        ` : ''}
                                     </div>
                                 `)}
                             </div>
@@ -836,16 +860,16 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${(isDesktop || activeTab === 'kresz') && html`
-                    <div className=${`w-full lg:w-1/3 sticky top-6 mb-20 space-y-6 ${!isDesktop ? 'hidden lg:block' : ''}`}>
+                    <div className=${`w-full lg:w-1/3 sticky top-6 mb-20 flex flex-col gap-4 ${!isDesktop ? 'hidden lg:flex' : ''} max-h-[calc(100vh-3rem)]`}>
 
                         <!-- Filter Panel (Desktop Only) -->
-                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden">
-                            <div className="bg-white px-5 py-4 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
-                                <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                                    <${Icons.SearchIcon} size=${20} className="text-[#333333]" />
+                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden shrink-0">
+                            <div className="bg-white px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
+                                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                                    <${Icons.SearchIcon} size=${18} className="text-[#333333]" />
                                     Szűrés
                                 </h3>
-                                <div className="flex items-center gap-4">
+                                <div className="flex items-center gap-3">
                                     ${(() => {
                                         const isAnyFilterActive = selectedCategories.consultation || selectedCategories.medical || selectedCategories.firstaid || selectedModules.mod1 || selectedModules.mod2 || selectedModules.mod3 || selectedModules.mod4 || timeFilter !== 'all';
                                         return html`
@@ -858,61 +882,61 @@ const StudentAppointmentsApp = () => {
                                                     setTimeFilter('all');
                                                 }}
                                                 disabled=${!isAnyFilterActive}
-                                                className=${`flex items-center gap-1.5 text-sm font-bold px-3 py-1.5 rounded-full transition-colors ${isAnyFilterActive ? 'text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
+                                                className=${`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full transition-colors ${isAnyFilterActive ? 'text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
                                                 title="Összes szűrés törlése"
                                             >
-                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-red-100 text-red-600' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${14} /></span>
-                                                Összes szűrés törlése
+                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-red-100 text-red-600' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${12} /></span>
+                                                Törlés
                                             </button>
                                         `;
                                     })()}
                                     <span className=${`text-[#888888] transition-transform duration-300 ${isFilterExpanded ? 'rotate-180' : ''}`}>
-                                        <${Icons.ChevronRightIcon} size=${24} className="rotate-90" />
+                                        <${Icons.ChevronRightIcon} size=${20} className="rotate-90" />
                                     </span>
                                 </div>
                             </div>
 
                             ${isFilterExpanded ? html`
-                                <div className="p-5 bg-white">
-                                    <div className="mb-5">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                <div className="p-4 bg-white">
+                                    <div className="mb-3">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Elméleti tanfolyam</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 1. modul
                                             </button>
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 2. modul
                                             </button>
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 3. modul
                                             </button>
-                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                            <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                 4. modul
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="mb-5 border-t border-gray-100 pt-5">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                                ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
+                                    <div className="mb-3 border-t border-gray-100 pt-3">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiegészítő szolgáltatások</p>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Konzultáció
                                             </button>
-                                            <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                                ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
+                                            <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Orvosi
                                             </button>
-                                            <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                                ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
+                                            <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Elsősegély
                                             </button>
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-gray-100 pt-5">
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
+                                    <div className="border-t border-gray-100 pt-3">
+                                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Napszak</p>
                                         <div className="flex bg-[#efefef] p-1 rounded-lg">
-                                            <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                            <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                            <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                            <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                            <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                            <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                         </div>
                                     </div>
                                 </div>
@@ -920,43 +944,43 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- Cart Panel -->
-                        <div className="bg-white shadow-lg sm:rounded-xl p-6 border border-gray-100 flex flex-col max-h-[calc(100vh-120px)]">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 border-b pb-3 shrink-0 flex items-center gap-2">
-                            <svg className="w-5 h-5 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                        <div className="bg-white shadow-lg sm:rounded-xl p-4 border border-gray-100 flex flex-col flex-1 min-h-0">
+                        <h3 className="text-base font-bold text-gray-900 mb-3 border-b pb-2 shrink-0 flex items-center gap-2">
+                            <svg className="w-4 h-4 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             Kiválasztott időpontok
                         </h3>
                         ${cart.length === 0 ? html`
-                            <div className="text-gray-500 text-sm italic py-8 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                            <div className="text-gray-500 text-xs italic py-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
                                 Még nem választottál ki időpontot.<br/>Kattints a "Kiválasztom" gombra a hozzáadáshoz.
                             </div>
                         ` : html`
-                            <div className="flex flex-col gap-3 max-h-[340px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar flex-1 min-h-0">
                                 ${cart.map(item => html`
-                                    <div key=${item.course.id} className="flex justify-between items-start p-3 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors">
+                                    <div key=${item.course.id} className="flex justify-between items-start p-2.5 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors">
                                         <div className="flex-1">
-                                            <div className="font-semibold text-[#e09900] text-sm">
+                                            <div className="font-semibold text-[#e09900] text-xs">
                                                 ${item.course.name}
-                                                ${item.isWaitlist ? html`<span className="ml-2 text-xs text-[#c98900] bg-orange-50 px-1.5 py-0.5 rounded border border-orange-200">(Várólista)</span>` : ''}
+                                                ${item.isWaitlist ? html`<span className="ml-1.5 text-[10px] text-[#c98900] bg-orange-50 px-1 py-0.5 rounded border border-orange-200">(Várólista)</span>` : ''}
                                             </div>
-                                            <div className="text-xs text-[#888888] mt-1.5 flex items-center gap-1.5">
-                                                <${Icons.CalendarIcon} size=${12} className="text-[#888888]" />
+                                            <div className="text-[11px] text-[#888888] mt-1 flex items-center gap-1">
+                                                <${Icons.CalendarIcon} size=${10} className="text-[#888888]" />
                                                 ${item.course.date.replace(/-/g, '. ')}. <span className="font-medium text-[#333333]">${item.course.startTime}</span>
                                             </div>
                                         </div>
                                         <button 
                                             onClick=${() => removeFromCart(item.course.id)}
-                                            className="ml-3 text-red-500 hover:text-red-700 bg-white hover:bg-red-50 rounded shadow-sm border border-red-100 p-1.5 transition-colors"
+                                            className="ml-2 text-red-500 hover:text-red-700 bg-white hover:bg-red-50 rounded shadow-sm border border-red-100 p-1 transition-colors"
                                             title="Eltávolítás"
                                         >
-                                            <${Icons.XIcon} size=${14} />
+                                            <${Icons.XIcon} size=${12} />
                                         </button>
                                     </div>
                                 `)}
                             </div>
-                            <div className="mt-6 pt-4 border-t border-gray-200 shrink-0">
+                            <div className="mt-4 pt-3 border-t border-gray-200 shrink-0">
                                 <button
                                     onClick=${() => setIsCheckoutOpen(true)}
-                                    className="w-full flex justify-center items-center gap-2 py-3 px-4 border border-transparent rounded-lg shadow-md text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-lg"
+                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
                                     Tovább a jelentkezéshez (${cart.length})
                                 </button>
