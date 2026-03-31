@@ -873,9 +873,9 @@ const StudentAppointmentsApp = () => {
                 buttonArea = html`
                     <button 
                         onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
-                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-[#e09900] rounded-md shadow-sm text-xs font-medium text-[#e09900] bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-colors"
+                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400 transition-colors"
                     >
-                        <${Icons.ClockIcon} size=${14} />
+                        <${Icons.ClockIcon} size=${14} className="text-[#e09900]" />
                         Várólistára jelentkezés
                     </button>
                 `;
@@ -884,7 +884,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900]"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-colors"
                 >
                     ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
                 </button>
@@ -998,7 +998,7 @@ const StudentAppointmentsApp = () => {
                                 ${desktopWeeks.map(week => html`
                                     <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
                                         <div 
-                                            className="bg-[#efefef] border-b border-gray-200 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-200 transition-colors"
+                                            className="bg-gray-200 border-b border-gray-300 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-300 transition-colors"
                                             onClick=${() => toggleWeek(week.weekKey)}
                                         >
                                             <h3 className="text-base sm:text-lg font-bold text-[#333333] flex items-center gap-2">
@@ -1169,45 +1169,54 @@ const StudentAppointmentsApp = () => {
             </div>
 
             
-                        <!-- Floating Filter Button (FAB) for Mobile -->
-            <div className=${`lg:hidden fixed z-40 left-4 sm:left-6 pb-[env(safe-area-bottom)] pointer-events-none flex flex-col items-start gap-3 transition-all duration-300 ${cart.length > 0 ? "bottom-24" : "bottom-6"}`}>
+            <!-- Floating Navigation Bar (Mobile) -->
+            <div className="lg:hidden fixed z-40 bottom-6 left-0 right-0 px-4 sm:px-6 pb-[env(safe-area-bottom)] pointer-events-none flex justify-between items-center transition-all duration-300 gap-2">
+
+                <!-- Filter Button -->
                 <button 
                     onClick=${() => setIsMobileFilterModalOpen(true)}
-                    className="pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200"
+                    className="pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
                     title="Szűrés és kategóriák"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 </button>
-            </div>
 
-            <!-- Floating Info Button (FAB) -->
-            <div className=${`fixed z-40 right-4 sm:right-6 pb-[env(safe-area-bottom)] pointer-events-none flex flex-col items-end gap-3 transition-all duration-300 ${cart.length > 0 ? "bottom-24 lg:bottom-6" : "bottom-6"}`}>
+                <!-- Floating Pill Button (Véglegesítés) -->
+                <div className=${`transition-all duration-300 flex-1 flex justify-center ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none max-w-0 overflow-hidden'}`}>
+                    <button
+                        onClick=${() => setIsCheckoutOpen(true)}
+                        className="bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-3 sm:gap-4 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
+                    >
+                        <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 shrink-0 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
+                            ${cart.length}
+                        </div>
+                        <span className="tracking-wide text-sm sm:text-base">Véglegesítés</span>
+                    </button>
+                </div>
+
+                <!-- Info Button -->
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-[#e09900] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(224,153,0,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border-2 border-white"
+                    className="pointer-events-auto bg-white hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
                 </button>
             </div>
 
+            <!-- Spacer for the floating buttons so content isn't covered at the bottom -->
+            <div className="lg:hidden h-24 pb-[env(safe-area-inset-bottom)]"></div>
 
-            <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
-            ${cart.length > 0 && html`
-                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-bottom)] pointer-events-none flex justify-center">
-                    <button 
-                        onClick=${() => setIsCheckoutOpen(true)}
-                        className=${`pointer-events-auto bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-4 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md`}
-                    >
-                        <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
-                            ${cart.length}
-                        </div>
-                        <span className="tracking-wide text-[16px]">Véglegesítés</span>
-                    </button>
-                </div>
-                <!-- Spacer for the floating button so content isn't covered at the bottom -->
-                <div className="lg:hidden h-32 pb-[env(safe-area-inset-bottom)]"></div>
-            `}
+            <!-- Floating Info Button for Desktop -->
+            <div className="hidden lg:flex fixed z-40 right-6 bottom-6 pointer-events-none flex-col items-end gap-3 transition-all duration-300">
+                <button
+                    onClick=${() => setIsInfoModalOpen(true)}
+                    className="pointer-events-auto bg-white hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200"
+                    title="Fontos tudnivalók jelentkezés előtt"
+                >
+                    <span className="font-serif italic font-bold text-3xl leading-none">i</span>
+                </button>
+            </div>
 
             <!-- Checkout Modal -->
             ${isCheckoutOpen && html`
