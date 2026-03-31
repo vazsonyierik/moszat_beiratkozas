@@ -10,9 +10,9 @@ const { useState, useEffect, useRef, Fragment } = React;
 
 // Modális ablak a gomb beszúrásához (színválasztóval)
 const InsertButtonModal = ({ isOpen, onClose, onInsert }) => {
-    const [url, setUrl] = useState('https://moszat.hu');
-    const [text, setText] = useState('Kattints ide');
-    const [bgColor, setBgColor] = useState('#4f46e5'); // Alapértelmezett kék
+    const [url, setUrl] = useState('https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}');
+    const [text, setText] = useState('Időpont lemondása');
+    const [bgColor, setBgColor] = useState('#d9534f'); // Alapértelmezett piros
     const [textColor, setTextColor] = useState('#ffffff');
 
     if (!isOpen) return null;
