@@ -45,7 +45,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
     const isDesktop = window.innerWidth >= 1024;
     const isMobile = window.innerWidth < 640;
-    const needsWizard = isMobile && cart.length >= 3;
+    const needsWizard = isMobile;
 
     // Determine what to render based on wizard step and view mode
     const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
@@ -92,8 +92,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     if (results) {
         return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins]">
-                <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-md transform transition-all sm:my-8 mt-16 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
-                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
+                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
                             <${Icons.XIcon} size=${24} />
@@ -596,6 +596,7 @@ const StudentAppointmentsApp = () => {
     });
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
     const [isFilterExpanded, setIsFilterExpanded] = useState(window.innerWidth >= 1024);
+    const [isMobileFilterModalOpen, setIsMobileFilterModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
@@ -985,11 +986,12 @@ const StudentAppointmentsApp = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-                <!-- Mobile Filter Trigger -->
+                                <!-- Mobile Filter Trigger -->
                 <div className="lg:hidden w-full">
-                    <button onClick=${() => setIsFilterExpanded(!isFilterExpanded)} className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 shadow-sm flex items-center justify-between text-gray-800 font-bold">
-                        <span className="flex items-center gap-2"><${Icons.SearchIcon} size=${18} className="text-[#333333]" /> Szűrés és kategóriák</span>
-                        <span className=${`transition-transform duration-300 ${isFilterExpanded ? "rotate-180" : ""}`}><${Icons.ChevronRightIcon} size=${20} className="rotate-90" /></span>
+                    <button onClick=${() => setIsMobileFilterModalOpen(true)} className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm flex items-center text-gray-800 font-bold transition-colors hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900] mr-3"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        <span>Szűrés és kategóriák</span>
+                        <${Icons.ChevronRightIcon} size=${20} className="text-gray-400 ml-auto" />
                     </button>
                 </div>
                 
@@ -1045,7 +1047,7 @@ const StudentAppointmentsApp = () => {
                     <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2">
 
                         <!-- Filter Panel -->
-                        <div className=${`bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden shrink-0 ${isDesktop ? "block" : (isFilterExpanded ? "block" : "hidden")}`}>
+                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden shrink-0">
                             <div className="bg-white px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
                                 <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
                                     <${Icons.SearchIcon} size=${18} className="text-[#333333]" />
@@ -1164,7 +1166,7 @@ const StudentAppointmentsApp = () => {
                                     onClick=${() => setIsCheckoutOpen(true)}
                                     className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
-                                    Tovább a jelentkezéshez (${cart.length})
+                                    Véglegesítés (${cart.length})
                                 </button>
                             </div>
                         `}
@@ -1188,7 +1190,7 @@ const StudentAppointmentsApp = () => {
 
             <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
             ${cart.length > 0 && html`
-                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-bottom)] pointer-events-none w-full px-4 flex justify-center">
+                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-bottom)] pointer-events-none flex justify-center">
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
                         className=${`pointer-events-auto bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-4 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md`}
@@ -1196,7 +1198,7 @@ const StudentAppointmentsApp = () => {
                         <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
                             ${cart.length}
                         </div>
-                        <span className="tracking-wide text-[15px]">Tovább a jelentkezéshez <span className="text-xl ml-1 font-normal opacity-80">→</span></span>
+                        <span className="tracking-wide text-[16px]">Véglegesítés</span>
                     </button>
                 </div>
                 <!-- Spacer for the floating button so content isn't covered at the bottom -->
@@ -1215,6 +1217,77 @@ const StudentAppointmentsApp = () => {
             `}
 
             ${isInfoModalOpen && html`<${InfoModal} onClose=${() => setIsInfoModalOpen(false)} />`}
+
+
+            <!-- Mobile Filter Modal -->
+            ${isMobileFilterModalOpen && html`
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-[60] font-[Poppins]" onClick=${() => setIsMobileFilterModalOpen(false)}>
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
+                        <header className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-3xl shrink-0">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                Szűrés és kategóriák
+                            </h3>
+                            <button onClick=${() => setIsMobileFilterModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 -mr-2 rounded-full hover:bg-gray-200 transition-colors">
+                                <${Icons.XIcon} size=${24} />
+                            </button>
+                        </header>
+                        <main className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                            <div className="mb-6">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                                </div>
+                            </div>
+
+                            <div className="mb-6 border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-2 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${16} className="text-white"/>` : ''} Konzultáció
+                                    </button>
+                                    <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-2 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${16} className="text-white"/>` : ''} Orvosi
+                                    </button>
+                                    <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-2 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${16} className="text-white"/>` : ''} Elsősegély
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
+                                <div className="flex bg-gray-100 p-1.5 rounded-xl border border-gray-200 shadow-inner">
+                                    <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Mind</button>
+                                    <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Délután</button>
+                                </div>
+                            </div>
+                        </main>
+                        <div className="p-4 border-t border-gray-100 bg-white rounded-b-3xl flex justify-between items-center gap-4 shrink-0">
+                            <button
+                                onClick=${() => {
+                                    setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                    setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                    setTimeFilter('all');
+                                }}
+                                className="px-4 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                            >
+                                Törlés
+                            </button>
+                            <button
+                                onClick=${() => setIsMobileFilterModalOpen(false)}
+                                className="flex-1 px-6 py-3 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center"
+                            >
+                                Eredmények mutatása
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `}
 
             ${toast && html`<${Toast} message=${toast.message} type=${toast.type} onClose=${() => setToast(null)} />`}
         </div>
