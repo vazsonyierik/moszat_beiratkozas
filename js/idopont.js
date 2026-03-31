@@ -140,9 +140,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     }
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-2xl shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
-                <header className="p-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-2xl shrink-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] animate-fade-in">
+            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md transform transition-all max-h-[90vh] flex flex-col overscroll-none animate-scale-in" onClick=${e => e.stopPropagation()}>
+                <header className="px-5 py-4 border-b border-gray-300 flex justify-between items-center bg-gray-200 rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${needsWizard && step === 2 ? html`
                             <button onClick=${() => setStep(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
@@ -183,12 +183,12 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             `)}
                         </ul>
                         ${needsWizard && step === 1 ? html`
-                            <div className="mt-6">
+                            <div className="mt-2 flex justify-end border-t border-gray-100 pt-4">
                                 <button
                                     onClick=${() => setStep(2)}
-                                    className="w-full py-3.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-[0_4px_10px_rgba(224,_153,_0,_0.2)] flex items-center justify-center gap-2"
+                                    className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
                                 >
-                                    Tovább az adatokhoz <span className="text-xl leading-none">→</span>
+                                    Tovább
                                 </button>
                             </div>
                         ` : ''}
@@ -196,7 +196,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 ` : ''}
 
                 ${showForm ? html`
-                    <main className="p-4 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-2xl">
+                    <main className="p-4 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-[1.5rem]">
                         ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
 
                         <form onSubmit=${handleSubmit} className="space-y-3">
@@ -345,7 +345,7 @@ const InfoModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                <main className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-2xl">
+                <main className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-[1.5rem]">
                     
                     ${activeTab === 'kresz' && html`
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
@@ -531,9 +531,12 @@ const InfoModal = ({ onClose }) => {
                         </div>
                     `}
                 </main>
-                <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-end shrink-0">
-                    <button onClick=${onClose} className="px-6 py-2.5 bg-gray-800 hover:bg-black text-white rounded-lg font-bold transition-colors">
-                        Bezárás
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end items-center shrink-0">
+                    <button
+                        onClick=${onClose}
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                    >
+                        Értettem
                     </button>
                 </div>
             </div>
@@ -594,7 +597,16 @@ const StudentAppointmentsApp = () => {
         mod3: false,
         mod4: false
     });
+
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
+
+    // Draft states for mobile filter
+    const [draftCategories, setDraftCategories] = useState({ consultation: false, medical: false, firstaid: false });
+    const [draftModules, setDraftModules] = useState({ mod1: false, mod2: false, mod3: false, mod4: false });
+    const [draftTimeFilter, setDraftTimeFilter] = useState('all');
+
+    const toggleDraftCategory = (cat) => setDraftCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
+
     const [isFilterExpanded, setIsFilterExpanded] = useState(window.innerWidth >= 1024);
     const [isMobileFilterModalOpen, setIsMobileFilterModalOpen] = useState(false);
     const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
@@ -898,7 +910,7 @@ const StudentAppointmentsApp = () => {
         }
 
         // A kártya csak akkor legyen elhalványítva (opacity-60), ha betelt, ÉS nincs lehetőség várólistára (pl. Elsősegély)
-        const isCompletelyFull = isFull && isFirstAid;
+        const isCompletelyFull = isFull && course.category === 'firstaid';
 
         return html`
             <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
@@ -1019,7 +1031,7 @@ const StudentAppointmentsApp = () => {
                                             </span>
                                         </div>
                                         <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${collapsedWeeks[week.weekKey] ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}>
-                                            <div className="overflow-hidden">
+                                            <div className={`overflow-hidden transition-all duration-500 delay-100 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFilterExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
                                                 <div className="p-4 sm:p-5 space-y-5">
                                                     ${Object.keys(week.days).sort().map(dateStr => html`
                                                         <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
@@ -1084,8 +1096,8 @@ const StudentAppointmentsApp = () => {
                                 </div>
                             </div>
 
-                            <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${isFilterExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
-                                <div className="overflow-hidden">
+                            <div className={`grid transition-[grid-template-rows] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFilterExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
+                                <div className={`overflow-hidden transition-all duration-500 delay-100 ease-[cubic-bezier(0.4,0,0.2,1)] ${isFilterExpanded ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-8'}`}>
                                     <div className="p-4 bg-white">
                                         <div className="mb-3 animate-fade-in">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Elméleti tanfolyam</p>
@@ -1108,13 +1120,13 @@ const StudentAppointmentsApp = () => {
                                         <div className="mb-3 border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '50ms' }}>
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Kiegészítő szolgáltatások</p>
                                             <div className="flex flex-wrap gap-1.5">
-                                                <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleDraftCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Konzultáció
                                                 </button>
-                                                <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleDraftCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Orvosi
                                                 </button>
-                                                <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleDraftCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Elsősegély
                                                 </button>
                                             </div>
@@ -1123,9 +1135,9 @@ const StudentAppointmentsApp = () => {
                                         <div className="border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '100ms' }}>
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
                                             <div className="flex bg-[#efefef] p-1 rounded-lg">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                                <button onClick=${() => setDraftTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                                <button onClick=${() => setDraftTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                                <button onClick=${() => setDraftTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1187,7 +1199,12 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Filter Button -->
                 <button 
-                    onClick=${() => setIsMobileFilterModalOpen(true)}
+                    onClick=${() => {
+                        setDraftCategories(selectedCategories);
+                        setDraftModules(selectedModules);
+                        setDraftTimeFilter(timeFilter);
+                        setIsMobileFilterModalOpen(true);
+                    }}
                     className="relative pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
                     title="Szűrés és kategóriák"
                 >
@@ -1265,24 +1282,24 @@ const StudentAppointmentsApp = () => {
                             <div className="mb-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Elméleti tanfolyam</p>
                                 <div className="flex flex-wrap gap-1.5">
-                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
-                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
-                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
-                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                                    <button onClick=${() => setDraftModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setDraftModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setDraftModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setDraftModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
                                 </div>
                             </div>
 
                             <div className="mb-4 border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Kiegészítő szolgáltatások</p>
                                 <div className="flex flex-wrap gap-1.5">
-                                    <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
-                                        ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
+                                    <button onClick=${() => toggleDraftCategory('consultation')} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${draftCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
                                     </button>
-                                    <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
-                                        ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
+                                    <button onClick=${() => toggleDraftCategory('medical')} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${draftCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
                                     </button>
-                                    <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
-                                        ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
+                                    <button onClick=${() => toggleDraftCategory('firstaid')} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${draftCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${draftCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
                                     </button>
                                 </div>
                             </div>
@@ -1290,28 +1307,32 @@ const StudentAppointmentsApp = () => {
                             <div className="border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Napszak</p>
                                 <div className="flex bg-[#efefef] p-1.5 rounded-xl border border-gray-200 shadow-inner">
-                                    <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                    <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                    <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                    <button onClick=${() => setDraftTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${draftTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                    <button onClick=${() => setDraftTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${draftTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                    <button onClick=${() => setDraftTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${draftTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                 </div>
                             </div>
                         </main>
                         <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center gap-3 shrink-0">
                             <button
                                 onClick=${() => {
-                                    setSelectedCategories({ consultation: false, medical: false, firstaid: false });
-                                    setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
-                                    setTimeFilter('all');
+                                    setDraftCategories({ consultation: false, medical: false, firstaid: false });
+                                    setDraftModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                    setDraftTimeFilter('all');
                                 }}
                                 className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-all active:scale-95"
                             >
                                 Törlés
                             </button>
                             <button 
-                                onClick=${() => setIsMobileFilterModalOpen(false)}
-                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
-                            >
-                                Eredmények mutatása
+                                onClick=${() => {
+                                    setSelectedCategories(draftCategories);
+                                    setSelectedModules(draftModules);
+                                    setTimeFilter(draftTimeFilter);
+                                    setIsMobileFilterModalOpen(false);
+                                }}
+                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm">
+                                Szűrés
                             </button>
                         </div>
                     </div>
