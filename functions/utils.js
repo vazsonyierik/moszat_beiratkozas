@@ -310,21 +310,34 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
     };
 
     // --- Add ICS Calendar Attachment logic ---
-    // Only add calendar for confirmations, modifications, and reminders. NOT waitlists or cancellations.
+    // Add calendar for confirmations, modifications, and reminders. NOT waitlists or cancellations.
     const icsTriggerTemplates = [
         'firstAidConfirmation', 'medicalBookingConfirmation', 'consultationBookingConfirmation', 'bookingConfirmation',
         'courseModified', 'medicalCourseModified', 'consultationCourseModified',
         'courseReminder3Days', 'courseReminder1Day', 'medicalCourseReminder1Day'
     ];
 
-    if (icsTriggerTemplates.includes(templateId) && templateData.courseDate && templateData.courseStartTime && templateData.courseEndTime && !templateData.isWaitlist) {
+    // Határozzuk meg a megfelelő dátum és időpont mezőket
+    const isModification = templateId.includes('Modified');
+    const rawDate = isModification ? (templateData.newCourseDate || templateData.courseDate) : templateData.courseDate;
+    const rawStartTime = isModification ? (templateData.newStartTime || templateData.startTime || templateData.courseStartTime) : (templateData.startTime || templateData.courseStartTime);
+    const rawEndTime = isModification ? (templateData.newEndTime || templateData.endTime || templateData.courseEndTime) : (templateData.endTime || templateData.courseEndTime);
+
+    if (icsTriggerTemplates.includes(templateId) && rawDate && rawStartTime && rawEndTime && !templateData.isWaitlist) {
+        
+        // Visszaalakítjuk a Magyar YYYY. MM. DD. formátumot YYYY-MM-DD -re, ha szükséges
+        let formattedDateForIcs = rawDate;
+        if (formattedDateForIcs.includes('.')) {
+            formattedDateForIcs = formattedDateForIcs.replace(/\./g, '').trim().replace(/\s+/g, '-');
+        }
+
         // Construct a mock courseData object for the generator
         const courseData = {
             id: templateData.courseId || templateData.id,
-            name: templateData.courseName || templateData.moduleName || templateData.name,
-            date: templateData.courseDate,
-            startTime: templateData.courseStartTime,
-            endTime: templateData.courseEndTime
+            name: isModification ? (templateData.newCourseName || templateData.courseName || templateData.name) : (templateData.courseName || templateData.moduleName || templateData.name),
+            date: formattedDateForIcs,
+            startTime: rawStartTime,
+            endTime: rawEndTime
         };
 
         const icsContent = generateIcsFile(courseData, recipientEmail);
