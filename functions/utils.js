@@ -330,12 +330,14 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
         const icsContent = generateIcsFile(courseData, recipientEmail);
         if (icsContent) {
             // Because Firebase Extensions (Send Email) expects attachments to be an array of Nodemailer Attachment objects
+            // For text/calendar, base64 encoding sometimes fails silently or corrupts the payload in the extension.
+            // Sending it as a UTF-8 string content directly is the safest method for text-based attachments in Nodemailer.
             mailPayload.message.attachments = [
                 {
                     filename: 'mosolyzona_idopont.ics',
-                    content: Buffer.from(icsContent).toString('base64'),
-                    encoding: 'base64',
-                    contentType: 'text/calendar'
+                    content: icsContent,
+                    contentType: 'text/calendar; charset=utf-8',
+                    encoding: 'utf-8'
                 }
             ];
         }
