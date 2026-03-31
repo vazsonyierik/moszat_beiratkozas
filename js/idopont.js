@@ -986,14 +986,7 @@ const StudentAppointmentsApp = () => {
             </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
-                                <!-- Mobile Filter Trigger -->
-                <div className="lg:hidden w-full">
-                    <button onClick=${() => setIsMobileFilterModalOpen(true)} className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm flex items-center text-gray-800 font-bold transition-colors hover:bg-gray-50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900] mr-3"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                        <span>Szűrés és kategóriák</span>
-                        <${Icons.ChevronRightIcon} size=${20} className="text-gray-400 ml-auto" />
-                    </button>
-                </div>
+
                 
                 <!-- Main Content Area -->
                 <div className="flex-1 w-full lg:w-2/3 order-2 lg:order-1">
@@ -1175,6 +1168,17 @@ const StudentAppointmentsApp = () => {
                 `}
             </div>
 
+
+                        <!-- Floating Filter Button (FAB) for Mobile -->
+            <div className=${`lg:hidden fixed z-40 left-4 sm:left-6 pb-[env(safe-area-bottom)] pointer-events-none flex flex-col items-start gap-3 transition-all duration-300 ${cart.length > 0 ? "bottom-24" : "bottom-6"}`}>
+                <button
+                    onClick=${() => setIsMobileFilterModalOpen(true)}
+                    className="pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200"
+                    title="Szűrés és kategóriák"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                </button>
+            </div>
 
             <!-- Floating Info Button (FAB) -->
             <div className=${`fixed z-40 right-4 sm:right-6 pb-[env(safe-area-bottom)] pointer-events-none flex flex-col items-end gap-3 transition-all duration-300 ${cart.length > 0 ? "bottom-24 lg:bottom-6" : "bottom-6"}`}>
