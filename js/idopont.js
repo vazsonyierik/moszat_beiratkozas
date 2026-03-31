@@ -45,7 +45,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
     const isDesktop = window.innerWidth >= 1024;
     const isMobile = window.innerWidth < 640;
-    const needsWizard = isMobile && cart.length >= 3;
+    const needsWizard = isMobile;
 
     // Determine what to render based on wizard step and view mode
     const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
@@ -92,8 +92,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     if (results) {
         return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins]">
-                <div className="bg-white sm:rounded-xl rounded-t-3xl shadow-2xl w-full max-w-md transform transition-all sm:my-8 mt-16 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
-                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 sm:rounded-t-xl rounded-t-3xl shrink-0">
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
+                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
                             <${Icons.XIcon} size=${24} />
@@ -306,6 +306,241 @@ function getDayName(dateStr) {
 }
 
 
+
+const InfoModal = ({ onClose }) => {
+    const [activeTab, setActiveTab] = useState('kresz');
+
+    return html`
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins]">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none" onClick=${e => e.stopPropagation()}>
+                
+                <header className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-2xl shrink-0">
+                    <h3 className="text-xl font-extrabold text-gray-800 flex items-center gap-2">
+                        <div className="bg-[#e09900] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-serif italic">i</div>
+                        Hasznos tudnivalók
+                    </h3>
+                    <button onClick=${onClose} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-2">
+                        <${Icons.XIcon} size=${24} />
+                    </button>
+                </header>
+
+                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto hide-scrollbar shrink-0">
+                    <button 
+                        onClick=${() => setActiveTab('kresz')}
+                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'kresz' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                    >
+                        Tantermi KRESZ
+                    </button>
+                    <button 
+                        onClick=${() => setActiveTab('firstaid')}
+                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'firstaid' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                    >
+                        Elsősegély
+                    </button>
+                    <button 
+                        onClick=${() => setActiveTab('medical')}
+                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'medical' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                    >
+                        Orvosi
+                    </button>
+                </div>
+
+                <main className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-2xl">
+                    
+                    ${activeTab === 'kresz' && html`
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2">Tantermi képzéseink – Rugalmasan, ahogy neked a legjobb!</h4>
+                                <p className="mb-4">Autósiskolánk folyamatosan szervez tantermi képzéseket, amelyeken Pető Attila, azaz a Kreszprofesszor segít téged a sikeres felkészülésben.</p>
+                                
+                                <h5 className="font-bold text-gray-800 mb-2">Miért jó ez neked? 👇</h5>
+                                
+                                <div className="space-y-4">
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><span className="text-green-600">✅</span> Rugalmas időpontok:</div>
+                                        <p className="mb-2">Képzéseink reggel és este is indulnak, így te döntöd el, mikor szeretnél részt venni.</p>
+                                        <div className="text-[#e09900] font-medium flex gap-2"><span className="shrink-0">👉</span> <span>Járhatsz akár reggeli, akár esti alkalmakra – sőt, ezt akár hetente is variálhatod, ahogy neked a legjobban megfelel!</span></div>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><span className="text-green-600">✅</span> Szabad modulválasztás:</div>
+                                        <p className="mb-2">Oktatásunk modulrendszerű, így bármikor csatlakozhatsz, és a modulokat tetszőleges sorrendben hallgathatod meg.</p>
+                                        <div className="text-[#e09900] font-medium flex gap-2"><span className="shrink-0">👉</span> <span>Nincs előre meghatározott sorrend – te állítod össze a saját tanrendeted!</span></div>
+                                    </div>
+                                    
+                                    <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                                        <div className="font-bold text-red-800 flex items-center gap-2 mb-1"><span className="text-red-600">✅</span> Fontos!</div>
+                                        <p className="text-red-800 font-medium">Arra figyelj, hogy ugyanazt a modult nem érdemes kétszer elvégezni, mert minden alkalommal ugyanazt az anyagot ismételjük.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <p className="font-medium text-gray-800 bg-orange-50 p-3 border-l-4 border-[#e09900] rounded-r-lg">
+                                📅 Tanulj a saját időbeosztásod szerint, válaszd ki, mikor szeretnél jönni, és számíthatsz ránk, hogy végigkísérünk a sikeres vizsgáig!
+                            </p>
+
+                            <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl">
+                                🎥 Nem találsz számodra megfelelő tantermi időpontot? Semmi gond! A tanórákat végig is nézheted Pető Attila, a Kreszprofesszor előadásában a YouTube-on, teljesen ingyenesen. <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline">👉 KRESZ TV</a>
+                            </p>
+
+                            <hr className="border-gray-200" />
+
+                            <h4 className="text-lg font-bold text-gray-900 mb-4">Modulok felépítése</h4>
+                            
+                            <ul className="space-y-4">
+                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">1. modul – Tanfolyamtájékoztató, alapozó foglalkozás</div>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
+                                        <li>Általános információk a képzés menetéről</li>
+                                        <li>Vezetéselmélet: emberi tényezők</li>
+                                        <li>Érzékelés: látás, figyelem</li>
+                                        <li>A vezető munkatere: ülés, tükrök beállítása</li>
+                                        <li>Alapvető műszaki információk a járműről</li>
+                                        <li>KRESZ-alapok, fogalmak, közúti jelzések</li>
+                                    </ul>
+                                </li>
+                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🚗 2. modul – KRESZ, haladás közben</div>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
+                                        <li>Elindulás, megállás, várakozás</li>
+                                        <li>Haladás az úton: jobbratartás, egyirányú út, osztottpályás út</li>
+                                        <li>Párhuzamos közlekedés, villamos sínen közlekedés</li>
+                                        <li>Kitérés, kikerülés, előzés</li>
+                                        <li>Megfordulás, hátramenet</li>
+                                    </ul>
+                                </li>
+                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🚗 3. modul – KRESZ, manőverezések</div>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
+                                        <li>A járművezetés személyi és tárgyi feltételei</li>
+                                        <li>Személyszállítás, teherszállítás szabályai</li>
+                                        <li>Műszaki hiba, vontatás</li>
+                                        <li>Irányváltoztatás, körforgalom, kanyarodó főútvonal</li>
+                                        <li>Követési távolság, féktávolság, vasúti átjáró</li>
+                                        <li>Autópálya, autóút, lakó-pihenő övezet</li>
+                                        <li>Megkülönböztető és figyelmeztető jelzések</li>
+                                    </ul>
+                                </li>
+                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🚗 4. modul – KRESZ, útkereszteződések</div>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
+                                        <li>Elsőbbségadás szabályai, sorrend a kereszteződésekben</li>
+                                        <li>Villamos és gyalogos elsőbbsége</li>
+                                        <li>Lámpák és rendőri forgalomirányítás jelzései</li>
+                                    </ul>
+                                </li>
+                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🛑 Konzultáció</div>
+                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
+                                        <li>Hasznos tippek a sikeres vizsgához</li>
+                                        <li>KRESZ: gyalogosként, kerékpárral, egyéb járművekkel közlekedve</li>
+                                        <li>Összefoglalás, ismétlés, gyakorlás</li>
+                                    </ul>
+                                </li>
+                            </ul>
+                        </div>
+                    `}
+
+                    ${activeTab === 'firstaid' && html`
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
+                            
+                            <div className="bg-orange-50 border border-[#e09900] p-4 rounded-xl text-orange-900">
+                                <h4 className="font-bold text-lg mb-1 flex items-center gap-2">Fontos tudnivaló a jogosítvány átvételéhez</h4>
+                                <p>A jogosítványod átvételének egyik feltétele, hogy rendelkezz érvényes és sikeres közúti elsősegélynyújtó vizsgával.</p>
+                            </div>
+
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">🎓 E-learning – a tandíj része</h4>
+                                <p className="mb-2">A tanfolyamon való részvétel nem kötelező, de minden tanulónk számára biztosítunk egy e-learninges felkészítőt, amely a tandíjban benne van. <strong>Ezért külön nem kell fizetned.</strong></p>
+                                <p>Az e-learning segít felkészülni az elsősegélynyújtó vizsgára saját tempódban, kényelmesen.</p>
+                            </div>
+
+                            <hr className="border-gray-200" />
+
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">🤝 Gyakorlati felkészítés</h4>
+                                <p className="mb-3 text-gray-600 italic">...ha magabiztosan szeretnél vizsgázni!</p>
+                                <p className="mb-4">Rendszeresen tartunk gyakorlati foglalkozásokat, ahol személyesen is át tudjuk nézni a legfontosabb vizsgatémákat:</p>
+                                
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Betegvizsgálat</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Újraélesztés (BLS)</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Stabil oldalfektetés</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Műfogások</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Sebellátás, kötözések</li>
+                                </ul>
+
+                                <p className="font-bold text-gray-800 mb-4 bg-gray-100 p-3 rounded-lg border-l-4 border-gray-400">✅ És természetesen válaszolunk az e-learninggel kapcsolatos kérdéseidre is.</p>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center">
+                                        <div className="text-2xl mb-1">📅</div>
+                                        <div className="font-bold text-gray-900">Mikor?</div>
+                                        <div className="text-gray-600">Háromhetente,<br/>péntekenként<br/>16:30-tól 20:30-ig</div>
+                                    </div>
+                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center">
+                                        <div className="text-2xl mb-1">📍</div>
+                                        <div className="font-bold text-gray-900">Helyszín</div>
+                                        <div className="text-gray-600 mt-2">Az autósiskola<br/>tanterme</div>
+                                    </div>
+                                    <div className="bg-[#e09900] text-white p-4 rounded-xl shadow-md text-center flex flex-col justify-center">
+                                        <div className="text-2xl mb-1">💰</div>
+                                        <div className="font-bold">Részvételi díj</div>
+                                        <div className="text-xl font-extrabold mt-1">12.000 Ft</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `}
+
+                    ${activeTab === 'medical' && html`
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
+                            <h4 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Orvosi alkalmassági vizsgálat – Gyorsan, kényelmesen!</h4>
+                            
+                            <div className="space-y-4">
+                                <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <span className="text-xl mt-0.5">👉</span>
+                                    <p className="font-medium text-gray-800 text-base">Nincs sorban állás, a vizsgálatot gyorsan és kényelmesen el tudod végezni.</p>
+                                </div>
+                                
+                                <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <span className="text-xl mt-0.5">👉</span>
+                                    <p className="text-gray-700">Akár egyéb vizsgálatok nélkül is elvégezhető, de ez <strong>mindig az orvos helyszíni döntésétől függ.</strong></p>
+                                </div>
+                                
+                                <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
+                                    <span className="text-xl mt-0.5">📄</span>
+                                    <p className="text-gray-700">Az orvosi alkalmassági véleményt rövid időn belül, a vizsgálatot követően kézhez kapod.</p>
+                                </div>
+                            </div>
+
+                            <div className="mt-8 bg-orange-50 p-6 rounded-2xl border border-[#e09900] shadow-sm">
+                                <div className="flex flex-col sm:flex-row items-center gap-6">
+                                    <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-sm shrink-0">💰</div>
+                                    <div>
+                                        <h5 className="font-bold text-orange-900 text-lg mb-1">A vizsgálat díja: 10.000 Ft</h5>
+                                        <p className="text-orange-800">A díjat a helyszínen tudsz befizetni, <strong>kizárólag készpénzben.</strong></p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="mt-4 bg-red-50 p-4 rounded-xl border-l-4 border-red-500 text-red-800 font-medium flex items-start gap-3">
+                                <span className="text-xl">🕔</span>
+                                <p><strong>Fontos!</strong> Kérjük, hogy a vizsgálatra legkésőbb 17:00-ig érkezz meg.</p>
+                            </div>
+                        </div>
+                    `}
+                </main>
+                <div className="p-4 border-t border-gray-200 bg-gray-50 rounded-b-2xl flex justify-end shrink-0">
+                    <button onClick=${onClose} className="px-6 py-2.5 bg-gray-800 hover:bg-black text-white rounded-lg font-bold transition-colors">
+                        Bezárás
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+};
+
 const StudentAppointmentsApp = () => {
     const [courses, setCourses] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
@@ -345,7 +580,7 @@ const StudentAppointmentsApp = () => {
 
     
     // Category Tabs: 'kresz', 'medical', 'firstaid'
-    const [activeTab, setActiveTab] = useState('kresz');
+    
 
     // Advanced filtering state for Desktop (where tabs are replaced by filters)
     const [selectedCategories, setSelectedCategories] = useState({
@@ -360,7 +595,9 @@ const StudentAppointmentsApp = () => {
         mod4: false
     });
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
-    const [isFilterExpanded, setIsFilterExpanded] = useState(true);
+    const [isFilterExpanded, setIsFilterExpanded] = useState(window.innerWidth >= 1024);
+    const [isMobileFilterModalOpen, setIsMobileFilterModalOpen] = useState(false);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
     useEffect(() => {
@@ -702,7 +939,7 @@ const StudentAppointmentsApp = () => {
         return html`<${LoadingOverlay} text="Időpontok betöltése..." />`;
     }
 
-    const activeCoursesList = activeTab === 'medical' ? medicalCourses : activeTab === 'firstaid' ? firstAidCourses : [];
+    
 
     const toggleCategory = (cat) => {
         setSelectedCategories(prev => ({ ...prev, [cat]: !prev[cat] }));
@@ -731,91 +968,38 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-            <!-- Navigation Tabs (Mobile Only) -->
-            <div className="flex lg:hidden justify-center mb-8">
-                <div className="inline-flex flex-col sm:flex-row bg-gray-100 p-1 rounded-xl shadow-inner w-full sm:w-auto">
-                    <button 
-                        onClick=${() => { setActiveTab('kresz'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'kresz' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                    >
-                        <span>🚗</span> Elméleti tanfolyam
-                    </button>
-                    <button 
-                        onClick=${() => { setActiveTab('medical'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'medical' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                    >
-                        <span>🩺</span> Orvosi vizsgálat
-                    </button>
-                    <button 
-                        onClick=${() => { setActiveTab('firstaid'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                        className=${`flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-semibold transition-all duration-200 ${activeTab === 'firstaid' ? 'bg-white text-[#e09900] shadow shadow-orange-100/50 scale-100' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200/50'}`}
-                    >
-                        <span>🚑</span> Elsősegély
-                    </button>
+            
+            
+            
+            <!-- Info Banner -->
+            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
+                <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                    <span className="font-serif italic font-bold text-xl leading-none">i</span>
+                </div>
+                <div className="flex-1">
+                    <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
+                    <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Minden információ a modulok sorrendjéről, a fizetős szolgáltatásokról és az elsősegélyről. <strong>Kattints ide a részletekért!</strong></p>
+                </div>
+                <div className="hidden sm:block text-orange-400">
+                    <${Icons.ChevronRightIcon} size=${24} />
                 </div>
             </div>
-            
+
             <div className="flex flex-col lg:flex-row gap-8 items-start">
+                                <!-- Mobile Filter Trigger -->
+                <div className="lg:hidden w-full">
+                    <button onClick=${() => setIsMobileFilterModalOpen(true)} className="w-full bg-white border border-gray-200 rounded-2xl px-4 py-3 shadow-sm flex items-center text-gray-800 font-bold transition-colors hover:bg-gray-50">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900] mr-3"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        <span>Szűrés és kategóriák</span>
+                        <${Icons.ChevronRightIcon} size=${20} className="text-gray-400 ml-auto" />
+                    </button>
+                </div>
                 
                 <!-- Main Content Area -->
-                <div className="flex-1 w-full lg:w-2/3">
+                <div className="flex-1 w-full lg:w-2/3 order-2 lg:order-1">
 
-                    <!-- Mobile Content Rendering (Tab based) -->
-                    <div className="block lg:hidden space-y-8">
-                        ${activeTab === 'kresz' && html`
-                            <div className="space-y-8">
-                                ${kreszWeeks.length === 0 ? html`
-                                    <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100">
-                                        <p className="text-gray-500 text-lg">Jelenleg nincs aktív meghirdetett KRESZ foglalkozás.</p>
-                                    </div>
-                                ` : kreszWeeks.map(week => html`
-                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
-                                        <div 
-                                            className="bg-[#efefef] border-b border-gray-200 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-200 transition-colors"
-                                            onClick=${() => toggleWeek(week.weekKey)}
-                                        >
-                                            <h3 className="text-base sm:text-lg font-bold text-[#333333] flex items-center gap-2">
-                                                <${Icons.CalendarIcon} size=${18} className="text-[#333333]"/>
-                                                ${week.name}
-                                            </h3>
-                                            <span className=${`text-gray-500 transition-transform duration-300 ${collapsedWeeks[week.weekKey] ? '' : 'rotate-90'}`}>
-                                                <${Icons.ChevronRightIcon} size=${24} />
-                                            </span>
-                                        </div>
-                                        ${!collapsedWeeks[week.weekKey] ? html`
-                                            <div className="p-4 sm:p-5 space-y-5 animate-fade-in">
-                                                ${Object.keys(week.days).sort().map(dateStr => html`
-                                                    <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
-                                                        <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
-                                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                                            ${week.days[dateStr].map(course => renderCourseCard(course, false))}
-                                                        </div>
-                                                    </div>
-                                                `)}
-                                            </div>
-                                        ` : ''}
-                                    </div>
-                                `)}
-                            </div>
-                        `}
-
-                        ${(activeTab === 'medical' || activeTab === 'firstaid') && html`
-                            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden p-4 sm:p-6">
-                                ${activeCoursesList.length === 0 ? html`
-                                    <div className="p-12 text-center">
-                                        <p className="text-gray-500 text-lg">Jelenleg nincs meghirdetett időpont ebben a kategóriában.</p>
-                                    </div>
-                                ` : html`
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        ${activeCoursesList.map(course => renderCourseCard(course, false))}
-                                    </div>
-                                `}
-                            </div>
-                        `}
-                    </div>
-
-                    <!-- Desktop Content Rendering (Filter based) -->
-                    <div className="hidden lg:block space-y-8">
+                    <!-- Content Rendering (Unified) -->
+                    <div className="space-y-8">
                         ${(desktopWeeks.length > 0) && html`
                             <div className="space-y-8">
                                 ${desktopWeeks.map(week => html`
@@ -859,10 +1043,10 @@ const StudentAppointmentsApp = () => {
                 </div>
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
-                ${(isDesktop || activeTab === 'kresz') && html`
-                    <div className=${`w-full lg:w-1/3 sticky top-6 mb-20 flex flex-col gap-4 ${!isDesktop ? 'hidden lg:flex' : ''} max-h-[calc(100vh-3rem)]`}>
+                ${html`
+                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2">
 
-                        <!-- Filter Panel (Desktop Only) -->
+                        <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-100 overflow-hidden shrink-0">
                             <div className="bg-white px-4 py-3 border-b flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
                                 <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
@@ -944,7 +1128,7 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- Cart Panel -->
-                        <div className="bg-white shadow-lg sm:rounded-xl p-4 border border-gray-100 flex flex-col flex-1 min-h-0">
+                        <div className="hidden lg:flex bg-white shadow-lg sm:rounded-xl p-4 border border-gray-100 flex-col flex-1 min-h-0">
                         <h3 className="text-base font-bold text-gray-900 mb-3 border-b pb-2 shrink-0 flex items-center gap-2">
                             <svg className="w-4 h-4 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
                             Kiválasztott időpontok
@@ -982,7 +1166,7 @@ const StudentAppointmentsApp = () => {
                                     onClick=${() => setIsCheckoutOpen(true)}
                                     className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
-                                    Tovább a jelentkezéshez (${cart.length})
+                                    Véglegesítés (${cart.length})
                                 </button>
                             </div>
                         `}
@@ -991,9 +1175,22 @@ const StudentAppointmentsApp = () => {
                 `}
             </div>
 
+            
+            <!-- Floating Info Button (FAB) -->
+            <div className=${`fixed z-40 right-4 sm:right-6 pb-[env(safe-area-bottom)] pointer-events-none flex flex-col items-end gap-3 transition-all duration-300 ${cart.length > 0 ? "bottom-24 lg:bottom-6" : "bottom-6"}`}>
+                <button 
+                    onClick=${() => setIsInfoModalOpen(true)}
+                    className="pointer-events-auto bg-[#e09900] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(224,153,0,0.5)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border-2 border-white"
+                    title="Fontos tudnivalók jelentkezés előtt"
+                >
+                    <span className="font-serif italic font-bold text-3xl leading-none">i</span>
+                </button>
+            </div>
+
+
             <!-- Floating Pill Button for Mobile (Visible on all tabs) -->
             ${cart.length > 0 && html`
-                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-bottom)] pointer-events-none w-full px-4 flex justify-center">
+                <div className="lg:hidden fixed z-40 bottom-6 left-1/2 -translate-x-1/2 pb-[env(safe-area-bottom)] pointer-events-none flex justify-center">
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
                         className=${`pointer-events-auto bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-4 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md`}
@@ -1001,7 +1198,7 @@ const StudentAppointmentsApp = () => {
                         <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
                             ${cart.length}
                         </div>
-                        <span className="tracking-wide text-[15px]">Tovább a jelentkezéshez <span className="text-xl ml-1 font-normal opacity-80">→</span></span>
+                        <span className="tracking-wide text-[16px]">Véglegesítés</span>
                     </button>
                 </div>
                 <!-- Spacer for the floating button so content isn't covered at the bottom -->
@@ -1017,6 +1214,79 @@ const StudentAppointmentsApp = () => {
                     isTestView=${isTestView}
                     onRemoveItem=${quickBookItem ? null : removeFromCart}
                 />
+            `}
+
+            ${isInfoModalOpen && html`<${InfoModal} onClose=${() => setIsInfoModalOpen(false)} />`}
+
+            
+            <!-- Mobile Filter Modal -->
+            ${isMobileFilterModalOpen && html`
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-[60] font-[Poppins]" onClick=${() => setIsMobileFilterModalOpen(false)}>
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none" onClick=${e => e.stopPropagation()}>
+                        <header className="px-6 py-5 border-b border-gray-100 flex justify-between items-center bg-gray-50 rounded-t-3xl shrink-0">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                Szűrés és kategóriák
+                            </h3>
+                            <button onClick=${() => setIsMobileFilterModalOpen(false)} className="text-gray-400 hover:text-gray-600 p-2 -mr-2 rounded-full hover:bg-gray-200 transition-colors">
+                                <${Icons.XIcon} size=${24} />
+                            </button>
+                        </header>
+                        <main className="p-6 overflow-y-auto custom-scrollbar flex-1">
+                            <div className="mb-6">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                                </div>
+                            </div>
+
+                            <div className="mb-6 border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button onClick=${() => toggleCategory('consultation')} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-2 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${16} className="text-white"/>` : ''} Konzultáció
+                                    </button>
+                                    <button onClick=${() => toggleCategory('medical')} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-2 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${16} className="text-white"/>` : ''} Orvosi
+                                    </button>
+                                    <button onClick=${() => toggleCategory('firstaid')} className=${`px-3 py-2 rounded-xl text-sm font-medium border transition-colors flex items-center gap-2 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-md' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                        ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${16} className="text-white"/>` : ''} Elsősegély
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
+                                <div className="flex bg-gray-100 p-1.5 rounded-xl border border-gray-200 shadow-inner">
+                                    <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Mind</button>
+                                    <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-gray-500 hover:text-gray-800'}`}>Délután</button>
+                                </div>
+                            </div>
+                        </main>
+                        <div className="p-4 border-t border-gray-100 bg-white rounded-b-3xl flex justify-between items-center gap-4 shrink-0">
+                            <button
+                                onClick=${() => {
+                                    setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                    setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                    setTimeFilter('all');
+                                }}
+                                className="px-4 py-3 text-sm font-bold text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                            >
+                                Törlés
+                            </button>
+                            <button 
+                                onClick=${() => setIsMobileFilterModalOpen(false)}
+                                className="flex-1 px-6 py-3 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center"
+                            >
+                                Eredmények mutatása
+                            </button>
+                        </div>
+                    </div>
+                </div>
             `}
 
             ${toast && html`<${Toast} message=${toast.message} type=${toast.type} onClose=${() => setToast(null)} />`}
