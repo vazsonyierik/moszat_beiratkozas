@@ -278,12 +278,12 @@ const EmailTemplatesTab = () => {
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                     'insertdatetime', 'media', 'table', 'help', 'wordcount'
                 ],
-                toolbar: 'undo redo | blocks fontfamily fontsize | ' +
+                toolbar: 'undo redo | blocks fontfamily fontsizeinput | ' +
                     'bold italic underline strikethrough forecolor backcolor | alignleft aligncenter ' +
                     'alignright alignjustify | lineheight | bullist numlist outdent indent | ' +
                     'table hr | removeformat | customInsertButton | code help',
-                font_family_formats: 'Andale Mono=andale mono,times; Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva',
-                font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt',
+                font_family_formats: 'Alapértelmezett Sans (Eszközfüggő)=sans-serif; Andale Mono=andale mono,times; Arial=arial,helvetica,sans-serif; Arial Black=arial black,avant garde; Book Antiqua=book antiqua,palatino; Comic Sans MS=comic sans ms,sans-serif; Courier New=courier new,courier; Georgia=georgia,palatino; Helvetica=helvetica; Impact=impact,chicago; Tahoma=tahoma,arial,helvetica,sans-serif; Terminal=terminal,monaco; Times New Roman=times new roman,times; Trebuchet MS=trebuchet ms,geneva; Verdana=verdana,geneva',
+                font_size_formats: '8px 10px 11px 12px 14px 16px 18px 24px 36px',
                 line_height_formats: '1.0 1.2 1.4 1.5 1.6 2.0',
                 content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }',
                 convert_urls: false,

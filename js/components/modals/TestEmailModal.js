@@ -33,12 +33,38 @@ const TestEmailModal = ({ templateId, savedTemplate, isOpen, onClose }) => {
         return [...new Set([...subjectVars, ...htmlVars])];
     }, [savedTemplate]);
 
-    // Modal megnyitásakor inicializáljuk a testData state-et üres stringekkel
+    // Modal megnyitásakor inicializáljuk a testData state-et mintaadatokkal
     useEffect(() => {
         if (isOpen && variables.length > 0) {
+            const mockDataMap = {
+                firstName: 'János',
+                lastName: 'Minta',
+                secondName: '',
+                fullName: 'Minta János',
+                email: 'teszt@example.com',
+                courseName: '1. modul – Alapozó',
+                courseDate: '2026. 05. 20.',
+                startTime: '14:00',
+                endTime: '17:00',
+                cancellation_token: 'teszt-token-123',
+                reason: 'Adminisztrációs hiba miatti törlés.',
+                reason_formatted: '<p><strong>Indoklás:</strong> Adminisztrációs hiba miatti törlés.</p>',
+                oldCourseName: 'Korábbi 1. modul',
+                oldCourseDate: '2026. 05. 18.',
+                oldStartTime: '10:00',
+                oldEndTime: '13:00',
+                newCourseName: 'Új 1. modul',
+                newCourseDate: '2026. 05. 20.',
+                newStartTime: '14:00',
+                newEndTime: '17:00',
+                encodedEmail: 'teszt%40example.com',
+                courseId: 'teszt-kurzus-123'
+            };
+
             const initialData = {};
             variables.forEach(v => {
-                initialData[v] = '';
+                // Ha van az előre definiált mintaadatok között, azt használjuk, különben üres string
+                initialData[v] = mockDataMap[v] !== undefined ? mockDataMap[v] : '';
             });
             setTestData(initialData);
         } else if (isOpen && variables.length === 0) {
