@@ -148,8 +148,8 @@ const TestEmailModal = ({ templateId, savedTemplate, isOpen, onClose }) => {
                                             </p>
                                             
                                             <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-                                                ${variables.map(v => html`
-                                                    <div key=${v}>
+                                                ${variables.map((v, index) => html`
+                                                    <div key=${`var-${v}-${index}`}>
                                                         <label className="block text-sm font-medium text-gray-700 mb-1">
                                                             {{${v}}} ${v === 'secondName' ? '(Opcionális)' : ''}
                                                         </label>
