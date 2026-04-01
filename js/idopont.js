@@ -997,7 +997,7 @@ const StudentAppointmentsApp = () => {
     };
 
     return html`
-        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-[Poppins]">
+        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-[Poppins] [scrollbar-gutter:stable]">
             ${isTestView && html`
                 <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
                     <${Icons.AlertTriangleIcon} size=${20} />
@@ -1036,7 +1036,7 @@ const StudentAppointmentsApp = () => {
                 <div className="flex-1 w-full lg:w-2/3 order-2 lg:order-1">
 
                     <!-- Content Rendering (Unified) -->
-                    <div className="space-y-8" key=${`desktop-list-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`}>
+                    <div className="space-y-8 min-h-[70vh]" key=${`desktop-list-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`}>
                         ${(desktopWeeks.length > 0) && html`
                             <div className="space-y-8 animate-fade-in-up">
                                 ${desktopWeeks.map(week => html`
@@ -1073,7 +1073,7 @@ const StudentAppointmentsApp = () => {
                         `}
 
                         ${(desktopWeeks.length === 0) && html`
-                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100 animate-fade-in-up">
+                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex items-center justify-center">
                                 <p className="text-gray-500 text-lg">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
                             </div>
                         `}
