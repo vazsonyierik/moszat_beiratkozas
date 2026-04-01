@@ -130,9 +130,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button
                         onClick=${() => handleStepChange(2)}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold shadow-md active:scale-95 text-center text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
                     >
-                        Tovább
+                        <span>Tovább</span>
                     </button>
                 </div>
             `;
@@ -156,7 +156,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[460px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${!results && needsWizard && step === 2 ? html`
@@ -208,11 +208,11 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="text-xs bg-gray-50 py-1.5 px-3 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center gap-2 transition-all hover:border-[#e09900]">
-                                            <div className="flex-1 min-w-0">
-                                                <span className="font-bold text-gray-800 block truncate text-[13px]">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1 text-[11px]">
-                                                    <${Icons.CalendarIcon} size=${11} className="text-[#888888]" />
+                                        <li key=${index} className="text-xs bg-gray-50 py-1.5 px-2.5 rounded border border-gray-200 flex justify-between items-center gap-2 transition-all hover:border-[#e09900]">
+                                            <div className="flex-1 min-w-0 leading-tight">
+                                                <span className="font-bold text-gray-800 text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">(Várólista)</span>` : ''}</span>
+                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1 text-[10px]">
+                                                    <${Icons.CalendarIcon} size=${10} className="text-[#888888]" />
                                                     <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                                 </div>
                                             </div>
@@ -220,10 +220,10 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 <button
                                                     type="button"
                                                     onClick=${() => onRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md p-1.5 transition-colors shrink-0"
+                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md p-1 transition-colors shrink-0"
                                                     title="Eltávolítás"
                                                 >
-                                                    <${Icons.XIcon} size=${16} />
+                                                    <${Icons.XIcon} size=${14} />
                                                 </button>
                                             ` : ''}
                                         </li>
