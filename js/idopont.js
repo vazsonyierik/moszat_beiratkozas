@@ -117,7 +117,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button 
                         onClick=${() => handleClose(results)}
-                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm"
+                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform shadow-md active:scale-95 text-sm"
                     >
                         Bezárás
                     </button>
@@ -130,7 +130,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button
                         onClick=${() => handleStepChange(2)}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform shadow-md active:scale-95 text-center text-sm"
                     >
                         Tovább
                     </button>
@@ -144,7 +144,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     <button
                         onClick=${handleSubmit}
                         disabled=${isSubmitting}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
                     >
                         ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span>`}
                     </button>
@@ -156,7 +156,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden h-[460px] sm:h-[480px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${!results && needsWizard && step === 2 ? html`
@@ -174,7 +174,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     </button>
                 </header>
                 
-                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 bg-white">
+                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 bg-white">
                     ${results ? html`
                         <div>
                             ${results.success.length > 0 ? html`
@@ -208,19 +208,25 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2.5">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
+                                        <li key=${index} className="text-xs bg-gray-50 p-2 sm:p-2.5 rounded-lg border border-gray-200 shadow-sm flex justify-between items-center gap-2 transition-colors hover:border-[#e09900]">
                                             <div className="flex-1 min-w-0">
-                                                <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                                    <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
+                                                <span className="font-bold text-gray-800 block truncate text-sm">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
+                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1 text-xs">
+                                                    <${Icons.CalendarIcon} size=${12} className="text-[#888888]" />
                                                     <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                                 </div>
                                             </div>
                                             ${onRemoveItem ? html`
                                                 <button
                                                     type="button"
-                                                    onClick=${() => onRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
+                                                    onClick=${() => {
+                                                        if (cart.length === 1) {
+                                                            handleClose({ removeLast: item.course.id });
+                                                        } else {
+                                                            onRemoveItem(item.course.id);
+                                                        }
+                                                    }}
+                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors transform active:scale-95 shrink-0"
                                                     title="Eltávolítás"
                                                 >
                                                     <${Icons.XIcon} size=${18} />
@@ -800,9 +806,13 @@ const StudentAppointmentsApp = () => {
     const handleCheckoutClose = (results) => {
         setIsCheckoutOpen(false);
         setQuickBookItem(null); // Clear quick book if it was open
-        if (results && results.success) {
-            const successfulIds = results.success.map(s => s.course.id);
-            setCart(prevCart => prevCart.filter(item => !successfulIds.includes(item.course.id)));
+        if (results) {
+            if (results.success) {
+                const successfulIds = results.success.map(s => s.course.id);
+                setCart(prevCart => prevCart.filter(item => !successfulIds.includes(item.course.id)));
+            } else if (results.removeLast) {
+                removeFromCart(results.removeLast);
+            }
         }
     };
 
@@ -1147,7 +1157,7 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${html`
-                    <div key=${`desktop-sidebar-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`} className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
+                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
@@ -1186,45 +1196,45 @@ const StudentAppointmentsApp = () => {
                             <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${isFilterExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                 <div className="overflow-hidden">
                                     <div className="p-4 bg-white">
-                                        <div className="mb-3 animate-fade-in">
+                                        <div className="mb-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Elméleti tanfolyam</p>
                                             <div className="flex flex-wrap gap-1.5">
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     1. modul
                                                 </button>
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     2. modul
                                                 </button>
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     3. modul
                                                 </button>
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     4. modul
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="mb-3 border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '50ms' }}>
+                                        <div className="mb-3 border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Kiegészítő szolgáltatások</p>
                                             <div className="flex flex-wrap gap-1.5">
-                                                <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     Konzultáció
                                                 </button>
-                                                <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     Orvosi
                                                 </button>
-                                                <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors transform active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     Elsősegély
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '100ms' }}>
+                                        <div className="border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
                                             <div className="flex bg-[#efefef] p-1 rounded-lg">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-colors transform active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-colors transform active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-colors transform active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1400,13 +1410,13 @@ const StudentAppointmentsApp = () => {
                         <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center gap-3 shrink-0">
                             <button
                                 onClick=${clearMobileFilters}
-                                className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-all active:scale-95"
+                                className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-colors transform active:scale-95"
                             >
                                 Törlés
                             </button>
                             <button 
                                 onClick=${applyMobileFilters}
-                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform shadow-md active:scale-95 text-center text-sm"
                             >
                                 Szűrés
                             </button>
