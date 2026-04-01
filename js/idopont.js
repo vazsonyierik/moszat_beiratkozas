@@ -157,7 +157,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 </header>
                 
                 ${showSummaryList ? html`
-                    <div className="p-4 sm:p-5 bg-white flex-1 sm:flex-none overflow-y-auto sm:max-h-[220px] custom-scrollbar rounded-b-[1.5rem]">
+                    <div key="step1" className="p-4 sm:p-5 bg-white flex-1 sm:flex-none overflow-y-auto sm:max-h-[220px] custom-scrollbar rounded-b-[1.5rem] animate-fade-in-up">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                         <ul className="space-y-2.5">
                             ${cart.map((item, index) => html`
@@ -184,7 +184,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         </ul>
                     </div>
                     ${needsWizard && step === 1 ? html`
-                        <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                        <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0 animate-fade-in-up" style=${{ animationDelay: '50ms' }}>
                             <button
                                 onClick=${() => setStep(2)}
                                 className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
@@ -196,7 +196,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 ` : ''}
 
                 ${showForm ? html`
-                    <main className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-[1.5rem]">
+                    <main key="step2" className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-[1.5rem] animate-fade-in-up">
                         ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
 
                         <form onSubmit=${handleSubmit} className="space-y-3">
@@ -285,7 +285,7 @@ function getWeekKey(dateStr) {
     return `${year}-${month}-${date}`;
 }
 
-// Format week key to display name (e.g. "Március 23. (Hétfő) - Március 29. (Vasárnap)")
+// Format week key to display name (e.g. "Március 23. - Március 29.")
 function formatWeekName(weekKey) {
     const monday = new Date(weekKey);
     const sunday = new Date(monday);
@@ -293,8 +293,8 @@ function formatWeekName(weekKey) {
     
     const months = ['Január', 'Február', 'Március', 'Április', 'Május', 'Június', 'Július', 'Augusztus', 'Szeptember', 'Október', 'November', 'December'];
     
-    const startStr = `${months[monday.getMonth()]} ${monday.getDate()}. (Hétfő)`;
-    const endStr = `${months[sunday.getMonth()]} ${sunday.getDate()}. (Vasárnap)`;
+    const startStr = `${months[monday.getMonth()]} ${monday.getDate()}.`;
+    const endStr = `${months[sunday.getMonth()]} ${sunday.getDate()}.`;
     return `${startStr} – ${endStr}`;
 }
 
@@ -312,7 +312,7 @@ const InfoModal = ({ onClose }) => {
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
+            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 max-h-[85vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
                 
                 <header className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <h3 className="text-xl font-extrabold text-gray-800 flex items-center gap-2">
@@ -875,6 +875,10 @@ const StudentAppointmentsApp = () => {
         setTempSelectedCategories({ consultation: false, medical: false, firstaid: false });
         setTempSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
         setTempTimeFilter('all');
+        setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+        setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+        setTimeFilter('all');
+        setIsMobileFilterModalOpen(false);
     };
 
     // Render Helpers
@@ -1140,13 +1144,13 @@ const StudentAppointmentsApp = () => {
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Kiegészítő szolgáltatások</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                                    ${selectedCategories.consultation ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Konzultáció
+                                                    Konzultáció
                                                 </button>
                                                 <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                                    ${selectedCategories.medical ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Orvosi
+                                                    Orvosi
                                                 </button>
                                                 <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-                                                    ${selectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${12} className="text-white"/>` : ''} Elsősegély
+                                                    Elsősegély
                                                 </button>
                                             </div>
                                         </div>
@@ -1307,13 +1311,13 @@ const StudentAppointmentsApp = () => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Kiegészítő szolgáltatások</p>
                                 <div className="flex flex-wrap gap-1.5">
                                     <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
-                                        ${tempSelectedCategories.consultation ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Konzultáció
+                                        Konzultáció
                                     </button>
                                     <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
-                                        ${tempSelectedCategories.medical ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Orvosi
+                                        Orvosi
                                     </button>
                                     <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
-                                        ${tempSelectedCategories.firstaid ? html`<${Icons.CheckIcon} size=${14} className="text-white"/>` : ''} Elsősegély
+                                        Elsősegély
                                     </button>
                                 </div>
                             </div>
