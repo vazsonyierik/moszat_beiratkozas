@@ -179,7 +179,11 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     };
 
     return html`
-        <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
+        <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => {
+            // Prevent closing by clicking outside if the user is actively filling out the form (Step 2)
+            if (showForm && !results) return;
+            handleClose(results || undefined);
+        }}>
             <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
@@ -205,7 +209,10 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     <ul className="text-sm text-green-700 list-disc list-inside">
                                         ${results.success.map(s => html`<li key=${s.course.id}>${s.course.name} (${s.course.date})</li>`)}
                                     </ul>
-                                    <p className="mt-2 text-sm text-green-800">A visszaigazolásokat elküldtük e-mailben.</p>
+                                    <p className="mt-3 text-sm text-green-800 border-t border-green-200/50 pt-3">
+                                        A foglalásokról (tételenként) visszaigazoló e-maileket fogsz kapni hamarosan.
+                                        <strong>Kérjük, ellenőrizd a Spam és Promóciók mappákat is!</strong>
+                                    </p>
                                 </div>
                             ` : ''}
                             
@@ -1023,7 +1030,7 @@ const StudentAppointmentsApp = () => {
                 <div className="flex flex-col h-full justify-between gap-3">
                     <div>
                         <div className="flex justify-between items-start mb-1.5 gap-2">
-                            <h4 className="font-extrabold text-[#333333] text-base leading-tight pr-2">${course.name}</h4>
+                            <h4 className=${`font-extrabold text-[#333333] leading-tight pr-2 ${course.name.length > 25 ? 'text-[14px]' : 'text-base'}`}>${course.name}</h4>
                             ${isInCart ? (isWaitlistInCart ? html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-[#c98900] shrink-0">Várólistán</span>
                             ` : html`
