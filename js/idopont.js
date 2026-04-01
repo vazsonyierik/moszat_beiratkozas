@@ -1147,7 +1147,7 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${html`
-                    <div key=${`desktop-sidebar-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`} className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
+                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
