@@ -72,6 +72,18 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
         setTimeout(() => onClose(resultsToPass), 240);
     };
 
+    const handleRemoveItem = (courseId) => {
+        if (cart.length === 1 && onRemoveItem) {
+            // Trigger exit animation if this is the last item
+            setIsClosing(true);
+            setTimeout(() => {
+                onRemoveItem(courseId);
+            }, 240);
+        } else if (onRemoveItem) {
+            onRemoveItem(courseId);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -219,8 +231,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                             ${onRemoveItem ? html`
                                                 <button
                                                     type="button"
-                                                    onClick=${() => onRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md p-1 transition-colors shrink-0"
+                                                    onClick=${() => handleRemoveItem(item.course.id)}
+                                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-md p-1 transition-colors shrink-0"
                                                     title="Eltávolítás"
                                                 >
                                                     <${Icons.XIcon} size=${14} />
@@ -234,7 +246,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
                         ${showForm && html`
                             <div>
-                                ${error ? html`<div className="mb-4 p-3 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0 text-[#ea9f21]" />${error}</div>` : ''}
+                                ${error ? html`<div className="mb-3 p-2 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-xs font-medium flex items-center gap-1.5"><${Icons.AlertTriangleIcon} size=${14} className="shrink-0 text-[#ea9f21]" /><span>${error}</span></div>` : ''}
 
                                 <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-2.5">
                                     <div className="grid grid-cols-2 gap-2.5">
