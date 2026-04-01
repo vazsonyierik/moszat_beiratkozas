@@ -13,18 +13,25 @@ const { useState, useEffect, useMemo, useRef, Fragment } = React;
 
 // Simple Toast component since we don't have AppContext wrapper here by default
 const Toast = ({ message, type, onClose }) => {
+    const [isClosing, setIsClosing] = useState(false);
+
     useEffect(() => {
-        const timer = setTimeout(onClose, 3000);
+        const timer = setTimeout(handleClose, 3000);
         return () => clearTimeout(timer);
     }, [onClose]);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 240);
+    };
 
     const bgClass = type === 'error' ? 'bg-red-500' : type === 'warning' ? 'bg-yellow-500' : type === 'success' ? 'bg-green-500' : 'bg-gray-800';
 
     return html`
-        <div className="fixed bottom-4 right-4 z-50 animate-fade-in-up">
+        <div className=${`fixed bottom-4 right-4 z-50 ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'}`}>
             <div className=${`${bgClass} text-white px-6 py-3 rounded shadow-lg flex items-center gap-3`}>
                 <span className="font-semibold">${message}</span>
-                <button onClick=${onClose} className="text-white hover:text-gray-200">
+                <button onClick=${handleClose} className="text-white hover:text-gray-200">
                     <${Icons.XIcon} size=${16} />
                 </button>
             </div>
@@ -41,6 +48,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [error, setError] = useState('');
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
+    const [isClosing, setIsClosing] = useState(false);
     const contentRef = useRef(null);
 
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
@@ -57,6 +65,11 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
         if (contentRef.current) {
             contentRef.current.scrollTop = 0;
         }
+    };
+
+    const handleClose = (resultsToPass) => {
+        setIsClosing(true);
+        setTimeout(() => onClose(resultsToPass), 240);
     };
 
     const handleSubmit = async (e) => {
@@ -97,181 +110,188 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
         setIsSubmitting(false);
     };
 
-    if (results) {
-        return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-                <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md transform transition-all my-auto flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up overflow-hidden" onClick=${e => e.stopPropagation()}>
-                    <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
-                        <h3 className="text-base font-bold text-[#333333]">Összegzés</h3>
-                        <button onClick=${() => onClose(results)} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
-                            <${Icons.XIcon} size=${20} />
-                        </button>
-                    </header>
-                    <main className="p-4 sm:p-6 overflow-y-auto custom-scrollbar rounded-b-[1.5rem]">
-                        ${results.success.length > 0 ? html`
-                            <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                                <h4 className="font-bold text-green-800 mb-2 flex items-center gap-2">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
-                                    Sikeres jelentkezés (${results.success.length} db)
-                                </h4>
-                                <ul className="text-sm text-green-700 list-disc list-inside">
-                                    ${results.success.map(s => html`<li key=${s.course.id}>${s.course.name} (${s.course.date})</li>`)}
-                                </ul>
-                                <p className="mt-2 text-sm text-green-800">A visszaigazolásokat elküldtük e-mailben.</p>
-                            </div>
-                        ` : ''}
-                        
-                        ${results.errors.length > 0 ? html`
-                            <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                                <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                    Sikertelen (${results.errors.length} db)
-                                </h4>
-                                <ul className="text-sm text-red-700 list-disc list-inside">
-                                    ${results.errors.map(e => html`<li key=${e.item.course.id}>${e.item.course.name} - ${e.error}</li>`)}
-                                </ul>
-                            </div>
-                        ` : ''}
-                        
-                        <div className="pt-4 flex justify-end">
-                            <button 
-                                onClick=${() => onClose(results)}
-                                className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95"
-                            >
-                                Bezárás
-                            </button>
-                        </div>
-                    </main>
+    // --- Helper for rendering action buttons in the persistent footer ---
+    const renderFooter = () => {
+        if (results) {
+            return html`
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                    <button 
+                        onClick=${() => handleClose(results)}
+                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm"
+                    >
+                        Bezárás
+                    </button>
                 </div>
-            </div>
-        `;
-    }
+            `;
+        }
+
+        if (showSummaryList && needsWizard && step === 1) {
+            return html`
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                    <button
+                        onClick=${() => handleStepChange(2)}
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                    >
+                        Tovább
+                    </button>
+                </div>
+            `;
+        }
+
+        if (showForm) {
+            return html`
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                    <button
+                        onClick=${handleSubmit}
+                        disabled=${isSubmitting}
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
+                    >
+                        ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span>`}
+                    </button>
+                </div>
+            `;
+        }
+        return null;
+    };
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-auto flex flex-col overscroll-none animate-fade-in-up overflow-hidden" onClick=${e => e.stopPropagation()}>
+        <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
-                        ${needsWizard && step === 2 ? html`
+                        ${!results && needsWizard && step === 2 ? html`
                             <button onClick=${() => handleStepChange(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
                                 <${Icons.ChevronRightIcon} size=${20} className="rotate-180" />
                             </button>
                         ` : ''}
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
-                            <${Icons.DocumentIcon} size=${18} className="text-[#333333] shrink-0" />
-                            Jelentkezés véglegesítése
+                            ${!results && html`<${Icons.DocumentIcon} size=${18} className="text-[#e09900] shrink-0" />`}
+                            ${results ? 'Összegzés' : 'Jelentkezés véglegesítése'}
                         </h3>
                     </div>
-                    <button onClick=${() => onClose()} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
+                    <button onClick=${() => handleClose(results || undefined)} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
                         <${Icons.XIcon} size=${20} />
                     </button>
                 </header>
                 
-                ${showSummaryList ? html`
-                    <div key="step1" ref=${contentRef} className="p-4 sm:p-5 bg-white flex-1 sm:flex-none overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar rounded-b-[1.5rem] animate-fade-in-up">
-                        <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
-                        <ul className="space-y-2.5">
-                            ${cart.map((item, index) => html`
-                                <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
-                                    <div className="flex-1 min-w-0">
-                                        <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                        <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                            <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
-                                            <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
+                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 bg-white">
+                    ${results ? html`
+                        <div>
+                            ${results.success.length > 0 ? html`
+                                <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
+                                    <h4 className="font-bold text-green-800 mb-2 flex items-center gap-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                        Sikeres jelentkezés (${results.success.length} db)
+                                    </h4>
+                                    <ul className="text-sm text-green-700 list-disc list-inside">
+                                        ${results.success.map(s => html`<li key=${s.course.id}>${s.course.name} (${s.course.date})</li>`)}
+                                    </ul>
+                                    <p className="mt-2 text-sm text-green-800">A visszaigazolásokat elküldtük e-mailben.</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${results.errors.length > 0 ? html`
+                                <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
+                                    <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2">
+                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                        Sikertelen (${results.errors.length} db)
+                                    </h4>
+                                    <ul className="text-sm text-red-700 list-disc list-inside">
+                                        ${results.errors.map(e => html`<li key=${e.item.course.id}>${e.item.course.name} - ${e.error}</li>`)}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    ` : html`
+                        ${showSummaryList && html`
+                            <div key="step1" className="animate-fade-in">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
+                                <ul className="space-y-2.5">
+                                    ${cart.map((item, index) => html`
+                                        <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
+                                            <div className="flex-1 min-w-0">
+                                                <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
+                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
+                                                    <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
+                                                    <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
+                                                </div>
+                                            </div>
+                                            ${onRemoveItem ? html`
+                                                <button
+                                                    type="button"
+                                                    onClick=${() => onRemoveItem(item.course.id)}
+                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
+                                                    title="Eltávolítás"
+                                                >
+                                                    <${Icons.XIcon} size=${18} />
+                                                </button>
+                                            ` : ''}
+                                        </li>
+                                    `)}
+                                </ul>
+                            </div>
+                        `}
+
+                        ${showForm && html`
+                            <div key="step2" className="animate-fade-in">
+                                ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
+
+                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Vezetéknév</label>
+                                            <input
+                                                type="text"
+                                                value=${lastName}
+                                                onChange=${e => setLastName(e.target.value)}
+                                                className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                required
+                                                placeholder="Kovács"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Keresztnév</label>
+                                            <input
+                                                type="text"
+                                                value=${firstName}
+                                                onChange=${e => setFirstName(e.target.value)}
+                                                className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                required
+                                                placeholder="János"
+                                            />
                                         </div>
                                     </div>
-                                    ${onRemoveItem ? html`
-                                        <button
-                                            type="button"
-                                            onClick=${() => onRemoveItem(item.course.id)}
-                                            className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
-                                            title="Eltávolítás"
-                                        >
-                                            <${Icons.XIcon} size=${18} />
-                                        </button>
-                                    ` : ''}
-                                </li>
-                            `)}
-                        </ul>
-                    </div>
-                    ${needsWizard && step === 1 ? html`
-                        <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0 animate-fade-in-up" style=${{ animationDelay: '50ms' }}>
-                            <button
-                                onClick=${() => handleStepChange(2)}
-                                className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
-                            >
-                                Tovább
-                            </button>
-                        </div>
-                    ` : ''}
-                ` : ''}
 
-                ${showForm ? html`
-                    <main key="step2" ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-[1.5rem] animate-fade-in-up">
-                        ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím</label>
+                                        <input 
+                                            type="email"
+                                            value=${email}
+                                            onChange=${e => setEmail(e.target.value)}
+                                            className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            required
+                                            placeholder="pelda@email.hu"
+                                        />
+                                    </div>
 
-                        <form onSubmit=${handleSubmit} className="space-y-3">
-                            <div className="grid grid-cols-2 gap-3">
-                                <div>
-                                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Vezetéknév</label>
-                                    <input
-                                        type="text"
-                                        value=${lastName}
-                                        onChange=${e => setLastName(e.target.value)}
-                                        className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
-                                        required
-                                        placeholder="Kovács"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Keresztnév</label>
-                                    <input
-                                        type="text"
-                                        value=${firstName}
-                                        onChange=${e => setFirstName(e.target.value)}
-                                        className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
-                                        required
-                                        placeholder="János"
-                                    />
-                                </div>
+                                    <div>
+                                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím megerősítése</label>
+                                        <input 
+                                            type="email"
+                                            value=${emailConfirm}
+                                            onChange=${e => setEmailConfirm(e.target.value)}
+                                            className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            required
+                                            placeholder="pelda@email.hu"
+                                        />
+                                    </div>
+                                    <button type="submit" className="hidden" />
+                                </form>
                             </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím</label>
-                                <input 
-                                    type="email"
-                                    value=${email}
-                                    onChange=${e => setEmail(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
-                                    required
-                                    placeholder="pelda@email.hu"
-                                />
-                            </div>
-
-                            <div>
-                                <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím megerősítése</label>
-                                <input 
-                                    type="email"
-                                    value=${emailConfirm}
-                                    onChange=${e => setEmailConfirm(e.target.value)}
-                                    className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
-                                    required
-                                    placeholder="pelda@email.hu"
-                                />
-                            </div>
-
-                            <div className="pt-4 mt-2 border-t border-gray-100 flex justify-end">
-                                <button
-                                    type="submit"
-                                    disabled=${isSubmitting}
-                                    className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
-                                >
-                                    ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span>`}
-                                </button>
-                            </div>
-                        </form>
-                    </main>
-                ` : ''}
+                        `}
+                    `}
+                </main>
+                ${renderFooter()}
             </div>
         </div>
     `;
@@ -320,7 +340,13 @@ function getDayName(dateStr) {
 
 const InfoModal = ({ onClose }) => {
     const [activeTab, setActiveTab] = useState('kresz');
+    const [isClosing, setIsClosing] = useState(false);
     const contentRef = useRef(null);
+
+    const handleClose = () => {
+        setIsClosing(true);
+        setTimeout(onClose, 240);
+    };
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
@@ -330,15 +356,15 @@ const InfoModal = ({ onClose }) => {
     };
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 flex flex-col overscroll-none animate-fade-in-up overflow-hidden" onClick=${e => e.stopPropagation()}>
+        <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${handleClose}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                 
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                         <div className="bg-[#ea9f21] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-serif italic">i</div>
                         Hasznos tudnivalók
                     </h3>
-                    <button onClick=${onClose} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
+                    <button onClick=${handleClose} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
                         <${Icons.XIcon} size=${20} />
                     </button>
                 </header>
@@ -636,6 +662,7 @@ const StudentAppointmentsApp = () => {
         mod4: false
     });
     const [tempTimeFilter, setTempTimeFilter] = useState('all');
+    const [isMobileFilterClosing, setIsMobileFilterClosing] = useState(false);
 
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
@@ -893,11 +920,19 @@ const StudentAppointmentsApp = () => {
         setIsMobileFilterModalOpen(true);
     };
 
+    const closeMobileFilterModal = () => {
+        setIsMobileFilterClosing(true);
+        setTimeout(() => {
+            setIsMobileFilterModalOpen(false);
+            setIsMobileFilterClosing(false); // Reset state for next time
+        }, 240);
+    };
+
     const applyMobileFilters = () => {
         setSelectedCategories({ ...tempSelectedCategories });
         setSelectedModules({ ...tempSelectedModules });
         setTimeFilter(tempTimeFilter);
-        setIsMobileFilterModalOpen(false);
+        closeMobileFilterModal();
     };
 
     const clearMobileFilters = () => {
@@ -907,7 +942,7 @@ const StudentAppointmentsApp = () => {
         setSelectedCategories({ consultation: false, medical: false, firstaid: false });
         setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
         setTimeFilter('all');
-        setIsMobileFilterModalOpen(false);
+        closeMobileFilterModal();
     };
 
     // Render Helpers
@@ -1316,14 +1351,14 @@ const StudentAppointmentsApp = () => {
             
             <!-- Mobile Filter Modal -->
             ${isMobileFilterModalOpen && html`
-                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] animate-fade-in" onClick=${() => setIsMobileFilterModalOpen(false)}>
-                    <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md transform transition-all max-h-[90vh] flex flex-col overscroll-none animate-scale-in overflow-hidden" onClick=${e => e.stopPropagation()}>
+                <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] ${isMobileFilterClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${closeMobileFilterModal}>
+                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                         <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                             <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                                 Szűrés és kategóriák
                             </h3>
-                            <button onClick=${() => setIsMobileFilterModalOpen(false)} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
+                            <button onClick=${closeMobileFilterModal} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
                                 <${Icons.XIcon} size=${20} />
                             </button>
                         </header>
