@@ -373,13 +373,13 @@ const InfoModal = ({ onClose }) => {
                                 
                                 <div className="space-y-4">
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Rugalmas időpontok:</div>
+                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Rugalmas időpontok:</div>
                                         <p className="mb-2 text-base sm:text-sm text-gray-600">Képzéseink reggel és este is indulnak, így te döntöd el, mikor szeretnél részt venni.</p>
                                         <div className="text-[#e09900] font-medium flex gap-2 items-start"><${Icons.ChevronRightIcon} size=${18} className="shrink-0 mt-0.5" /> <span className="text-base sm:text-sm">Járhatsz akár reggeli, akár esti alkalmakra – sőt, ezt akár hetente is variálhatod, ahogy neked a legjobban megfelel!</span></div>
                                     </div>
 
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Szabad modulválasztás:</div>
+                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Szabad modulválasztás:</div>
                                         <p className="mb-2 text-base sm:text-sm text-gray-600">Oktatásunk modulrendszerű, így bármikor csatlakozhatsz, és a modulokat tetszőleges sorrendben hallgathatod meg.</p>
                                         <div className="text-[#e09900] font-medium flex gap-2 items-start"><${Icons.ChevronRightIcon} size=${18} className="shrink-0 mt-0.5" /> <span className="text-base sm:text-sm">Nincs előre meghatározott sorrend – te állítod össze a saját tanrendeted!</span></div>
                                     </div>
@@ -480,15 +480,15 @@ const InfoModal = ({ onClose }) => {
                                 <p className="mb-4 text-base sm:text-sm text-gray-600">Rendszeresen tartunk gyakorlati foglalkozásokat, ahol személyesen is át tudjuk nézni a legfontosabb vizsgatémákat:</p>
                                 
                                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-base sm:text-sm">
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Betegvizsgálat</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Újraélesztés (BLS)</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Stabil oldalfektetés</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Műfogások</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Sebellátás, kötözések</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Betegvizsgálat</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Újraélesztés (BLS)</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Stabil oldalfektetés</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Műfogások</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircleIcon} size=${18} className="text-[#ea9f21]" /> Sebellátás, kötözések</li>
                                 </ul>
 
                                 <p className="font-bold text-gray-800 mb-4 bg-gray-100 p-3 rounded-lg border-l-4 border-gray-400 flex items-start gap-3">
-                                    <${Icons.CheckCircle} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                    <${Icons.CheckCircleIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
                                     <span className="text-base sm:text-sm">És természetesen válaszolunk az e-learninggel kapcsolatos kérdéseidre is.</span>
                                 </p>
 
