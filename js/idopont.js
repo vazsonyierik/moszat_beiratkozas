@@ -1363,7 +1363,7 @@ const StudentAppointmentsApp = () => {
                             </button>
                         </header>
                         <main className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1">
-                            <div className="mb-4 animate-fade-in-up" style=${{ animationDelay: '50ms' }}>
+                            <div className="mb-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Elméleti tanfolyam</p>
                                 <div className="flex flex-wrap gap-1.5">
                                     <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
@@ -1373,7 +1373,7 @@ const StudentAppointmentsApp = () => {
                                 </div>
                             </div>
 
-                            <div className="mb-4 border-t border-gray-100 pt-4 animate-fade-in-up" style=${{ animationDelay: '100ms' }}>
+                            <div className="mb-4 border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Kiegészítő szolgáltatások</p>
                                 <div className="flex flex-wrap gap-1.5">
                                     <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
@@ -1388,7 +1388,7 @@ const StudentAppointmentsApp = () => {
                                 </div>
                             </div>
 
-                            <div className="border-t border-gray-100 pt-4 animate-fade-in-up" style=${{ animationDelay: '150ms' }}>
+                            <div className="border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Napszak</p>
                                 <div className="flex bg-[#efefef] p-1.5 rounded-xl border border-gray-200 shadow-inner">
                                     <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
