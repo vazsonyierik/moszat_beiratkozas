@@ -156,7 +156,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[90vh] sm:h-[600px] max-h-[600px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${!results && needsWizard && step === 2 ? html`
@@ -174,7 +174,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     </button>
                 </header>
                 
-                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 bg-white">
+                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 bg-white">
                     ${results ? html`
                         <div>
                             ${results.success.length > 0 ? html`
@@ -205,14 +205,14 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     ` : html`
                         ${showSummaryList && html`
                             <div>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
-                                <ul className="space-y-2.5">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiválasztott időpontok (${cart.length})</p>
+                                <ul className="space-y-2">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
+                                        <li key=${index} className="text-sm bg-gray-50 p-2.5 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
                                             <div className="flex-1 min-w-0">
-                                                <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                                    <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
+                                                <span className="font-bold text-gray-800 block truncate text-sm">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
+                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-xs">
+                                                    <${Icons.CalendarIcon} size=${12} className="text-[#888888]" />
                                                     <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                                 </div>
                                             </div>
@@ -220,7 +220,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 <button
                                                     type="button"
                                                     onClick=${() => onRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
+                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-1.5 transition-colors shrink-0"
                                                     title="Eltávolítás"
                                                 >
                                                     <${Icons.XIcon} size=${18} />
@@ -236,26 +236,26 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             <div>
                                 ${error ? html`<div className="mb-4 p-3 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0 text-[#ea9f21]" />${error}</div>` : ''}
 
-                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-3">
+                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-2.5">
+                                    <div className="grid grid-cols-2 gap-2.5">
                                         <div>
-                                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Vezetéknév</label>
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">Vezetéknév</label>
                                             <input
                                                 type="text"
                                                 value=${lastName}
                                                 onChange=${e => setLastName(e.target.value)}
-                                                className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                                 required
                                                 placeholder="Kovács"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Keresztnév</label>
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">Keresztnév</label>
                                             <input
                                                 type="text"
                                                 value=${firstName}
                                                 onChange=${e => setFirstName(e.target.value)}
-                                                className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                                 required
                                                 placeholder="János"
                                             />
@@ -263,24 +263,24 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím</label>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">E-mail cím</label>
                                         <input 
                                             type="email"
                                             value=${email}
                                             onChange=${e => setEmail(e.target.value)}
-                                            className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím megerősítése</label>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">E-mail cím megerősítése</label>
                                         <input 
                                             type="email"
                                             value=${emailConfirm}
                                             onChange=${e => setEmailConfirm(e.target.value)}
-                                            className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
