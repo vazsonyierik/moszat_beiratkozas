@@ -49,7 +49,6 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
     const [isClosing, setIsClosing] = useState(false);
-    const [isStepAnimating, setIsStepAnimating] = useState(false);
     const contentRef = useRef(null);
 
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
@@ -62,15 +61,10 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const showForm = isDesktop ? true : (!needsWizard || step === 2);
 
     const handleStepChange = (newStep) => {
-        // Trigger a simple cross-fade by applying a class when the step changes
-        setIsStepAnimating(true);
         setStep(newStep);
         if (contentRef.current) {
             contentRef.current.scrollTop = 0;
         }
-        setTimeout(() => {
-            setIsStepAnimating(false);
-        }, 300); // the duration of animate-fade-in
     };
 
     const handleClose = (resultsToPass) => {
@@ -162,7 +156,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${!results && needsWizard && step === 2 ? html`
@@ -210,7 +204,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         </div>
                     ` : html`
                         ${showSummaryList && html`
-                            <div key="step1" className=${isStepAnimating ? 'animate-fade-in' : ''}>
+                            <div key="step1" className="animate-fade-in">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2.5">
                                     ${cart.map((item, index) => html`
@@ -239,7 +233,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         `}
 
                         ${showForm && html`
-                            <div key="step2" className=${isStepAnimating ? 'animate-fade-in' : ''}>
+                            <div key="step2" className="animate-fade-in">
                                 ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
 
                                 <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-3">
@@ -363,7 +357,7 @@ const InfoModal = ({ onClose }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${handleClose}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                 
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
@@ -1358,7 +1352,7 @@ const StudentAppointmentsApp = () => {
             <!-- Mobile Filter Modal -->
             ${isMobileFilterModalOpen && html`
                 <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] ${isMobileFilterClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${closeMobileFilterModal}>
-                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md transform transition-all max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
+                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                         <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                             <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
