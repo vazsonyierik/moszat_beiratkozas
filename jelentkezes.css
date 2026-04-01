@@ -1127,6 +1127,34 @@ input[type="radio"]:focus-visible {
     animation: fadeInUp 0.3s ease-out forwards;
 }
 
+@keyframes fadeOutDown {
+    from {
+        opacity: 1;
+        transform: translate3d(0, 0, 0);
+    }
+    to {
+        opacity: 0;
+        transform: translate3d(0, 20px, 0);
+    }
+}
+
+.animate-fade-out-down {
+    animation: fadeOutDown 0.24s ease-in forwards;
+}
+
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+    to {
+        opacity: 0;
+    }
+}
+
+.animate-fade-out {
+    animation: fadeOut 0.24s ease-in forwards;
+}
+
 @keyframes tabFadeIn {
     from {
         opacity: 0;
