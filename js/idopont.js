@@ -77,7 +77,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
         setError('');
 
         if (!firstName || !lastName || !email || !emailConfirm) {
-            setError('Kérjük, töltsön ki minden mezőt!');
+            setError('Kérjük, tölts ki minden mezőt!');
             return;
         }
 
@@ -191,12 +191,12 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             ` : ''}
                             
                             ${results.errors.length > 0 ? html`
-                                <div className="mb-4 p-4 bg-red-50 rounded-lg border border-red-200">
-                                    <h4 className="font-bold text-red-800 mb-2 flex items-center gap-2">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div className="mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                                    <h4 className="font-bold text-orange-900 mb-2 flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-[#ea9f21]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                         Sikertelen (${results.errors.length} db)
                                     </h4>
-                                    <ul className="text-sm text-red-700 list-disc list-inside">
+                                    <ul className="text-sm text-orange-800 list-disc list-inside">
                                         ${results.errors.map(e => html`<li key=${e.item.course.id}>${e.item.course.name} - ${e.error}</li>`)}
                                     </ul>
                                 </div>
@@ -204,7 +204,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         </div>
                     ` : html`
                         ${showSummaryList && html`
-                            <div key="step1" className="animate-fade-in">
+                            <div>
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2.5">
                                     ${cart.map((item, index) => html`
@@ -233,8 +233,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         `}
 
                         ${showForm && html`
-                            <div key="step2" className="animate-fade-in">
-                                ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
+                            <div>
+                                ${error ? html`<div className="mb-4 p-3 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0 text-[#ea9f21]" />${error}</div>` : ''}
 
                                 <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-3">
                                     <div className="grid grid-cols-2 gap-3">
