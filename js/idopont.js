@@ -272,7 +272,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 type="text"
                                                 value=${lastName}
                                                 onChange=${e => setLastName(e.target.value)}
-                                                className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
+                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                                 required
                                                 placeholder="Kovács"
                                             />
@@ -283,7 +283,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 type="text"
                                                 value=${firstName}
                                                 onChange=${e => setFirstName(e.target.value)}
-                                                className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
+                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                                 required
                                                 placeholder="János"
                                             />
@@ -296,7 +296,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                             type="email"
                                             value=${email}
                                             onChange=${e => setEmail(e.target.value)}
-                                            className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
+                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
@@ -308,7 +308,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                             type="email"
                                             value=${emailConfirm}
                                             onChange=${e => setEmailConfirm(e.target.value)}
-                                            className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
+                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
