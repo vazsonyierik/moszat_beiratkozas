@@ -9,7 +9,7 @@ import * as Icons from './Icons.js';
 
 const React = window.React;
 const ReactDOM = window.ReactDOM;
-const { useState, useEffect, useMemo, Fragment } = React;
+const { useState, useEffect, useMemo, useRef, Fragment } = React;
 
 // Simple Toast component since we don't have AppContext wrapper here by default
 const Toast = ({ message, type, onClose }) => {
@@ -41,6 +41,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [error, setError] = useState('');
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
+    const contentRef = useRef(null);
 
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
     const isDesktop = window.innerWidth >= 1024;
@@ -50,6 +51,13 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     // Determine what to render based on wizard step and view mode
     const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
     const showForm = isDesktop ? true : (!needsWizard || step === 2);
+
+    const handleStepChange = (newStep) => {
+        setStep(newStep);
+        if (contentRef.current) {
+            contentRef.current.scrollTop = 0;
+        }
+    };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -91,9 +99,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     if (results) {
         return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-                <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
-                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] shrink-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
+                <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md transform transition-all mt-[10vh] sm:my-8 flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
+                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
                         <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
                             <${Icons.XIcon} size=${24} />
@@ -140,16 +148,16 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     }
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all my-8 max-h-[95vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
-                <header className="p-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
+            <div className="bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all mt-[10vh] sm:my-8 flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
+                <header className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
                     <div className="flex items-center gap-3">
                         ${needsWizard && step === 2 ? html`
-                            <button onClick=${() => setStep(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
+                            <button onClick=${() => handleStepChange(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
                                 <${Icons.ChevronRightIcon} size=${20} className="rotate-180" />
                             </button>
                         ` : ''}
-                        <h3 className="text-base sm:text-lg font-extrabold text-gray-800 tracking-tight">Jelentkezés véglegesítése</h3>
+                        <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">Jelentkezés véglegesítése</h3>
                     </div>
                     <button onClick=${() => onClose()} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
                         <${Icons.XIcon} size=${20} />
@@ -157,7 +165,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 </header>
                 
                 ${showSummaryList ? html`
-                    <div key="step1" className="p-4 sm:p-5 bg-white flex-1 sm:flex-none overflow-y-auto sm:max-h-[220px] custom-scrollbar rounded-b-[1.5rem] animate-fade-in-up">
+                    <div key="step1" ref=${contentRef} className="p-4 sm:p-5 bg-white flex-1 sm:flex-none overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar rounded-b-[1.5rem] animate-fade-in-up">
                         <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                         <ul className="space-y-2.5">
                             ${cart.map((item, index) => html`
@@ -186,7 +194,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     ${needsWizard && step === 1 ? html`
                         <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0 animate-fade-in-up" style=${{ animationDelay: '50ms' }}>
                             <button
-                                onClick=${() => setStep(2)}
+                                onClick=${() => handleStepChange(2)}
                                 className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
                             >
                                 Tovább
@@ -196,7 +204,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 ` : ''}
 
                 ${showForm ? html`
-                    <main key="step2" className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-[1.5rem] animate-fade-in-up">
+                    <main key="step2" ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 sm:flex-none bg-white rounded-b-[1.5rem] animate-fade-in-up">
                         ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
 
                         <form onSubmit=${handleSubmit} className="space-y-3">
@@ -309,14 +317,22 @@ function getDayName(dateStr) {
 
 const InfoModal = ({ onClose }) => {
     const [activeTab, setActiveTab] = useState('kresz');
+    const contentRef = useRef(null);
+
+    const handleTabChange = (tab) => {
+        setActiveTab(tab);
+        if (contentRef.current) {
+            contentRef.current.scrollTop = 0;
+        }
+    };
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 max-h-[85vh] flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
+            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
                 
-                <header className="px-6 py-4 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
-                    <h3 className="text-xl font-extrabold text-gray-800 flex items-center gap-2">
-                        <div className="bg-[#e09900] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-serif italic">i</div>
+                <header className="px-6 py-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
+                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <div className="bg-[#ea9f21] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-serif italic">i</div>
                         Hasznos tudnivalók
                     </h3>
                     <button onClick=${onClose} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-2">
@@ -324,70 +340,71 @@ const InfoModal = ({ onClose }) => {
                     </button>
                 </header>
 
-                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto hide-scrollbar shrink-0">
+                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0" style=${{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     <button 
-                        onClick=${() => setActiveTab('kresz')}
+                        onClick=${() => handleTabChange('kresz')}
                         className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'kresz' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Tantermi KRESZ
                     </button>
                     <button 
-                        onClick=${() => setActiveTab('firstaid')}
+                        onClick=${() => handleTabChange('firstaid')}
                         className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'firstaid' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Elsősegély
                     </button>
                     <button 
-                        onClick=${() => setActiveTab('medical')}
+                        onClick=${() => handleTabChange('medical')}
                         className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'medical' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Orvosi
                     </button>
                 </div>
 
-                <main className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-[1.5rem]">
+                <main ref=${contentRef} className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-[1.5rem] max-h-[60vh]">
                     
                     ${activeTab === 'kresz' && html`
-                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="kresz">
                             <div>
                                 <h4 className="text-lg font-bold text-gray-900 mb-2">Tantermi képzéseink – Rugalmasan, ahogy neked a legjobb!</h4>
-                                <p className="mb-4">Autósiskolánk folyamatosan szervez tantermi képzéseket, amelyeken Pető Attila, azaz a Kreszprofesszor segít téged a sikeres felkészülésben.</p>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">Autósiskolánk folyamatosan szervez tantermi képzéseket, amelyeken Pető Attila, azaz a Kreszprofesszor segít téged a sikeres felkészülésben.</p>
                                 
-                                <h5 className="font-bold text-gray-800 mb-2">Miért jó ez neked? 👇</h5>
+                                <h5 className="text-lg font-bold text-gray-800 mb-2">Miért jó ez neked?</h5>
                                 
                                 <div className="space-y-4">
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><span className="text-green-600">✅</span> Rugalmas időpontok:</div>
-                                        <p className="mb-2">Képzéseink reggel és este is indulnak, így te döntöd el, mikor szeretnél részt venni.</p>
-                                        <div className="text-[#e09900] font-medium flex gap-2"><span className="shrink-0">👉</span> <span>Járhatsz akár reggeli, akár esti alkalmakra – sőt, ezt akár hetente is variálhatod, ahogy neked a legjobban megfelel!</span></div>
+                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Rugalmas időpontok:</div>
+                                        <p className="mb-2 text-base sm:text-sm text-gray-600">Képzéseink reggel és este is indulnak, így te döntöd el, mikor szeretnél részt venni.</p>
+                                        <div className="text-[#e09900] font-medium flex gap-2 items-start"><${Icons.ChevronRightIcon} size=${18} className="shrink-0 mt-0.5" /> <span className="text-base sm:text-sm">Járhatsz akár reggeli, akár esti alkalmakra – sőt, ezt akár hetente is variálhatod, ahogy neked a legjobban megfelel!</span></div>
                                     </div>
 
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><span className="text-green-600">✅</span> Szabad modulválasztás:</div>
-                                        <p className="mb-2">Oktatásunk modulrendszerű, így bármikor csatlakozhatsz, és a modulokat tetszőleges sorrendben hallgathatod meg.</p>
-                                        <div className="text-[#e09900] font-medium flex gap-2"><span className="shrink-0">👉</span> <span>Nincs előre meghatározott sorrend – te állítod össze a saját tanrendeted!</span></div>
+                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Szabad modulválasztás:</div>
+                                        <p className="mb-2 text-base sm:text-sm text-gray-600">Oktatásunk modulrendszerű, így bármikor csatlakozhatsz, és a modulokat tetszőleges sorrendben hallgathatod meg.</p>
+                                        <div className="text-[#e09900] font-medium flex gap-2 items-start"><${Icons.ChevronRightIcon} size=${18} className="shrink-0 mt-0.5" /> <span className="text-base sm:text-sm">Nincs előre meghatározott sorrend – te állítod össze a saját tanrendeted!</span></div>
                                     </div>
                                     
                                     <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                                        <div className="font-bold text-red-800 flex items-center gap-2 mb-1"><span className="text-red-600">✅</span> Fontos!</div>
-                                        <p className="text-red-800 font-medium">Arra figyelj, hogy ugyanazt a modult nem érdemes kétszer elvégezni, mert minden alkalommal ugyanazt az anyagot ismételjük.</p>
+                                        <div className="font-bold text-red-800 flex items-center gap-2 mb-1"><${Icons.AlertTriangleIcon} size=${18} className="text-red-600" /> Fontos!</div>
+                                        <p className="text-red-800 font-medium text-base sm:text-sm">Arra figyelj, hogy ugyanazt a modult nem érdemes kétszer elvégezni, mert minden alkalommal ugyanazt az anyagot ismételjük.</p>
                                     </div>
                                 </div>
                             </div>
 
-                            <p className="font-medium text-gray-800 bg-orange-50 p-3 border-l-4 border-[#e09900] rounded-r-lg">
-                                📅 Tanulj a saját időbeosztásod szerint, válaszd ki, mikor szeretnél jönni, és számíthatsz ránk, hogy végigkísérünk a sikeres vizsgáig!
-                            </p>
+                            <div className="font-medium text-gray-800 bg-orange-50 p-3 border-l-4 border-[#e09900] rounded-r-lg flex items-start gap-3">
+                                <${Icons.CalendarIcon} size=${20} className="text-[#e09900] shrink-0 mt-0.5" />
+                                <span className="text-base sm:text-sm">Tanulj a saját időbeosztásod szerint, válaszd ki, mikor szeretnél jönni, és számíthatsz ránk, hogy végigkísérünk a sikeres vizsgáig!</span>
+                            </div>
 
-                            <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl">
-                                🎥 Nem találsz számodra megfelelő tantermi időpontot? Semmi gond! A tanórákat végig is nézheted Pető Attila, a Kreszprofesszor előadásában a YouTube-on, teljesen ingyenesen. <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline">👉 KRESZ TV</a>
+                            <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm">
+                                Nem találsz számodra megfelelő tantermi időpontot? Semmi gond! A tanórákat végig is nézheted Pető Attila, a Kreszprofesszor előadásában a YouTube-on, teljesen ingyenesen. <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV</a>
                             </p>
 
                             <hr className="border-gray-200" />
 
                             <h4 className="text-lg font-bold text-gray-900 mb-4">Modulok felépítése</h4>
                             
-                            <ul className="space-y-4">
+                            <ul className="space-y-4 text-base sm:text-sm">
                                 <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                                     <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">1. modul – Tanfolyamtájékoztató, alapozó foglalkozás</div>
                                     <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
@@ -400,7 +417,7 @@ const InfoModal = ({ onClose }) => {
                                     </ul>
                                 </li>
                                 <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🚗 2. modul – KRESZ, haladás közben</div>
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">2. modul – KRESZ, haladás közben</div>
                                     <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
                                         <li>Elindulás, megállás, várakozás</li>
                                         <li>Haladás az úton: jobbratartás, egyirányú út, osztottpályás út</li>
@@ -410,7 +427,7 @@ const InfoModal = ({ onClose }) => {
                                     </ul>
                                 </li>
                                 <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🚗 3. modul – KRESZ, manőverezések</div>
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">3. modul – KRESZ, manőverezések</div>
                                     <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
                                         <li>A járművezetés személyi és tárgyi feltételei</li>
                                         <li>Személyszállítás, teherszállítás szabályai</li>
@@ -422,7 +439,7 @@ const InfoModal = ({ onClose }) => {
                                     </ul>
                                 </li>
                                 <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🚗 4. modul – KRESZ, útkereszteződések</div>
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">4. modul – KRESZ, útkereszteződések</div>
                                     <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
                                         <li>Elsőbbségadás szabályai, sorrend a kereszteződésekben</li>
                                         <li>Villamos és gyalogos elsőbbsége</li>
@@ -430,7 +447,7 @@ const InfoModal = ({ onClose }) => {
                                     </ul>
                                 </li>
                                 <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">🛑 Konzultáció</div>
+                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">Konzultáció</div>
                                     <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
                                         <li>Hasznos tippek a sikeres vizsgához</li>
                                         <li>KRESZ: gyalogosként, kerékpárral, egyéb járművekkel közlekedve</li>
@@ -442,49 +459,52 @@ const InfoModal = ({ onClose }) => {
                     `}
 
                     ${activeTab === 'firstaid' && html`
-                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="firstaid">
                             
                             <div className="bg-orange-50 border border-[#e09900] p-4 rounded-xl text-orange-900">
                                 <h4 className="font-bold text-lg mb-1 flex items-center gap-2">Fontos tudnivaló a jogosítvány átvételéhez</h4>
-                                <p>A jogosítványod átvételének egyik feltétele, hogy rendelkezz érvényes és sikeres közúti elsősegélynyújtó vizsgával.</p>
+                                <p className="text-base sm:text-sm">A jogosítványod átvételének egyik feltétele, hogy rendelkezz érvényes és sikeres közúti elsősegélynyújtó vizsgával.</p>
                             </div>
 
                             <div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">🎓 E-learning – a tandíj része</h4>
-                                <p className="mb-2">A tanfolyamon való részvétel nem kötelező, de minden tanulónk számára biztosítunk egy e-learninges felkészítőt, amely a tandíjban benne van. <strong>Ezért külön nem kell fizetned.</strong></p>
-                                <p>Az e-learning segít felkészülni az elsősegélynyújtó vizsgára saját tempódban, kényelmesen.</p>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">E-learning – a tandíj része</h4>
+                                <p className="mb-2 text-base sm:text-sm text-gray-600">A tanfolyamon való részvétel nem kötelező, de minden tanulónk számára biztosítunk egy e-learninges felkészítőt, amely a tandíjban benne van. <strong>Ezért külön nem kell fizetned.</strong></p>
+                                <p className="text-base sm:text-sm text-gray-600">Az e-learning segít felkészülni az elsősegélynyújtó vizsgára saját tempódban, kényelmesen.</p>
                             </div>
 
                             <hr className="border-gray-200" />
 
                             <div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">🤝 Gyakorlati felkészítés</h4>
-                                <p className="mb-3 text-gray-600 italic">...ha magabiztosan szeretnél vizsgázni!</p>
-                                <p className="mb-4">Rendszeresen tartunk gyakorlati foglalkozásokat, ahol személyesen is át tudjuk nézni a legfontosabb vizsgatémákat:</p>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">Gyakorlati felkészítés</h4>
+                                <p className="mb-3 text-gray-600 italic text-base sm:text-sm">...ha magabiztosan szeretnél vizsgázni!</p>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">Rendszeresen tartunk gyakorlati foglalkozásokat, ahol személyesen is át tudjuk nézni a legfontosabb vizsgatémákat:</p>
                                 
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6">
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Betegvizsgálat</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Újraélesztés (BLS)</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Stabil oldalfektetés</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Műfogások</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><span className="text-green-600">✅</span> Sebellátás, kötözések</li>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-base sm:text-sm">
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Betegvizsgálat</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Újraélesztés (BLS)</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Stabil oldalfektetés</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Műfogások</li>
+                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Sebellátás, kötözések</li>
                                 </ul>
 
-                                <p className="font-bold text-gray-800 mb-4 bg-gray-100 p-3 rounded-lg border-l-4 border-gray-400">✅ És természetesen válaszolunk az e-learninggel kapcsolatos kérdéseidre is.</p>
+                                <p className="font-bold text-gray-800 mb-4 bg-gray-100 p-3 rounded-lg border-l-4 border-gray-400 flex items-start gap-3">
+                                    <${Icons.CheckCircle} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                    <span className="text-base sm:text-sm">És természetesen válaszolunk az e-learninggel kapcsolatos kérdéseidre is.</span>
+                                </p>
 
                                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center">
-                                        <div className="text-2xl mb-1">📅</div>
+                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center flex flex-col items-center">
+                                        <div className="mb-2 text-[#888888]"><${Icons.CalendarIcon} size=${24} /></div>
                                         <div className="font-bold text-gray-900">Mikor?</div>
-                                        <div className="text-gray-600">Háromhetente,<br/>péntekenként<br/>16:30-tól 20:30-ig</div>
+                                        <div className="text-gray-600 text-sm mt-1">Háromhetente,<br/>péntekenként<br/>16:30-tól 20:30-ig</div>
                                     </div>
-                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center">
-                                        <div className="text-2xl mb-1">📍</div>
+                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center flex flex-col items-center">
+                                        <div className="mb-2 text-[#888888]"><${Icons.InfoIcon} size=${24} /></div>
                                         <div className="font-bold text-gray-900">Helyszín</div>
-                                        <div className="text-gray-600 mt-2">Az autósiskola<br/>tanterme</div>
+                                        <div className="text-gray-600 text-sm mt-2">Az autósiskola<br/>tanterme</div>
                                     </div>
-                                    <div className="bg-[#e09900] text-white p-4 rounded-xl shadow-md text-center flex flex-col justify-center">
-                                        <div className="text-2xl mb-1">💰</div>
+                                    <div className="bg-[#e09900] text-white p-4 rounded-xl shadow-md text-center flex flex-col justify-center items-center">
+                                        <div className="mb-2"><${Icons.CreditCardIcon} size=${24} /></div>
                                         <div className="font-bold">Részvételi díj</div>
                                         <div className="text-xl font-extrabold mt-1">12.000 Ft</div>
                                     </div>
@@ -494,39 +514,41 @@ const InfoModal = ({ onClose }) => {
                     `}
 
                     ${activeTab === 'medical' && html`
-                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in">
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="medical">
                             <h4 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Orvosi alkalmassági vizsgálat – Gyorsan, kényelmesen!</h4>
                             
                             <div className="space-y-4">
                                 <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <span className="text-xl mt-0.5">👉</span>
+                                    <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
                                     <p className="font-medium text-gray-800 text-base">Nincs sorban állás, a vizsgálatot gyorsan és kényelmesen el tudod végezni.</p>
                                 </div>
                                 
                                 <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <span className="text-xl mt-0.5">👉</span>
-                                    <p className="text-gray-700">Akár egyéb vizsgálatok nélkül is elvégezhető, de ez <strong>mindig az orvos helyszíni döntésétől függ.</strong></p>
+                                    <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                    <p className="text-gray-700 text-base sm:text-sm">Akár egyéb vizsgálatok nélkül is elvégezhető, de ez <strong>mindig az orvos helyszíni döntésétől függ.</strong></p>
                                 </div>
                                 
                                 <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <span className="text-xl mt-0.5">📄</span>
-                                    <p className="text-gray-700">Az orvosi alkalmassági véleményt rövid időn belül, a vizsgálatot követően kézhez kapod.</p>
+                                    <${Icons.DocumentIcon} size=${20} className="text-[#888888] mt-0.5 shrink-0" />
+                                    <p className="text-gray-700 text-base sm:text-sm">Az orvosi alkalmassági véleményt rövid időn belül, a vizsgálatot követően kézhez kapod.</p>
                                 </div>
                             </div>
 
                             <div className="mt-8 bg-orange-50 p-6 rounded-2xl border border-[#e09900] shadow-sm">
                                 <div className="flex flex-col sm:flex-row items-center gap-6">
-                                    <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center text-3xl shadow-sm shrink-0">💰</div>
+                                    <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center shadow-sm shrink-0 text-[#ea9f21]">
+                                        <${Icons.CreditCardIcon} size=${32} />
+                                    </div>
                                     <div>
-                                        <h5 className="font-bold text-orange-900 text-lg mb-1">A vizsgálat díja: 10.000 Ft</h5>
-                                        <p className="text-orange-800">A díjat a helyszínen tudsz befizetni, <strong>kizárólag készpénzben.</strong></p>
+                                        <h5 className="font-bold text-orange-900 text-lg mb-1 text-center sm:text-left">A vizsgálat díja: 10.000 Ft</h5>
+                                        <p className="text-orange-800 text-center sm:text-left text-base sm:text-sm">A díjat a helyszínen tudsz befizetni, <strong>kizárólag készpénzben.</strong></p>
                                     </div>
                                 </div>
                             </div>
 
                             <div className="mt-4 bg-red-50 p-4 rounded-xl border-l-4 border-red-500 text-red-800 font-medium flex items-start gap-3">
-                                <span className="text-xl">🕔</span>
-                                <p><strong>Fontos!</strong> Kérjük, hogy a vizsgálatra legkésőbb 17:00-ig érkezz meg.</p>
+                                <${Icons.ClockIcon} size=${20} className="mt-0.5 shrink-0" />
+                                <p className="text-base sm:text-sm"><strong>Fontos!</strong> Kérjük, hogy a vizsgálatra legkésőbb 17:00-ig érkezz meg.</p>
                             </div>
                         </div>
                     `}
@@ -548,8 +570,14 @@ const StudentAppointmentsApp = () => {
     const [cartBump, setCartBump] = useState(false);
     const [quickBookItem, setQuickBookItem] = useState(null); // For instant booking Orvosi/Elsosegely
     const [toast, setToast] = useState(null);
+    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
+    const [isMobileFilterModalOpen, setIsMobileFilterModalOpen] = useState(false);
+    
     useEffect(() => {
-        if (isCheckoutOpen) {
+        // Csak mobilon alkalmazzuk a scroll lock-ot, asztali nézetben felesleges (és elrontja a görgetősávot)
+        if (window.innerWidth >= 1024) return;
+
+        if (isCheckoutOpen || isInfoModalOpen || isMobileFilterModalOpen) {
             // Apply iOS safe scroll locking
             document.body.style.overflow = 'hidden';
             document.body.style.position = 'fixed';
@@ -571,7 +599,7 @@ const StudentAppointmentsApp = () => {
             document.body.style.top = '';
             document.body.style.width = '';
         };
-    }, [isCheckoutOpen]);
+    }, [isCheckoutOpen, isInfoModalOpen, isMobileFilterModalOpen]);
 
     
     // Category Tabs: 'kresz', 'medical', 'firstaid'
@@ -591,7 +619,6 @@ const StudentAppointmentsApp = () => {
     });
     const [timeFilter, setTimeFilter] = useState('all'); // 'all', 'am', 'pm'
     const [isFilterExpanded, setIsFilterExpanded] = useState(window.innerWidth >= 1024);
-    const [isMobileFilterModalOpen, setIsMobileFilterModalOpen] = useState(false);
     
     // Temporary state for Mobile Filter Modal (deferred filtering)
     const [tempSelectedCategories, setTempSelectedCategories] = useState({
@@ -607,7 +634,6 @@ const StudentAppointmentsApp = () => {
     });
     const [tempTimeFilter, setTempTimeFilter] = useState('all');
 
-    const [isInfoModalOpen, setIsInfoModalOpen] = useState(false);
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
 
     const isAnyFilterActive = useMemo(() => {
@@ -958,8 +984,8 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         ${(isMedical || isFirstAid) && html`
-                            <div className="mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-[#efefef] border border-gray-200 text-[11px] font-semibold text-[#888888]">
-                                <${Icons.CreditCardIcon} size=${12} className="text-[#888888]" />
+                            <div className=${`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold ${isCompletelyFull ? 'bg-[#efefef] border border-gray-200 text-[#888888]' : 'bg-[#ea9f21] text-white'}`}>
+                                <${Icons.CreditCardIcon} size=${12} className=${isCompletelyFull ? 'text-[#888888]' : 'text-white'} />
                                 ${isFirstAid ? 'Előre fizetős' : 'Fizetős'}
                             </div>
                         `}
@@ -1083,7 +1109,7 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${html`
-                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2">
+                    <div key=${`desktop-sidebar-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`} className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
@@ -1236,12 +1262,15 @@ const StudentAppointmentsApp = () => {
                 <div className=${`transition-all duration-300 flex-1 flex justify-center ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none max-w-0 overflow-hidden'}`}>
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
-                        className="bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-3 sm:gap-4 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
+                        className="bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-2 sm:gap-3 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
                     >
                         <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 shrink-0 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
                             ${cart.length}
                         </div>
-                        <span className="tracking-wide text-sm sm:text-base">Véglegesítés</span>
+                        <div className="flex items-center gap-1.5 ml-1">
+                            <${Icons.DocumentIcon} size=${18} className="shrink-0 text-white" />
+                            <span className="tracking-wide text-sm sm:text-base">Véglegesítés</span>
+                        </div>
                     </button>
                 </div>
 
@@ -1262,7 +1291,7 @@ const StudentAppointmentsApp = () => {
             <div className="hidden lg:flex fixed z-40 right-6 bottom-6 pointer-events-none flex-col items-end gap-3 transition-all duration-300">
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-white hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200"
+                    className="pointer-events-auto bg-[#ea9f21] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-[#ea9f21]"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1287,12 +1316,12 @@ const StudentAppointmentsApp = () => {
             ${isMobileFilterModalOpen && html`
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] animate-fade-in" onClick=${() => setIsMobileFilterModalOpen(false)}>
                     <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md transform transition-all max-h-[90vh] flex flex-col overscroll-none animate-scale-in" onClick=${e => e.stopPropagation()}>
-                        <header className="px-5 py-4 border-b border-gray-300 flex justify-between items-center bg-gray-200 rounded-t-[1.5rem] shrink-0">
-                            <h3 className="text-lg font-bold text-[#333333] flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        <header className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
+                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                                 Szűrés és kategóriák
                             </h3>
-                            <button onClick=${() => setIsMobileFilterModalOpen(false)} className="text-gray-500 hover:text-gray-800 p-1.5 -mr-1.5 rounded-full hover:bg-gray-300 transition-colors">
+                            <button onClick=${() => setIsMobileFilterModalOpen(false)} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-1">
                                 <${Icons.XIcon} size=${20} />
                             </button>
                         </header>
