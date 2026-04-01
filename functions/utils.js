@@ -300,12 +300,19 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
 
     const subjectPrefix = isTest ? "[TESZT] " : "";
 
+    // Csomagoljuk a HTML törzset egy alapértelmezett, modern betűtípust és sorközt beállító div-be
+    const wrappedHtml = `
+        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            ${finalHtml}
+        </div>
+    `;
+
     const mailPayload = {
         to: recipientEmail,
         from: "\"Mosolyzóna, a Kreszprofesszor autósiskolája\" <iroda@mosolyzona.hu>",
         message: {
             subject: `${subjectPrefix}${finalSubject}`,
-            html: finalHtml,
+            html: wrappedHtml,
         },
     };
 

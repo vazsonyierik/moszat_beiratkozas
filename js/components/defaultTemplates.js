@@ -4,8 +4,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Sikeres jelentkezés (E-1)', category: 'Beiratkozás és Tanfolyam',
         subject: `Sikeres jelentkezés! Már csak egy lépés van hátra`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Először is szeretnénk megköszönni, hogy minket választottál a jogosítványod megszerzéséhez!</p>
             <p>A beiratkozásod véglegesítéséhez és az online elméleti tananyaghoz való hozzáféréshez már csak egy lépés van hátra: a tandíj legalább első részletének befizetése.</p>
             
@@ -51,8 +50,7 @@ const DEFAULT_TEMPLATES = {
             <p style="margin-top: 1.2em;"><strong>Röviddel ezután</strong> tőlünk is kapsz majd egy részletes tájékoztató e-mailt a tanfolyam további menetéről és a következő lépésekről.</p>
             <p style="margin-top: 1.2em;">Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     enrolledConfirmation: {
@@ -60,8 +58,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Beiratkozás visszaigazolása (E-2)', category: 'Beiratkozás és Tanfolyam',
         subject: `Fontos információk a KRESZ-tanfolyamodról!`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Örülünk, hogy nálunk kezdted meg a KRESZ-vizsgára való felkészülést!</p>
             <p>Ebben az e-mailben minden fontos tudnivalót összegyűjtöttünk, amelyek segítenek abban, hogy a tanulásod gördülékeny és sikeres legyen. <strong>Kérünk, őrizd meg ezt a levelet, akár a kedvencek közé mentve, akár kinyomtatva – a tanfolyam során bármikor szükséged lehet rá!</strong></p>
             
@@ -133,8 +130,7 @@ const DEFAULT_TEMPLATES = {
 
             <p style="margin-top: 1.5em;">Sok sikert kívánunk a tanuláshoz és a vizsgákhoz! Mi itt vagyunk, ha segítségre van szükséged – bátran keress minket!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     courseCompletedMedicalNeeded: {
@@ -142,8 +138,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Tanfolyam elvégezve - Orvosi hiányzik (E-3)', category: 'Beiratkozás és Tanfolyam',
         subject: `Következő lépések a KRESZ-vizsgád felé`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez! Már csak néhány lépés választ el attól, hogy jelentkezhess a KRESZ-vizsgára. Segítünk, hogy minden simán menjen!</p>
             <p>Kérjük, kövesd az alábbi <b>két egyszerű lépést</b> a megadott sorrendben:</p>
             <p><b>1. LÉPÉS: Orvosi alkalmassági elküldése</b></p>
@@ -182,7 +177,6 @@ const DEFAULT_TEMPLATES = {
             </ol>
             <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
-        </div>
         `,
         enabled: true
     },
@@ -191,8 +185,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Időpont emlékeztető 1 nap (T-9)', category: 'Emlékeztetők',
         subject: `Holnap találkozunk! Emlékeztető a KRESZ foglalkozásról`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Szeretnénk emlékeztetni, hogy holnap várunk a következő foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -207,7 +200,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -216,8 +208,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Tanfolyam elvégezve - Aláírásra kész (E-4)', category: 'Beiratkozás és Tanfolyam',
         subject: `Következő lépés a KRESZ-vizsgád felé`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez!</p>
             <p>Mivel az orvosi alkalmassági véleményed már megvan, csak egyetlen lépés van hátra, hogy jelentkezhess a KRESZ-vizsgára: a jelentkezési lap aláírása.</p>
             <p><strong>Teendőd: Személyes ügyintézés az irodában</strong></p>
@@ -248,7 +239,6 @@ const DEFAULT_TEMPLATES = {
             </ol>
             <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
-        </div>
         `,
         enabled: true
     },
@@ -257,12 +247,10 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi alkalmassági rögzítve (E-5)', category: 'Beiratkozás és Tanfolyam',
         subject: `Orvosi alkalmassági vélemény rögzítve`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Értesítünk, hogy az orvosi alkalmassági vélemény feltöltésre került a vizsgáztató szerv elektronikus nyilvántartó rendszerébe (KVAR).</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     paymentReminderDay4: {
@@ -270,13 +258,11 @@ const DEFAULT_TEMPLATES = {
         name: 'Fizetési emlékeztető 4. nap (T-1)', category: 'Emlékeztetők',
         subject: `Emlékeztető a befejezetlen regisztrációdról`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Ez egy emlékeztető a pár nappal ezelőtt megkezdett beiratkozásodról. A folyamat véglegesítéséhez már csak a tandíj befizetése van hátra, melyhez továbbra is felhasználhatod az 5000 Ft értékű kedvezményedet.</p>
             <p>Amennyiben nem találod a korábbi, részleteket tartalmazó e-mailünket, kérjük, jelezd nekünk egy válaszlevélben, és örömmel elküldjük újra a szükséges információkat.</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     paymentReminderDay10: {
@@ -284,15 +270,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Fizetési emlékeztető 10. nap (T-2)', category: 'Emlékeztetők',
         subject: `Fontos: a regisztrációddal kapcsolatban`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>A 10 nappal ezelőtti online regisztrációddal kapcsolatban írunk.</p>
             <p>Szeretnénk emlékeztetni, hogy a beiratkozásod véglegesítéséhez már csak a tandíj befizetése van hátra, melyhez továbbra is felhasználhatod az 5000 Ft értékű kedvezményedet.</p>
             <p>Kérjük, vedd figyelembe, hogy amennyiben pár napon belül nem kapunk visszajelzést tőled, ezt tekintjük az utolsó értesítésünknek, és adatvédelmi irányelveinknek megfelelően töröljük a befejezetlen regisztrációdat a rendszerünkből.</p>
             <p>Ha a fizetési információkat tartalmazó korábbi e-mailünket nem találod, jelezd nekünk egy válasszal, és örömmel elküldjük újra.</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     courseStartReminderDay30: {
@@ -300,15 +284,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Tanfolyamkezdési emlékeztető 30. nap (T-3)', category: 'Emlékeztetők',
         subject: `Emlékeztető: Aktiváld a KRESZ-hozzáférésedet!`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Látjuk a rendszerünkben, hogy bár már 30 napja beiratkoztál hozzánk, még nem nyitottad meg az online KRESZ-tananyagot.</p>
             <p><strong>Fontos:</strong> Az e-learning regisztráció önmagában nem elég! Ahhoz, hogy hivatalosan is elinduljon a tanfolyam, legalább egyszer meg kell nyitnod a tananyagot.</p>
             <p>Kérünk, hogy ezt tedd meg minél hamarabb!</p>
             <p>Ha ezzel kapcsolatban technikai problémába ütköztél, vagy egyszerűen csak kérdésed van, kérjük, jelezd nekünk egy válasz e-mailben, és örömmel segítünk!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     courseStartReminderDay60: {
@@ -316,15 +298,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Tanfolyamkezdési emlékeztető 60. nap (T-4)', category: 'Emlékeztetők',
         subject: `Figyelmeztetés: a regisztrációd 30 napon belül lejár!`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Sajnos még mindig azt látjuk a rendszerünkben, hogy nem kezdted el az e-learning tanfolyamot, pedig már 60 napja beiratkoztál.</p>
             <p>Szeretnénk megbizonyosdni róla, hogy minden rendben van-e. Gyakori hiba, hogy a tanulók csak belépnek a felületre, de nem indítják el ténylegesen a tananyagot. Kérünk, ellenőrizd, hogy ez nálad megtörtént-e!</p>
             <p><strong>A tanfolyam elindítására 30 napod maradt.</strong></p>
             <p>Ha ezzel kapcsolatban technikai problémába ütköztél, vagy egyszerűen csak kérdésed van, kérjük, jelezd nekünk egy válasz e-mailben, és örömmel segítünk!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     courseStartReminderDay85: {
@@ -332,15 +312,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Tanfolyamkezdési emlékeztető 85. nap (T-5)', category: 'Emlékeztetők',
         subject: `Fontos! Már csak 5 napod maradt elkezdeni a KRESZ tanfolyamot!`,
         html: `
-        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
             <p>Látjuk, hogy már csak 5 napod van elkezdeni az online KRESZ tanfolyamodat.</p>
             <p>Szeretnénk egyértelművé tenni a következőt: <strong>már csak 5 napod van elindítani a tananyagot.</strong> Bizonyosodj meg róla, hogy a tananyagot magát nyitod meg, nem csak belépsz az oldalra.</p>
             <p><strong>Ne feledd</strong>, a határidő lejárta után a folytatás csak egy új, <strong>30 000 Ft-os regisztrációval lehetséges.</strong></p>
             <p>Ha ezzel kapcsolatban technikai problémába ütköztél, írj egy választ erre az e-mailre, és azonnal segítünk. Ne várd meg az utolsó pillanatot!</p>
             <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        </div>
-    `,
+        `,
         enabled: true
     },
     elearningProgressReminderDay90: {
@@ -348,14 +326,12 @@ const DEFAULT_TEMPLATES = {
         name: 'E-learning haladási emlékeztető 90. nap (T-6)', category: 'Emlékeztetők',
         subject: `Fontos információk az e-learninges KRESZ tanfolyamodhoz`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
                 <p>Ez egy emlékeztető, hogy 3 hónapja kezdted el az online KRESZ tanfolyamot, ezért egy rövid helyzetjelentéssel és néhány fontos információval szeretnénk segíteni a haladásodat.</p>
                 <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong> Ehhez kérjük, keress minket elérhetőségeinken!</p>
                 
                 <p>Kérdés esetén ne habozz keresni minket! Sikeres tanulást kívánunk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -364,8 +340,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Időpontfoglalás visszaigazolása', category: 'Időpontfoglalás',
         subject: `Időpontfoglalás visszaigazolása - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen jelentkeztél a következő foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -380,7 +355,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -389,8 +363,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Jelentkezés törölve (Admin)', category: 'Időpontfoglalás',
         subject: `Jelentkezés törölve - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy a következő foglalkozásra leadott jelentkezésed törlésre került a rendszerünkben:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -399,7 +372,6 @@ const DEFAULT_TEMPLATES = {
                 {{reason_formatted}}
                 <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -408,8 +380,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Jelentkezés lemondva (Diák)', category: 'Időpontfoglalás',
         subject: `Időpont lemondva - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen lemondtad a jelentkezésedet a következő foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -417,7 +388,6 @@ const DEFAULT_TEMPLATES = {
                 </ul>
                 <p>Köszönjük, hogy jelezted felénk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -426,8 +396,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Időpont változás', category: 'Időpontfoglalás',
         subject: `Időpont változás - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az alábbi foglalkozásod, amire jelentkeztél, <strong>megváltozott:</strong></p>
                 
                 <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
@@ -455,7 +424,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -464,8 +432,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Foglalkozás elmarad', category: 'Időpontfoglalás',
         subject: `Foglalkozás elmarad - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sajnálattal tájékoztatunk, hogy a következő foglalkozás, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -475,7 +442,6 @@ const DEFAULT_TEMPLATES = {
                 <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
                 <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -484,15 +450,13 @@ const DEFAULT_TEMPLATES = {
         name: 'E-learning haladási emlékeztető 180. nap (T-7)', category: 'Emlékeztetők',
         subject: `Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről`,
         html: `
-            <div dir="ltr" style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
                 <p>Egy fontos határidőre szeretnénk emlékeztetni a KRESZ tanfolyamoddal kapcsolatban.</p>
                 <p>A jogszabályok értelmében a tanfolyam megkezdésétől számítva 9 hónapod van, hogy részt vegyél egy KRESZ vizsgán. A te esetedben ebből <strong>már csak 3 hónap van hátra.</strong></p>
                 <p>A KRESZ vizsgára való felkészüléshez elengedhetetlen a tananyaghoz való hozzáférés.<br>Amennyiben a hozzáférési időd időközben lejárt, kérjük, jelezd felénk e-mailben. A tandíjad ugyanis tartalmaz egy egyszeri, díjmentes hosszabbítást, <strong>ami plusz 30 napot és 10 óra gyakorlási időt biztosít a számodra.</strong></p>
                 
                 <p>Ha a határidőkkel vagy a képzéssel kapcsolatban bármilyen kérdésed van, válasz e-mailben keress minket!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -501,8 +465,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Időpont emlékeztető 3 nap (T-8)', category: 'Emlékeztetők',
         subject: `Emlékeztető a közelgő KRESZ foglalkozásról`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Szeretnénk emlékeztetni, hogy 3 nap múlva várunk a következő foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -517,7 +480,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -526,8 +488,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Várólista: Automatikus bekerülés', category: 'Időpontfoglalás',
         subject: `Jó hír! Bekerültél a foglalkozásra - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Örömmel értesítünk, hogy felszabadult egy hely az alábbi foglalkozáson, és mivel a várólistán voltál, automatikusan be is osztottunk rá!</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -542,7 +503,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -551,8 +511,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Várólista: Sikeres feliratkozás', category: 'Időpontfoglalás',
         subject: `Sikeres feliratkozás a várólistára - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen feliratkoztál a várólistára az alábbi foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -567,7 +526,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -576,8 +534,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Várólista: Időpont változás', category: 'Időpontfoglalás',
         subject: `Várólistás időpont változás - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az alábbi foglalkozás időpontja, amire <strong>várólistán vagy</strong>, megváltozott:</p>
 
                 <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
@@ -605,7 +562,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -614,8 +570,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Várólista: Last-minute üresedés (<24h)', category: 'Várólista',
         subject: `Utolsó pillanatos szabad hely! (Gyorsasági foglalás)`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Váratlanul felszabadult egy hely a várva várt foglalkozáson, amely kevesebb mint 24 óra múlva kezdődik!</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -637,7 +592,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -646,8 +600,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Elsősegély: Sikeres jelentkezés', category: 'Elsősegély',
         subject: `Sikeres jelentkezés elsősegély tanfolyamra - Mosolyzóna`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen regisztráltunk az alábbi elsősegély tanfolyamra:</p>
                 <ul>
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
@@ -675,7 +628,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -684,8 +636,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Elsősegély Emlékeztető (T-5 nap)', category: 'Elsősegély',
         subject: `Közeleg az elsősegély tanfolyamod!`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>5 nap múlva ({{courseDate}}) várunk az elsősegély tanfolyamra!</p>
                 <p>Rendszerünk szerint a tanfolyam díja még nem érkezett be hozzánk. Kérjük, ne felejtsd el rendezni a díjat banki átutalással vagy személyesen az irodánkban legkésőbb a tanfolyam előtti napig.</p>
                 <p>Kérjük, vedd figyelembe, hogy a helyszínen az oktatónál nincs lehetőség fizetésre, a díj beérkezése a részvétel feltétele!</p>
@@ -697,7 +648,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -706,8 +656,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Elsősegély Emlékeztető (T-3 nap)', category: 'Elsősegély',
         subject: `Sürgős: Elsősegély tanfolyam fizetési emlékeztető`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>3 nap múlva lesz az elsősegély tanfolyam, amelyre jelentkeztél ({{courseDate}}).</p>
                 <p><strong>Fontos figyelmeztetés!</strong> A díj befizetésének hiányában a képzésen nem vehetsz részt. Kérjük, sürgősen pótold a befizetést! Ha átutaltad, kérjük, hozd magaddal a bizonylatot a tanfolyamra.</p>
                 <p>Amennyiben már nem aktuális, mindenképpen mondd le a jelentkezést:</p>
@@ -718,7 +667,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -727,13 +675,11 @@ const DEFAULT_TEMPLATES = {
         name: 'Elsősegély Figyelmeztetés (T-1 nap)', category: 'Elsősegély',
         subject: `Figyelem! Holnapi elsősegély tanfolyam - Hiányzó befizetés`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Figyelem! Mivel a holnapi elsősegély tanfolyam díja a mai napig nem került rögzítésre a rendszerünkben, <strong>a holnapi tanfolyamon sajnos nem áll módunkban fogadni téged.</strong></p>
                 <p>Ha a díjat már átutaltad, és csak adminisztrációs hiba történt, kérlek <strong>azonnal vedd fel velünk a kapcsolatot</strong> válasz e-mailben, és hozd magaddal a fizetést igazoló bizonylatot a tanfolyamra!</p>
                 <p>Megértésedet köszönjük!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -742,8 +688,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Elsősegély: Díj beérkezett', category: 'Elsősegély',
         subject: `Sikeres fizetés: Elsősegély tanfolyam`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Örömmel értesítünk, hogy az elsősegély tanfolyam díja sikeresen megérkezett hozzánk, így a helyed <strong>véglegesítve lett.</strong></p>
                 <ul>
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
@@ -751,7 +696,6 @@ const DEFAULT_TEMPLATES = {
                 <p>Már nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
                 <p>Várunk szeretettel!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -762,8 +706,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Sikeres foglalás', category: 'Orvosi alkalmassági',
         subject: `Sikeres jelentkezés orvosi alkalmassági vizsgálatra`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen jelentkeztél az orvosi alkalmassági vizsgálatra a következő időpontban:</p>
                 <p style="margin-left: 1.2em; font-size: 1.1em; color: #e53935;">
                     <strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})<br>
@@ -781,7 +724,6 @@ const DEFAULT_TEMPLATES = {
                     Ha valamilyen oknál fogva mégsem tud részt venni a vizsgálaton, kérjük jelezze számunkra a lemondást: 
                     <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}">Kattintson ide a lemondáshoz</a>.
                 </p>
-            </div>
         `,
         enabled: true
     },
@@ -790,8 +732,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Várólista feliratkozás', category: 'Orvosi alkalmassági',
         subject: `Feliratkoztál az orvosi alkalmassági vizsgálat várólistájára`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Ez egy automatikus visszaigazolás arról, hogy sikeresen feliratkoztál az alábbi orvosi alkalmassági vizsgálat <strong>VÁRÓLISTÁJÁRA</strong>:</p>
                 <p style="margin-left: 1.2em; font-size: 1.1em;">
                     <strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})
@@ -809,7 +750,6 @@ const DEFAULT_TEMPLATES = {
                     Ha le szeretne iratkozni a várólistáról: 
                     <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}">Kattintson ide a leiratkozáshoz</a>.
                 </p>
-            </div>
         `,
         enabled: true
     },
@@ -818,8 +758,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Emlékeztető (1 nappal előtte)', category: 'Orvosi alkalmassági',
         subject: `Emlékeztető: Holnap orvosi alkalmassági vizsgálat`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Emlékeztetünk, hogy holnap orvosi alkalmassági vizsgálatra várunk az irodánkban.</p>
                 <p style="margin-left: 1.2em; font-size: 1.1em; color: #e53935;">
                     <strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})<br>
@@ -837,7 +776,6 @@ const DEFAULT_TEMPLATES = {
                     Ha valamilyen oknál fogva mégsem tud részt venni a vizsgálaton, kérjük jelezze számunkra a lemondást: 
                     <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}">Kattintson ide a lemondáshoz</a>.
                 </p>
-            </div>
         `,
         enabled: true
     },
@@ -847,15 +785,13 @@ const DEFAULT_TEMPLATES = {
         subject: `Emlékeztető: Holnapi orvosi alkalmassági vizsgálat`,
         doctorEmail: 'dr.minta@example.com',
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Tisztelt Doktor Úr / Doktornő!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Tisztelt Doktor Úr / Doktornő!</strong></p>
                 <p>Emlékeztetőül küldjük, hogy a holnapi napon orvosi alkalmassági vizsgálat lesz az irodánkban az alábbi időpontban:</p>
                 <p style="margin-left: 1.2em; font-size: 1.1em;">
                     <strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})
                 </p>
                 <p>A diákokat értesítettük, hogy hozzák magukkal a szükséges iratokat és a vizsgálat díját.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -866,15 +802,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Várólista: Leiratkozás (Diák)', category: 'Időpont foglalás',
         subject: "Sikeres leiratkozás a várólistáról",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen leiratkoztál a következő KRESZ foglalkozás várólistájáról:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -883,14 +817,12 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Várólista leiratkozás', category: 'Orvosi alkalmassági',
         subject: "Sikeres leiratkozás az orvosi alkalmassági vizsgálat várólistájáról",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen leiratkoztál a következő orvosi alkalmassági vizsgálat várólistájáról:</p>
                 <ul>
                     <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -899,15 +831,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Lemondás (Diák által)', category: 'Orvosi alkalmassági',
         subject: "Orvosi alkalmassági vizsgálat időpontjának lemondása",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen lemondtad a következő orvosi alkalmassági vizsgálat időpontját:</p>
                 <ul>
                     <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p>Köszönjük, hogy jelezted a lemondást!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -916,8 +846,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Törlés (Admin által)', category: 'Orvosi alkalmassági',
         subject: "Orvosi alkalmassági vizsgálat időpont törölve",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy a következő orvosi alkalmassági vizsgálatra szóló jelentkezésed törlésre került a rendszerből:</p>
                 <ul>
                     <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
@@ -925,7 +854,6 @@ const DEFAULT_TEMPLATES = {
                 {{reason_formatted}}
                 <p>Kérjük, vedd fel velünk a kapcsolatot, ha kérdésed van, vagy új időpontot szeretnél foglalni.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -934,8 +862,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Időpont elmarad', category: 'Orvosi alkalmassági',
         subject: "Fontos: Orvosi alkalmassági vizsgálat elmarad",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sajnálattal értesítünk, hogy a következő orvosi alkalmassági vizsgálat, amelyre jelentkeztél, váratlan okok miatt elmarad:</p>
                 <ul>
                     <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
@@ -943,7 +870,6 @@ const DEFAULT_TEMPLATES = {
                 {{reason_formatted}}
                 <p>Kérjük, látogass el a jelentkezési felületre egy új időpont foglalásához. Elnézést kérünk az okozott kellemetlenségért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -952,8 +878,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Orvosi vizsg.: Időpont módosítás', category: 'Orvosi alkalmassági',
         subject: "Fontos: Orvosi alkalmassági vizsgálat időpontjának módosítása",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az orvosi alkalmassági vizsgálat, amelyre jelentkeztél, módosításra került.</p>
                 <p><strong>A korábbi adatok:</strong></p>
                 <ul>
@@ -971,7 +896,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -982,8 +906,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Sikeres foglalás', category: 'Konzultáció',
         subject: `Időpontfoglalás visszaigazolása - Konzultáció`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen jelentkeztél a következő konzultációs foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -998,7 +921,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1007,8 +929,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Törlés (Admin)', category: 'Konzultáció',
         subject: `Konzultáció jelentkezés törölve - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy a következő konzultációs foglalkozásra leadott jelentkezésed törlésre került a rendszerünkben:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1017,7 +938,6 @@ const DEFAULT_TEMPLATES = {
                 {{reason_formatted}}
                 <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1026,8 +946,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Lemondás (Diák)', category: 'Konzultáció',
         subject: `Konzultáció időpont lemondva - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen lemondtad a jelentkezésedet a következő konzultációs foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1035,7 +954,6 @@ const DEFAULT_TEMPLATES = {
                 </ul>
                 <p>Köszönjük, hogy jelezted felénk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1044,8 +962,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Időpont változás', category: 'Konzultáció',
         subject: `Konzultáció időpont változás - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az alábbi konzultációs foglalkozásod, amire jelentkeztél, <strong>megváltozott:</strong></p>
                 
                 <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
@@ -1073,7 +990,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1082,8 +998,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Elmarad', category: 'Konzultáció',
         subject: `Konzultációs foglalkozás elmarad - Mosolyzóna Autósiskola`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sajnálattal tájékoztatunk, hogy a következő konzultációs foglalkozás, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1093,7 +1008,6 @@ const DEFAULT_TEMPLATES = {
                 <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
                 <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1102,8 +1016,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Emlékeztető 3 nap', category: 'Konzultáció',
         subject: `Emlékeztető a közelgő konzultációs foglalkozásról`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Szeretnénk emlékeztetni, hogy 3 nap múlva várunk a következő konzultációs foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1118,7 +1031,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1127,8 +1039,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció: Emlékeztető 1 nap', category: 'Konzultáció',
         subject: `Holnap találkozunk! Emlékeztető a konzultációról`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Szeretnénk emlékeztetni, hogy holnap várunk a következő konzultációs foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1143,7 +1054,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1152,8 +1062,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció Várólista: Feliratkozás', category: 'Konzultáció',
         subject: `Sikeres feliratkozás a konzultáció várólistájára`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen feliratkoztál a várólistára az alábbi konzultációs foglalkozásra:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1168,7 +1077,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1177,8 +1085,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció Várólista: Bekerülés', category: 'Konzultáció',
         subject: `Jó hír! Bekerültél a konzultációs foglalkozásra`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Örömmel értesítünk, hogy felszabadult egy hely az alábbi konzultációs foglalkozáson, és mivel a várólistán voltál, automatikusan be is osztottunk rá!</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1193,7 +1100,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1202,8 +1108,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció Várólista: Időpont változás', category: 'Konzultáció',
         subject: `Konzultáció várólistás időpont változás`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Tájékoztatunk, hogy az alábbi konzultációs foglalkozás időpontja, amire <strong>várólistán vagy</strong>, megváltozott:</p>
 
                 <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
@@ -1231,7 +1136,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1240,15 +1144,13 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció Várólista: Leiratkozás', category: 'Konzultáció',
         subject: "Sikeres leiratkozás a konzultáció várólistájáról",
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Sikeresen leiratkoztál a következő konzultációs foglalkozás várólistájáról:</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
                     <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
                 </ul>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
         `,
         enabled: true
     },
@@ -1257,8 +1159,7 @@ const DEFAULT_TEMPLATES = {
         name: 'Konzultáció Várólista: Last-minute', category: 'Konzultáció',
         subject: `Utolsó pillanatos szabad hely a konzultáción!`,
         html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
                 <p>Váratlanul felszabadult egy hely a konzultációs foglalkozáson, amely kevesebb mint 24 óra múlva kezdődik!</p>
                 <ul>
                     <li><strong>Foglalkozás:</strong> {{courseName}}</li>
@@ -1280,7 +1181,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-            </div>
         `,
         enabled: true
     }
