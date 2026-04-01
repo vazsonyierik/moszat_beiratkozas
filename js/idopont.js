@@ -100,9 +100,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     if (results) {
         return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center sm:p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-                <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md transform transition-all mt-[10vh] sm:my-8 flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
-                    <header className="p-4 sm:p-6 border-b flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
-                        <h3 className="text-xl font-bold text-gray-800">Összegzés</h3>
+                <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-md transform mt-[10vh] sm:my-8 flex flex-col pb-[env(safe-area-inset-bottom)] overscroll-none animate-fade-in-up overflow-hidden" onClick=${e => e.stopPropagation()}>
+                    <header className="px-4 py-3 sm:px-5 sm:py-4 border-b flex justify-between items-center bg-gray-200 rounded-t-[1.5rem] shrink-0">
+                        <h3 className="text-lg font-bold text-gray-900">Összegzés</h3>
                         <button onClick=${() => onClose(results)} className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-200 transition-colors">
                             <${Icons.XIcon} size=${24} />
                         </button>
@@ -149,8 +149,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-start sm:items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform transition-all mt-[10vh] sm:my-8 flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
-                <header className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
+            <div className="bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md transform mt-[10vh] sm:my-8 flex flex-col overscroll-none animate-fade-in-up overflow-hidden" onClick=${e => e.stopPropagation()}>
+                <header className="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex justify-between items-center bg-gray-200 rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${needsWizard && step === 2 ? html`
                             <button onClick=${() => handleStepChange(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
@@ -328,11 +328,11 @@ const InfoModal = ({ onClose }) => {
 
     return html`
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] animate-fade-in">
-            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 flex flex-col overscroll-none animate-fade-in-up" onClick=${e => e.stopPropagation()}>
+            <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl transform transition-all my-8 flex flex-col overscroll-none animate-fade-in-up overflow-hidden" onClick=${e => e.stopPropagation()}>
                 
-                <header className="px-6 py-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
-                    <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-                        <div className="bg-[#ea9f21] text-white rounded-full w-7 h-7 flex items-center justify-center text-sm font-serif italic">i</div>
+                <header className="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex justify-between items-center bg-gray-200 rounded-t-[1.5rem] shrink-0">
+                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                        <div className="bg-[#ea9f21] text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-serif italic">i</div>
                         Hasznos tudnivalók
                     </h3>
                     <button onClick=${onClose} className="text-gray-500 hover:text-gray-800 p-1.5 rounded-full hover:bg-gray-200 transition-colors -mr-2">
@@ -361,10 +361,10 @@ const InfoModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                <main ref=${contentRef} className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-[1.5rem] max-h-[60vh]">
+                <main ref=${contentRef} className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white max-h-[60vh]">
                     
                     ${activeTab === 'kresz' && html`
-                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="kresz">
+                        <div style=${{ animation: 'fadeIn 0.3s ease-out' }} className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="kresz">
                             <div>
                                 <h4 className="text-lg font-bold text-gray-900 mb-2">Tantermi képzéseink – Rugalmasan, ahogy neked a legjobb!</h4>
                                 <p className="mb-4 text-base sm:text-sm text-gray-600">Autósiskolánk folyamatosan szervez tantermi képzéseket, amelyeken Pető Attila, azaz a Kreszprofesszor segít téged a sikeres felkészülésben.</p>
@@ -459,7 +459,7 @@ const InfoModal = ({ onClose }) => {
                     `}
 
                     ${activeTab === 'firstaid' && html`
-                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="firstaid">
+                        <div style=${{ animation: 'fadeIn 0.3s ease-out' }} className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="firstaid">
                             
                             <div className="bg-orange-50 border border-[#e09900] p-4 rounded-xl text-orange-900">
                                 <h4 className="font-bold text-lg mb-1 flex items-center gap-2">Fontos tudnivaló a jogosítvány átvételéhez</h4>
@@ -514,7 +514,7 @@ const InfoModal = ({ onClose }) => {
                     `}
 
                     ${activeTab === 'medical' && html`
-                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="medical">
+                        <div style=${{ animation: 'fadeIn 0.3s ease-out' }} className="space-y-6 text-sm text-gray-700 leading-relaxed animate-fade-in" key="medical">
                             <h4 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Orvosi alkalmassági vizsgálat – Gyorsan, kényelmesen!</h4>
                             
                             <div className="space-y-4">
@@ -1316,8 +1316,8 @@ const StudentAppointmentsApp = () => {
             ${isMobileFilterModalOpen && html`
                 <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] animate-fade-in" onClick=${() => setIsMobileFilterModalOpen(false)}>
                     <div className="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md transform transition-all max-h-[90vh] flex flex-col overscroll-none animate-scale-in" onClick=${e => e.stopPropagation()}>
-                        <header className="p-4 sm:p-5 border-b border-gray-200 flex justify-between items-center bg-gray-50 rounded-t-[1.5rem] min-h-[64px] shrink-0">
-                            <h3 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <header className="px-4 py-3 sm:px-5 sm:py-4 border-b border-gray-200 flex justify-between items-center bg-gray-200 rounded-t-[1.5rem] shrink-0">
+                            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                                 Szűrés és kategóriák
                             </h3>
