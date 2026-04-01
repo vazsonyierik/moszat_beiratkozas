@@ -20,9 +20,25 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
     const [borderRadius, setBorderRadius] = useState(6);
     const [borderWidth, setBorderWidth] = useState(0);
     const [borderColor, setBorderColor] = useState('#000000');
+    const [borderOpacity, setBorderOpacity] = useState(100); // Új state a szegély áttetszőségéhez
     const [fontSize, setFontSize] = useState(16);
     const [fontWeight, setFontWeight] = useState('bold');
     const [opacity, setOpacity] = useState(100);
+
+    // Helper: HEX to RGB string ("r, g, b")
+    const hexToRgbStr = (hex) => {
+        let r = 0, g = 0, b = 0;
+        if (hex.length === 4) {
+            r = parseInt(hex[1] + hex[1], 16);
+            g = parseInt(hex[2] + hex[2], 16);
+            b = parseInt(hex[3] + hex[3], 16);
+        } else if (hex.length === 7) {
+            r = parseInt(hex.substring(1, 3), 16);
+            g = parseInt(hex.substring(3, 5), 16);
+            b = parseInt(hex.substring(5, 7), 16);
+        }
+        return `${r}, ${g}, ${b}`;
+    };
 
     // Ha van initialData (meglévő gombot szerkesztünk), akkor betöltjük
     useEffect(() => {
@@ -37,6 +53,7 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
                 setBorderRadius(initialData.borderRadius !== undefined ? initialData.borderRadius : 6);
                 setBorderWidth(initialData.borderWidth !== undefined ? initialData.borderWidth : 0);
                 setBorderColor(initialData.borderColor || '#000000');
+                setBorderOpacity(initialData.borderOpacity !== undefined ? initialData.borderOpacity : 100);
                 setFontSize(initialData.fontSize !== undefined ? initialData.fontSize : 16);
                 setFontWeight(initialData.fontWeight || 'bold');
                 setOpacity(initialData.opacity !== undefined ? initialData.opacity : 100);
@@ -51,6 +68,7 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
                 setBorderRadius(6);
                 setBorderWidth(0);
                 setBorderColor('#000000');
+                setBorderOpacity(100);
                 setFontSize(16);
                 setFontWeight('bold');
                 setOpacity(100);
@@ -64,7 +82,7 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
         e.preventDefault();
         onInsert({
             url, text, bgColor, textColor, paddingV, paddingH,
-            borderRadius, borderWidth, borderColor, fontSize, fontWeight, opacity
+            borderRadius, borderWidth, borderColor, borderOpacity, fontSize, fontWeight, opacity
         });
         onClose();
     };
@@ -200,7 +218,7 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Áttetszőség (%)</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Gomb áttetszőség (%)</label>
                                 <input
                                     type="number"
                                     value=${opacity}
@@ -211,9 +229,9 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-3 gap-4">
                             <div>
-                                <label className="block text-sm font-bold text-gray-700 mb-1">Szegély vastagság (px)</label>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Szegély vastagság</label>
                                 <input
                                     type="number"
                                     value=${borderWidth}
@@ -229,9 +247,19 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
                                         type="color"
                                         value=${borderColor}
                                         onChange=${(e) => setBorderColor(e.target.value)}
-                                        className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                        className="h-10 w-full rounded cursor-pointer border-0 p-0"
                                     />
                                 </div>
+                            </div>
+                            <div className=${borderWidth > 0 ? '' : 'opacity-50 pointer-events-none'}>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Szegély áttetszőség</label>
+                                <input
+                                    type="number"
+                                    value=${borderOpacity}
+                                    onChange=${(e) => setBorderOpacity(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="0" max="100"
+                                />
                             </div>
                         </div>
                     </div>
@@ -249,7 +277,7 @@ const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) =>
                                 borderRadius: `${borderRadius}px`,
                                 fontWeight: fontWeight,
                                 fontSize: `${fontSize}px`,
-                                border: `${borderWidth}px solid ${borderColor}`,
+                                border: `${borderWidth}px solid rgba(${hexToRgbStr(borderColor)}, ${borderOpacity / 100})`,
                                 opacity: opacity / 100
                             }}>
                                 ${text}
@@ -442,6 +470,7 @@ const EmailTemplatesTab = () => {
                     'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
                     'insertdatetime', 'media', 'table', 'help', 'wordcount'
                 ],
+                toolbar_mode: 'wrap', // Ne tegye a gombokat három pont (...) mögé, hanem törje új sorba
                 toolbar: 'undo redo | blocks fontfamily fontsizeinput | ' +
                     'bold italic underline strikethrough forecolor backcolor | alignleft aligncenter ' +
                     'alignright alignjustify | lineheight | bullist numlist outdent indent | ' +
@@ -456,32 +485,14 @@ const EmailTemplatesTab = () => {
                 setup: (editor) => {
                     editorInstance = editor;
                     
-                    // Custom Button plugin - Toolbar gomb
-                    editor.ui.registry.addButton('customInsertButton', {
-                        text: 'Gomb beszúrása',
-                        icon: 'plus',
-                        tooltip: 'Gomb beszúrása',
-                        onAction: () => {
-                            document.dispatchEvent(new CustomEvent('openInsertButtonModal', { detail: { action: 'insert' } }));
-                        }
-                    });
-
-                    // Custom Button - Kontextus menü (Jobb klikk)
-                    editor.ui.registry.addMenuItem('editCustomButton', {
-                        text: 'Gomb szerkesztése',
-                        icon: 'edit-block',
-                        onAction: () => {
-                            const node = editor.selection.getNode();
-                            // Kinyerjük az adatokat a node-ból (vagy legközelebbi A tag-ből)
-                            const anchorNode = node.nodeName === 'A' ? node : node.closest('a');
-
-                            if (anchorNode) {
+                    // Közös logika a gomb adatainak kinyerésére a DOM-ból
+                    const extractButtonData = (anchorNode) => {
                                 // Megpróbáljuk kinyerni a stílusokat
                                 const computedStyle = editor.dom.getStyle(anchorNode, 'background-color', true) || editor.dom.getStyle(anchorNode, 'background-color');
                                 let bgColorHex = '#d9534f';
                                 // Nagyon egyszerű rgb to hex konverter (TinyMCE rgb-t vagy rgba-t ad vissza)
                                 if (computedStyle && computedStyle.startsWith('rgb')) {
-                                     const rgb = computedStyle.match(/\d+/g);
+                                     const rgb = computedStyle.match(/[\d.]+/g);
                                      if(rgb && rgb.length >= 3) {
                                          bgColorHex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
                                      }
@@ -490,7 +501,7 @@ const EmailTemplatesTab = () => {
                                 const colorStyle = editor.dom.getStyle(anchorNode, 'color', true) || editor.dom.getStyle(anchorNode, 'color');
                                 let textColorHex = '#ffffff';
                                 if (colorStyle && colorStyle.startsWith('rgb')) {
-                                     const rgb = colorStyle.match(/\d+/g);
+                                     const rgb = colorStyle.match(/[\d.]+/g);
                                      if(rgb && rgb.length >= 3) {
                                          textColorHex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
                                      }
@@ -503,14 +514,18 @@ const EmailTemplatesTab = () => {
                                 // Border radius
                                 const br = parseInt(editor.dom.getStyle(anchorNode, 'border-radius') || 6);
 
-                                // Border width & color
+                                // Border width, color, and opacity
                                 const bw = parseInt(editor.dom.getStyle(anchorNode, 'border-width') || 0);
                                 let borderColorHex = '#000000';
+                                let borderOp = 100;
                                 const bcStyle = editor.dom.getStyle(anchorNode, 'border-color');
                                 if (bcStyle && bcStyle.startsWith('rgb')) {
-                                    const rgb = bcStyle.match(/\d+/g);
+                                    const rgb = bcStyle.match(/[\d.]+/g);
                                     if(rgb && rgb.length >= 3) {
                                          borderColorHex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                                    }
+                                    if(rgb && rgb.length >= 4) {
+                                         borderOp = Math.round(parseFloat(rgb[3]) * 100);
                                     }
                                 }
 
@@ -521,7 +536,7 @@ const EmailTemplatesTab = () => {
                                 // Opacity
                                 const op = parseFloat(editor.dom.getStyle(anchorNode, 'opacity') || 1);
 
-                                const buttonData = {
+                                return {
                                     url: anchorNode.getAttribute('href') || '',
                                     text: anchorNode.innerText || '',
                                     bgColor: bgColorHex,
@@ -531,11 +546,46 @@ const EmailTemplatesTab = () => {
                                     borderRadius: br,
                                     borderWidth: bw,
                                     borderColor: borderColorHex,
+                                    borderOpacity: borderOp,
                                     fontSize: fs,
                                     fontWeight: fw,
                                     opacity: Math.round(op * 100)
                                 };
+                    };
 
+                    // Custom Button plugin - Toolbar gomb
+                    editor.ui.registry.addButton('customInsertButton', {
+                        text: 'Gomb beszúrása / szerkesztése',
+                        icon: 'plus',
+                        tooltip: 'Gomb beszúrása vagy meglévő szerkesztése',
+                        onAction: () => {
+                            const node = editor.selection.getNode();
+                            const anchorNode = node.nodeName === 'A' ? node : node.closest('a');
+                            const isButton = anchorNode && editor.dom.getStyle(anchorNode, 'display') === 'inline-block';
+
+                            if (isButton) {
+                                // Meglévő gomb szerkesztése
+                                const buttonData = extractButtonData(anchorNode);
+                                document.dispatchEvent(new CustomEvent('openInsertButtonModal', {
+                                    detail: { action: 'edit', data: buttonData, node: anchorNode }
+                                }));
+                            } else {
+                                // Új gomb beszúrása
+                                document.dispatchEvent(new CustomEvent('openInsertButtonModal', { detail: { action: 'insert' } }));
+                            }
+                        }
+                    });
+
+                    // Custom Button - Kontextus menü (Jobb klikk)
+                    editor.ui.registry.addMenuItem('editCustomButton', {
+                        text: 'Gomb szerkesztése',
+                        icon: 'edit-block',
+                        onAction: () => {
+                            const node = editor.selection.getNode();
+                            const anchorNode = node.nodeName === 'A' ? node : node.closest('a');
+
+                            if (anchorNode) {
+                                const buttonData = extractButtonData(anchorNode);
                                 document.dispatchEvent(new CustomEvent('openInsertButtonModal', {
                                     detail: { action: 'edit', data: buttonData, node: anchorNode }
                                 }));
