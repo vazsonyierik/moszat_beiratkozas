@@ -302,7 +302,7 @@ function formatWeekName(weekKey) {
 function getDayName(dateStr) {
     const d = new Date(dateStr);
     const days = ['Vasárnap', 'Hétfő', 'Kedd', 'Szerda', 'Csütörtök', 'Péntek', 'Szombat'];
-    return `${days[d.getDay()]} (${dateStr.replace(/-/g, '. ')})`;
+    return `${days[d.getDay()]} • ${dateStr.replace(/-/g, '. ')}.`;
 }
 
 
@@ -1087,7 +1087,7 @@ const StudentAppointmentsApp = () => {
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
-                            <div className="bg-gray-200 px-4 py-3 border-b border-gray-300 flex justify-between items-center cursor-pointer hover:bg-gray-300 transition-colors" onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
+                            <div className=${`bg-gray-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-300 transition-colors ${isFilterExpanded ? 'border-b border-gray-300' : ''}`} onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
                                 <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                     <${Icons.SearchIcon} size=${18} className="text-[#333333]" />
                                     Szűrés
