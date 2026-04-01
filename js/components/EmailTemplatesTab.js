@@ -8,99 +8,261 @@ import TestEmailModal from './modals/TestEmailModal.js';
 const React = window.React;
 const { useState, useEffect, useRef, Fragment } = React;
 
-// Modális ablak a gomb beszúrásához (színválasztóval)
-const InsertButtonModal = ({ isOpen, onClose, onInsert }) => {
+// Modális ablak a gomb beszúrásához (színválasztóval és haladó beállításokkal)
+const InsertButtonModal = ({ isOpen, onClose, onInsert, initialData = null }) => {
+    // Alapértelmezett értékek
     const [url, setUrl] = useState('https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}');
     const [text, setText] = useState('Időpont lemondása');
-    const [bgColor, setBgColor] = useState('#d9534f'); // Alapértelmezett piros
+    const [bgColor, setBgColor] = useState('#d9534f');
     const [textColor, setTextColor] = useState('#ffffff');
+    const [paddingV, setPaddingV] = useState(12);
+    const [paddingH, setPaddingH] = useState(24);
+    const [borderRadius, setBorderRadius] = useState(6);
+    const [borderWidth, setBorderWidth] = useState(0);
+    const [borderColor, setBorderColor] = useState('#000000');
+    const [fontSize, setFontSize] = useState(16);
+    const [fontWeight, setFontWeight] = useState('bold');
+    const [opacity, setOpacity] = useState(100);
+
+    // Ha van initialData (meglévő gombot szerkesztünk), akkor betöltjük
+    useEffect(() => {
+        if (isOpen) {
+            if (initialData) {
+                setUrl(initialData.url || 'https://');
+                setText(initialData.text || 'Gomb');
+                setBgColor(initialData.bgColor || '#d9534f');
+                setTextColor(initialData.textColor || '#ffffff');
+                setPaddingV(initialData.paddingV !== undefined ? initialData.paddingV : 12);
+                setPaddingH(initialData.paddingH !== undefined ? initialData.paddingH : 24);
+                setBorderRadius(initialData.borderRadius !== undefined ? initialData.borderRadius : 6);
+                setBorderWidth(initialData.borderWidth !== undefined ? initialData.borderWidth : 0);
+                setBorderColor(initialData.borderColor || '#000000');
+                setFontSize(initialData.fontSize !== undefined ? initialData.fontSize : 16);
+                setFontWeight(initialData.fontWeight || 'bold');
+                setOpacity(initialData.opacity !== undefined ? initialData.opacity : 100);
+            } else {
+                // Reset to defaults ha új gomb
+                setUrl('https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}');
+                setText('Időpont lemondása');
+                setBgColor('#d9534f');
+                setTextColor('#ffffff');
+                setPaddingV(12);
+                setPaddingH(24);
+                setBorderRadius(6);
+                setBorderWidth(0);
+                setBorderColor('#000000');
+                setFontSize(16);
+                setFontWeight('bold');
+                setOpacity(100);
+            }
+        }
+    }, [isOpen, initialData]);
 
     if (!isOpen) return null;
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        onInsert(url, text, bgColor, textColor);
+        onInsert({
+            url, text, bgColor, textColor, paddingV, paddingH,
+            borderRadius, borderWidth, borderColor, fontSize, fontWeight, opacity
+        });
         onClose();
     };
 
     return html`
-        <div className="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-60 p-4">
-            <div className="relative w-full max-w-sm rounded-xl bg-white shadow-2xl flex flex-col">
-                <div className="flex items-center justify-between rounded-t-xl border-b p-4 bg-gray-50">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center overflow-y-auto overflow-x-hidden bg-black bg-opacity-60 p-4">
+            <div className="relative w-full max-w-lg rounded-xl bg-white shadow-2xl flex flex-col max-h-[90vh]">
+                <div className="flex items-center justify-between rounded-t-xl border-b p-4 bg-gray-50 flex-shrink-0">
                     <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                         <svg className="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
-                        Gomb beszúrása
+                        ${initialData ? 'Gomb szerkesztése' : 'Gomb beszúrása'}
                     </h3>
-                    <button onClick=${onClose} className="text-gray-400 hover:text-gray-900 bg-transparent hover:bg-gray-200 rounded-lg p-1.5 transition-colors">
+                    <button type="button" onClick=${onClose} className="text-gray-400 hover:text-gray-900 bg-transparent hover:bg-gray-200 rounded-lg p-1.5 transition-colors">
                         <${Icons.XIcon} size=${20} />
                     </button>
                 </div>
 
-                <form onSubmit=${handleSubmit} className="p-5 space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Gomb felirata</label>
-                        <input
-                            type="text"
-                            value=${text}
-                            onChange=${(e) => setText(e.target.value)}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-medium p-2 border"
-                            required
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">Hivatkozás (URL)</label>
-                        <input
-                            type="url"
-                            value=${url}
-                            onChange=${(e) => setUrl(e.target.value)}
-                            className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
-                            required
-                            placeholder="https://"
-                        />
+                <form onSubmit=${handleSubmit} className="p-5 space-y-4 overflow-y-auto flex-grow custom-scrollbar">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Gomb felirata</label>
+                            <input
+                                type="text"
+                                value=${text}
+                                onChange=${(e) => setText(e.target.value)}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm font-medium p-2 border"
+                                required
+                            />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="block text-sm font-bold text-gray-700 mb-1">Hivatkozás (URL)</label>
+                            <input
+                                type="url"
+                                value=${url}
+                                onChange=${(e) => setUrl(e.target.value)}
+                                className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                required
+                                placeholder="https://"
+                            />
+                        </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Háttérszín</label>
-                            <div className="flex items-center gap-2">
-                                <input
-                                    type="color"
-                                    value=${bgColor}
-                                    onChange=${(e) => setBgColor(e.target.value)}
-                                    className="h-10 w-10 rounded cursor-pointer border-0 p-0"
-                                />
-                                <span className="text-xs text-gray-500 font-mono">${bgColor}</span>
+                    <div className="border-t border-gray-100 pt-4">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Színek</h4>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Háttérszín</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        value=${bgColor}
+                                        onChange=${(e) => setBgColor(e.target.value)}
+                                        className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                    />
+                                    <span className="text-xs text-gray-500 font-mono">${bgColor}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Szövegszín</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        value=${textColor}
+                                        onChange=${(e) => setTextColor(e.target.value)}
+                                        className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                    />
+                                    <span className="text-xs text-gray-500 font-mono">${textColor}</span>
+                                </div>
                             </div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-1">Szövegszín</label>
-                            <div className="flex items-center gap-2">
+                    </div>
+
+                    <div className="border-t border-gray-100 pt-4">
+                        <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Megjelenés</h4>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Betűméret (px)</label>
                                 <input
-                                    type="color"
-                                    value=${textColor}
-                                    onChange=${(e) => setTextColor(e.target.value)}
-                                    className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                    type="number"
+                                    value=${fontSize}
+                                    onChange=${(e) => setFontSize(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="8" max="72"
                                 />
-                                <span className="text-xs text-gray-500 font-mono">${textColor}</span>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Vastagság</label>
+                                <select
+                                    value=${fontWeight}
+                                    onChange=${(e) => setFontWeight(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                >
+                                    <option value="normal">Normál</option>
+                                    <option value="bold">Félkövér (Bold)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Belső margó F/L (px)</label>
+                                <input
+                                    type="number"
+                                    value=${paddingV}
+                                    onChange=${(e) => setPaddingV(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="0" max="100"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Belső margó B/J (px)</label>
+                                <input
+                                    type="number"
+                                    value=${paddingH}
+                                    onChange=${(e) => setPaddingH(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="0" max="100"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Lekerekítés (px)</label>
+                                <input
+                                    type="number"
+                                    value=${borderRadius}
+                                    onChange=${(e) => setBorderRadius(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="0" max="100"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Áttetszőség (%)</label>
+                                <input
+                                    type="number"
+                                    value=${opacity}
+                                    onChange=${(e) => setOpacity(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="0" max="100"
+                                />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Szegély vastagság (px)</label>
+                                <input
+                                    type="number"
+                                    value=${borderWidth}
+                                    onChange=${(e) => setBorderWidth(e.target.value)}
+                                    className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm p-2 border"
+                                    min="0" max="20"
+                                />
+                            </div>
+                            <div className=${borderWidth > 0 ? '' : 'opacity-50 pointer-events-none'}>
+                                <label className="block text-sm font-bold text-gray-700 mb-1">Szegély színe</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        value=${borderColor}
+                                        onChange=${(e) => setBorderColor(e.target.value)}
+                                        className="h-10 w-10 rounded cursor-pointer border-0 p-0"
+                                    />
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div className="mt-6 pt-4 border-t border-gray-100">
                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Előnézet:</label>
-                        <div className="p-4 bg-gray-50 rounded-lg flex justify-center border border-gray-200 border-dashed">
-                            <a href="#" onClick=${e=>e.preventDefault()} style=${{ display: 'inline-block', padding: '10px 20px', backgroundColor: bgColor, color: textColor, textDecoration: 'none', borderRadius: '5px', fontWeight: 'bold' }}>
+                        <div className="p-4 bg-gray-50 rounded-lg flex justify-center items-center border border-gray-200 border-dashed overflow-hidden min-h-[100px]"
+                             style=${{ backgroundImage: 'linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)', backgroundSize: '20px 20px', backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px' }}>
+                            <a href="#" onClick=${e=>e.preventDefault()} style=${{
+                                display: 'inline-block',
+                                padding: `${paddingV}px ${paddingH}px`,
+                                backgroundColor: bgColor,
+                                color: textColor,
+                                textDecoration: 'none',
+                                borderRadius: `${borderRadius}px`,
+                                fontWeight: fontWeight,
+                                fontSize: `${fontSize}px`,
+                                border: `${borderWidth}px solid ${borderColor}`,
+                                opacity: opacity / 100
+                            }}>
                                 ${text}
                             </a>
                         </div>
                     </div>
 
-                    <div className="pt-4 flex justify-end gap-3">
+                    <div className="pt-4 flex justify-end gap-3 sticky bottom-0 bg-white border-t border-gray-100 mt-4 pb-2">
                         <button type="button" onClick=${onClose} className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md font-medium transition-colors">
                             Mégse
                         </button>
-                        <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-bold transition-colors">
-                            Beszúrás
+                        <button type="submit" className="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md font-bold transition-colors shadow-sm">
+                            ${initialData ? 'Módosítások mentése' : 'Beszúrás'}
                         </button>
                     </div>
                 </form>
@@ -134,6 +296,8 @@ const EmailTemplatesTab = () => {
 
     // Custom Button Modal state
     const [isButtonModalOpen, setIsButtonModalOpen] = useState(false);
+    const [buttonModalData, setButtonModalData] = useState(null); // Új state a szerkesztett gomb adatainak
+    const [editingNode, setEditingNode] = useState(null); // Reference to the DOM node being edited
     
     // Dynamic variables state
     const [dynamicVariables, setDynamicVariables] = useState([]);
@@ -292,14 +456,101 @@ const EmailTemplatesTab = () => {
                 setup: (editor) => {
                     editorInstance = editor;
                     
-                    // Custom Button plugin
+                    // Custom Button plugin - Toolbar gomb
                     editor.ui.registry.addButton('customInsertButton', {
                         text: 'Gomb beszúrása',
                         icon: 'plus',
                         tooltip: 'Gomb beszúrása',
                         onAction: () => {
-                            // Nyissuk meg a React modális ablakot
-                            document.dispatchEvent(new CustomEvent('openInsertButtonModal'));
+                            document.dispatchEvent(new CustomEvent('openInsertButtonModal', { detail: { action: 'insert' } }));
+                        }
+                    });
+
+                    // Custom Button - Kontextus menü (Jobb klikk)
+                    editor.ui.registry.addMenuItem('editCustomButton', {
+                        text: 'Gomb szerkesztése',
+                        icon: 'edit-block',
+                        onAction: () => {
+                            const node = editor.selection.getNode();
+                            // Kinyerjük az adatokat a node-ból (vagy legközelebbi A tag-ből)
+                            const anchorNode = node.nodeName === 'A' ? node : node.closest('a');
+
+                            if (anchorNode) {
+                                // Megpróbáljuk kinyerni a stílusokat
+                                const computedStyle = editor.dom.getStyle(anchorNode, 'background-color', true) || editor.dom.getStyle(anchorNode, 'background-color');
+                                let bgColorHex = '#d9534f';
+                                // Nagyon egyszerű rgb to hex konverter (TinyMCE rgb-t vagy rgba-t ad vissza)
+                                if (computedStyle && computedStyle.startsWith('rgb')) {
+                                     const rgb = computedStyle.match(/\d+/g);
+                                     if(rgb && rgb.length >= 3) {
+                                         bgColorHex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                                     }
+                                }
+
+                                const colorStyle = editor.dom.getStyle(anchorNode, 'color', true) || editor.dom.getStyle(anchorNode, 'color');
+                                let textColorHex = '#ffffff';
+                                if (colorStyle && colorStyle.startsWith('rgb')) {
+                                     const rgb = colorStyle.match(/\d+/g);
+                                     if(rgb && rgb.length >= 3) {
+                                         textColorHex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                                     }
+                                }
+
+                                // Padding
+                                const pT = parseInt(editor.dom.getStyle(anchorNode, 'padding-top') || 12);
+                                const pL = parseInt(editor.dom.getStyle(anchorNode, 'padding-left') || 24);
+
+                                // Border radius
+                                const br = parseInt(editor.dom.getStyle(anchorNode, 'border-radius') || 6);
+
+                                // Border width & color
+                                const bw = parseInt(editor.dom.getStyle(anchorNode, 'border-width') || 0);
+                                let borderColorHex = '#000000';
+                                const bcStyle = editor.dom.getStyle(anchorNode, 'border-color');
+                                if (bcStyle && bcStyle.startsWith('rgb')) {
+                                    const rgb = bcStyle.match(/\d+/g);
+                                    if(rgb && rgb.length >= 3) {
+                                         borderColorHex = "#" + ((1 << 24) + (parseInt(rgb[0]) << 16) + (parseInt(rgb[1]) << 8) + parseInt(rgb[2])).toString(16).slice(1);
+                                    }
+                                }
+
+                                // Font size & weight
+                                const fs = parseInt(editor.dom.getStyle(anchorNode, 'font-size') || 16);
+                                const fw = editor.dom.getStyle(anchorNode, 'font-weight') === 'bold' || parseInt(editor.dom.getStyle(anchorNode, 'font-weight')) > 400 ? 'bold' : 'normal';
+
+                                // Opacity
+                                const op = parseFloat(editor.dom.getStyle(anchorNode, 'opacity') || 1);
+
+                                const buttonData = {
+                                    url: anchorNode.getAttribute('href') || '',
+                                    text: anchorNode.innerText || '',
+                                    bgColor: bgColorHex,
+                                    textColor: textColorHex,
+                                    paddingV: pT,
+                                    paddingH: pL,
+                                    borderRadius: br,
+                                    borderWidth: bw,
+                                    borderColor: borderColorHex,
+                                    fontSize: fs,
+                                    fontWeight: fw,
+                                    opacity: Math.round(op * 100)
+                                };
+
+                                document.dispatchEvent(new CustomEvent('openInsertButtonModal', {
+                                    detail: { action: 'edit', data: buttonData, node: anchorNode }
+                                }));
+                            }
+                        }
+                    });
+
+                    // Csak akkor mutatjuk a kontextus menüt, ha gombon állunk
+                    editor.ui.registry.addContextMenu('editCustomButton', {
+                        update: (element) => {
+                            // Ellenőrizzük, hogy link-e, és gomb-szerű kinézete van-e (display: inline-block)
+                            const isButton = element.nodeName === 'A' && editor.dom.getStyle(element, 'display') === 'inline-block';
+                            const parentIsButton = element.closest('a') && editor.dom.getStyle(element.closest('a'), 'display') === 'inline-block';
+
+                            return (isButton || parentIsButton) ? 'editCustomButton' : '';
                         }
                     });
 
@@ -327,7 +578,17 @@ const EmailTemplatesTab = () => {
         }
 
         // Event listener a modális megnyitásához a TinyMCEből
-        const handleOpenModal = () => setIsButtonModalOpen(true);
+        const handleOpenModal = (e) => {
+            if (e.detail && e.detail.action === 'edit') {
+                setButtonModalData(e.detail.data);
+                setEditingNode(e.detail.node);
+            } else {
+                setButtonModalData(null);
+                setEditingNode(null);
+            }
+            setIsButtonModalOpen(true);
+        };
+
         document.addEventListener('openInsertButtonModal', handleOpenModal);
 
         return () => {
@@ -360,17 +621,34 @@ const EmailTemplatesTab = () => {
         setDynamicVariables(sortedVariables);
     }, [templates, isLoading]);
 
-    // Gomb tényleges beszúrása a React állapotból a TinyMCE-be
-    const handleInsertButton = (url, text, bgColor, textColor) => {
+    // Gomb beszúrása VAGY meglévő frissítése a TinyMCE-ben
+    const handleInsertButton = (data) => {
         if (!editorContainerRef.current || !editorContainerRef.current.id) return;
-        
         const editor = window.tinymce.get(editorContainerRef.current.id);
         if (!editor) return;
 
-        // Nyers HTML beszúrása
-        const buttonHtml = `<a href="${url}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: ${bgColor}; color: ${textColor}; text-decoration: none; border-radius: 6px; font-weight: bold; margin: 15px 0;">${text}</a>&nbsp;`;
+        const borderStyle = data.borderWidth > 0 ? `border: ${data.borderWidth}px solid ${data.borderColor};` : '';
 
-        editor.insertContent(buttonHtml);
+        // Ha meglévő gombot szerkesztünk (és a DOM node még létezik)
+        if (editingNode && editor.dom.isChildOf(editingNode, editor.getBody())) {
+            editor.dom.setAttribs(editingNode, {
+                href: data.url,
+                target: '_blank',
+                style: `display: inline-block; padding: ${data.paddingV}px ${data.paddingH}px; background-color: ${data.bgColor}; color: ${data.textColor}; text-decoration: none; border-radius: ${data.borderRadius}px; font-weight: ${data.fontWeight}; font-size: ${data.fontSize}px; margin: 15px 0; opacity: ${data.opacity / 100}; ${borderStyle}`
+            });
+            editingNode.innerText = data.text;
+
+            // Frissítjük a state-et
+            setHtmlContent(editor.getContent());
+        } else {
+            // Új gomb beszúrása
+            const buttonHtml = `<a href="${data.url}" target="_blank" style="display: inline-block; padding: ${data.paddingV}px ${data.paddingH}px; background-color: ${data.bgColor}; color: ${data.textColor}; text-decoration: none; border-radius: ${data.borderRadius}px; font-weight: ${data.fontWeight}; font-size: ${data.fontSize}px; margin: 15px 0; opacity: ${data.opacity / 100}; ${borderStyle}">${data.text}</a>&nbsp;`;
+            editor.insertContent(buttonHtml);
+        }
+
+        // Reset state
+        setEditingNode(null);
+        setButtonModalData(null);
     };
 
     const handleTemplateSelect = (templateId) => {
@@ -789,8 +1067,13 @@ const EmailTemplatesTab = () => {
             />
             <${InsertButtonModal}
                 isOpen=${isButtonModalOpen}
-                onClose=${() => setIsButtonModalOpen(false)}
+                onClose=${() => {
+                    setIsButtonModalOpen(false);
+                    setButtonModalData(null);
+                    setEditingNode(null);
+                }}
                 onInsert=${handleInsertButton}
+                initialData=${buttonModalData}
             />
         </div>
     `;
