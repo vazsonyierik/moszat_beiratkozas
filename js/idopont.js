@@ -156,7 +156,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         ${!results && needsWizard && step === 2 ? html`
@@ -1147,7 +1147,7 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${html`
-                    <div key=${`desktop-sidebar-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`} className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
+                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
@@ -1186,7 +1186,7 @@ const StudentAppointmentsApp = () => {
                             <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${isFilterExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                 <div className="overflow-hidden">
                                     <div className="p-4 bg-white">
-                                        <div className="mb-3 animate-fade-in">
+                                        <div className="mb-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Elméleti tanfolyam</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
@@ -1204,7 +1204,7 @@ const StudentAppointmentsApp = () => {
                                             </div>
                                         </div>
 
-                                        <div className="mb-3 border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '50ms' }}>
+                                        <div className="mb-3 border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Kiegészítő szolgáltatások</p>
                                             <div className="flex flex-wrap gap-1.5">
                                                 <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
@@ -1219,7 +1219,7 @@ const StudentAppointmentsApp = () => {
                                             </div>
                                         </div>
 
-                                        <div className="border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '100ms' }}>
+                                        <div className="border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
                                             <div className="flex bg-[#efefef] p-1 rounded-lg">
                                                 <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
