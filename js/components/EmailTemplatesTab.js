@@ -1,6 +1,6 @@
 import { html } from '../UI.js';
 import { db, doc, getDoc, setDoc, collection, getDocs } from '../firebase.js';
-import * as Icons from '../Icons.js';
+import Icons from '../Icons.js';
 import { useToast, useConfirmation } from '../context/AppContext.js';
 import DEFAULT_TEMPLATES from './defaultTemplates.js';
 import TestEmailModal from './modals/TestEmailModal.js';
