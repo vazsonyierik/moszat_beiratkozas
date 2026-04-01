@@ -49,6 +49,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
     const [isClosing, setIsClosing] = useState(false);
+    const [isStepAnimating, setIsStepAnimating] = useState(false);
     const contentRef = useRef(null);
 
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
@@ -61,10 +62,15 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const showForm = isDesktop ? true : (!needsWizard || step === 2);
 
     const handleStepChange = (newStep) => {
+        // Trigger a simple cross-fade by applying a class when the step changes
+        setIsStepAnimating(true);
         setStep(newStep);
         if (contentRef.current) {
             contentRef.current.scrollTop = 0;
         }
+        setTimeout(() => {
+            setIsStepAnimating(false);
+        }, 300); // the duration of animate-fade-in
     };
 
     const handleClose = (resultsToPass) => {
@@ -165,7 +171,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             </button>
                         ` : ''}
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
-                            ${!results && html`<${Icons.DocumentIcon} size=${18} className="text-[#333333] shrink-0" />`}
+                            ${!results && html`<${Icons.DocumentIcon} size=${18} className="text-[#e09900] shrink-0" />`}
                             ${results ? 'Összegzés' : 'Jelentkezés véglegesítése'}
                         </h3>
                     </div>
@@ -174,7 +180,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     </button>
                 </header>
                 
-                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 bg-white animate-fade-in-up">
+                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 bg-white">
                     ${results ? html`
                         <div>
                             ${results.success.length > 0 ? html`
@@ -204,7 +210,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         </div>
                     ` : html`
                         ${showSummaryList && html`
-                            <div key="step1" className="animate-fade-in-up">
+                            <div key="step1" className=${isStepAnimating ? 'animate-fade-in' : ''}>
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2.5">
                                     ${cart.map((item, index) => html`
@@ -233,7 +239,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         `}
 
                         ${showForm && html`
-                            <div key="step2" className="animate-fade-in-up">
+                            <div key="step2" className=${isStepAnimating ? 'animate-fade-in' : ''}>
                                 ${error ? html`<div className="mb-4 p-3 bg-red-50 border border-red-100 text-red-700 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0" />${error}</div>` : ''}
 
                                 <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-3">
