@@ -141,6 +141,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
             return html`
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button
+                        key="btn-next"
                         onClick=${() => handleStepChange(2)}
                         className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
                     >
@@ -155,6 +156,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center shrink-0">
                     ${needsWizard && step === 2 && !results ? html`
                         <button
+                            key="btn-back"
                             type="button"
                             onClick=${() => handleStepChange(1)}
                             className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-colors lg:active:scale-95 text-sm"
@@ -162,8 +164,9 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             <${Icons.ChevronRightIcon} size=${16} className="rotate-180" />
                             <span>Vissza</span>
                         </button>
-                    ` : html`<div></div>`}
+                    ` : html`<div key="btn-back-placeholder"></div>`}
                     <button
+                        key="btn-submit"
                         onClick=${handleSubmit}
                         disabled=${isSubmitting}
                         className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
@@ -374,7 +377,7 @@ const InfoModal = ({ onClose }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${handleClose}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                 
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
@@ -1304,7 +1307,7 @@ const StudentAppointmentsApp = () => {
                 <!-- Filter Button -->
                 <button 
                     onClick=${openMobileFilterModal}
-                    className="relative pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
+                    className="relative pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
                     title="Szűrés és kategóriák"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
@@ -1331,7 +1334,7 @@ const StudentAppointmentsApp = () => {
                 <!-- Info Button -->
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-white hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
+                    className="pointer-events-auto bg-white lg:hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1345,7 +1348,7 @@ const StudentAppointmentsApp = () => {
             <div className="hidden lg:flex fixed z-40 right-6 bottom-6 pointer-events-none flex-col items-end gap-3 transition-all duration-300">
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-[#ea9f21] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 lg:active:scale-95 border border-[#ea9f21]"
+                    className="pointer-events-auto bg-[#ea9f21] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-[#ea9f21]"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1369,7 +1372,7 @@ const StudentAppointmentsApp = () => {
             <!-- Mobile Filter Modal -->
             ${isMobileFilterModalOpen && html`
                 <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] ${isMobileFilterClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${closeMobileFilterModal}>
-                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
+                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                         <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                             <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
