@@ -1,5 +1,5 @@
 import { html } from '../UI.js';
-import * as Icons from '../Icons.js';
+import Icons from '../Icons.js';
 import * as utils from '../utils.js';
 
 const React = window.React;

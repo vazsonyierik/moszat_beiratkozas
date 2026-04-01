@@ -16,7 +16,7 @@
  */
 import { html } from '../../UI.js';
 import { formatFullName, formatSingleTimestamp } from '../../utils.js';
-import * as Icons from '../../Icons.js';
+import Icons from '../../Icons.js';
 import { useConfirmation, useToast } from '../../context/AppContext.js';
 import { functions, httpsCallable, isTestMode, db, doc, getDoc, collection, query, where, getDocs } from '../../firebase.js';
 

@@ -5,7 +5,7 @@
 
 import { html, LoadingOverlay } from './UI.js';
 import { db, collection, onSnapshot, query, where, auth, signInAnonymously, onAuthStateChanged, functions, httpsCallable } from './firebase.js';
-import * as Icons from './Icons.js';
+import Icons from './Icons.js';
 
 const React = window.React;
 const ReactDOM = window.ReactDOM;

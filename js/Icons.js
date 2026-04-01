@@ -61,3 +61,33 @@ export const LogoutIcon = ({ size = 24, className = '' }) => html`<svg xmlns="ht
 export const RestoreIcon = ({ size = 18, className = '' }) => html`<svg xmlns="http://www.w3.org/2000/svg" width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className=${className}><path d="M3 7v6h6"/><path d="M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>`;
 export const ArrowDownCircleIcon = ({ size = 18, className = '' }) => html`<svg xmlns="http://www.w3.org/2000/svg" width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className=${className}><circle cx="12" cy="12" r="10"/><path d="m12 16-4-4m4 4 4-4m-4-8v12"/></svg>`;
 export const ArrowDownCircleSolidIcon = ({ size = 18, className = '' }) => html`<svg xmlns="http://www.w3.org/2000/svg" width=${size} height=${size} viewBox="0 0 24 24" fill="currentColor" className=${className}><path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25Zm-.53 14.03a.75.75 0 0 0 1.06 0l3-3a.75.75 0 1 0-1.06-1.06l-1.72 1.72V8.25a.75.75 0 0 0-1.5 0v5.69l-1.72-1.72a.75.75 0 0 0-1.06 1.06l3 3Z" clipRule="evenodd" /></svg>`;
+
+
+
+
+// --- FALLBACK ÉS PROXY MECHANIZMUS ---
+// Ha egy ikon véletlenül hiányzik, ez jelenik meg helyette, így nem omlik össze az oldal.
+export const FallbackIcon = ({ size = 24, className = 'text-red-500' }) => html`<svg xmlns="http://www.w3.org/2000/svg" width=${size} height=${size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className=${className}><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>`;
+
+// A modul összes named exportját importáljuk saját magába, hogy dinamikusan hozzáférjünk.
+import * as self from './Icons.js';
+
+const IconsProxy = new Proxy(self, {
+  get: function(target, prop, receiver) {
+    if (prop in target) {
+      return Reflect.get(target, prop, receiver);
+    }
+    // Ha nem sztring vagy Symbol, akkor undefined (pl. webpack/react belső lekérdezések)
+    if (typeof prop !== 'string') {
+        return undefined;
+    }
+    // Ha a lekért tulajdonság gyanúsan nem React komponens (pl. default, __esModule, stb.)
+    if (prop === 'default' || prop === '__esModule' || prop === 'prototype' || prop === 'name') {
+        return undefined;
+    }
+    console.warn(`[⚠️ Icons.js Proxy] Hiányzó ikonra hivatkozás: ${prop}. A FallbackIcon jelenik meg.`);
+    return target.FallbackIcon || FallbackIcon;
+  }
+});
+
+export default IconsProxy;

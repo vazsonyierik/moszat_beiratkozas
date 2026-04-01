@@ -1,5 +1,5 @@
 import { html } from '../../UI.js';
-import * as Icons from '../../Icons.js';
+import Icons from '../../Icons.js';
 import { db, collection, onSnapshot, query, orderBy, deleteDoc, doc, getDocs, limit, where, functions, httpsCallable } from '../../firebase.js';
 import { useToast, useConfirmation } from '../../context/AppContext.js';
 

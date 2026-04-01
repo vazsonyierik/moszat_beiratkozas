@@ -1,6 +1,6 @@
 import { html } from '../../UI.js';
 import { db, collection, query, where, getDocs, updateDoc, doc, addDoc, orderBy, limit, deleteDoc } from '../../firebase.js';
-import * as Icons from '../../Icons.js';
+import Icons from '../../Icons.js';
 
 const { useState, useRef, useEffect, Fragment } = window.React;
 const XLSX = window.XLSX;

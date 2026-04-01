@@ -7,7 +7,7 @@
 import { html, LoadingOverlay } from '../UI.js';
 import { db, collection, query, orderBy, onSnapshot, getDocs, where } from '../firebase.js';
 import { formatSingleTimestamp } from '../utils.js';
-import * as Icons from '../Icons.js';
+import Icons from '../Icons.js';
 
 const { useState, useEffect, useMemo } = window.React;
 

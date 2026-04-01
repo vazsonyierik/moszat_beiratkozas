@@ -1,6 +1,6 @@
 import { html } from '../UI.js';
 import { db, collection, query, where, orderBy, onSnapshot } from '../firebase.js';
-import * as Icons from '../Icons.js';
+import Icons from '../Icons.js';
 
 const { useState, useEffect, Fragment } = window.React;
 
