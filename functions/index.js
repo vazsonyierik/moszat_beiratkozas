@@ -1068,7 +1068,9 @@ exports.sendTestEmail = onCall({region: "europe-west1"}, async (request) => {
                     // Ha a tesztben csak firstName lett megadva (pl. időpontfoglalás), azt is továbbítjuk
                 };
                 
-                const fallbackTemplate = templates[templateId](mappedTestData);
+                // Mivel egyes sablonok (pl. orvosi) két paramétert várnak: (courseData, bookingData),
+                // mindkét helyre bedobjuk a teszt adatokat, hogy ne legyen 'Cannot read properties of undefined' hiba.
+                const fallbackTemplate = templates[templateId](mappedTestData, mappedTestData);
                 finalSubject = fallbackTemplate.subject;
                 finalHtml = fallbackTemplate.html;
                 
