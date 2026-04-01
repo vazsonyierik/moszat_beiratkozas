@@ -184,7 +184,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
             if (showForm && !results) return;
             handleClose(results || undefined);
         }}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-sm sm:max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
@@ -234,11 +234,12 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="text-xs bg-gray-50 py-1.5 px-2.5 rounded border border-gray-200 flex justify-between items-center gap-2 transition-all hover:border-[#e09900]">
+                                        <li key=${index} className="bg-gray-50 p-2.5 sm:py-1.5 sm:px-2.5 rounded border border-gray-200 flex justify-between items-center gap-3 sm:gap-2 transition-all hover:border-[#e09900]">
                                             <div className="flex-1 min-w-0 leading-tight">
-                                                <span className="font-bold text-gray-800 text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">Várólista</span>` : ''}</span>
-                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1 text-[10px]">
-                                                    <${Icons.CalendarIcon} size=${10} className="text-[#888888]" />
+                                                <span className="font-bold text-gray-800 text-[14px] sm:text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">Várólista</span>` : ''}</span>
+                                                <div className="text-gray-500 mt-1 sm:mt-0.5 flex items-center gap-1.5 sm:gap-1 text-[12px] sm:text-[10px]">
+                                                    <div className="sm:hidden"><${Icons.CalendarIcon} size=${12} className="text-[#888888]" /></div>
+                                                    <div className="hidden sm:block"><${Icons.CalendarIcon} size=${10} className="text-[#888888]" /></div>
                                                     <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                                 </div>
                                             </div>
@@ -246,10 +247,11 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 <button
                                                     type="button"
                                                     onClick=${() => handleRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-md p-1 transition-colors shrink-0"
+                                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-md p-2 sm:p-1 transition-colors shrink-0"
                                                     title="Eltávolítás"
                                                 >
-                                                    <${Icons.XIcon} size=${14} />
+                                                    <div className="sm:hidden"><${Icons.XIcon} size=${16} /></div>
+                                                    <div className="hidden sm:block"><${Icons.XIcon} size=${14} /></div>
                                                 </button>
                                             ` : ''}
                                         </li>
@@ -270,7 +272,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 type="text"
                                                 value=${lastName}
                                                 onChange=${e => setLastName(e.target.value)}
-                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
                                                 required
                                                 placeholder="Kovács"
                                             />
@@ -281,7 +283,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 type="text"
                                                 value=${firstName}
                                                 onChange=${e => setFirstName(e.target.value)}
-                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
                                                 required
                                                 placeholder="János"
                                             />
@@ -294,7 +296,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                             type="email"
                                             value=${email}
                                             onChange=${e => setEmail(e.target.value)}
-                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
@@ -306,7 +308,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                             type="email"
                                             value=${emailConfirm}
                                             onChange=${e => setEmailConfirm(e.target.value)}
-                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full p-2 sm:p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-[16px] sm:text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
@@ -633,26 +635,19 @@ const StudentAppointmentsApp = () => {
         if (window.innerWidth >= 1024) return;
 
         if (isCheckoutOpen || isInfoModalOpen || isMobileFilterModalOpen) {
-            // Apply iOS safe scroll locking
+            // Apply scroll locking without changing position fixed, as that causes iOS Safari bottom bar to jump up
             document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${window.scrollY}px`;
-            document.body.style.width = '100%';
+            document.body.style.overscrollBehavior = 'none'; // Prevents pull-to-refresh
+            document.documentElement.style.overscrollBehavior = 'none';
         } else {
-            const scrollY = document.body.style.top;
             document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            if (scrollY) {
-                window.scrollTo(0, parseInt(scrollY || '0') * -1);
-            }
+            document.body.style.overscrollBehavior = '';
+            document.documentElement.style.overscrollBehavior = '';
         }
         return () => {
             document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
+            document.body.style.overscrollBehavior = '';
+            document.documentElement.style.overscrollBehavior = '';
         };
     }, [isCheckoutOpen, isInfoModalOpen, isMobileFilterModalOpen]);
 
