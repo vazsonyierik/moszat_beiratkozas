@@ -117,7 +117,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button 
                         onClick=${() => handleClose(results)}
-                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm"
+                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform shadow-md active:scale-95 text-sm"
                     >
                         Bezárás
                     </button>
@@ -130,7 +130,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button
                         onClick=${() => handleStepChange(2)}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform shadow-md active:scale-95 text-center text-sm"
                     >
                         Tovább
                     </button>
@@ -144,7 +144,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     <button
                         onClick=${handleSubmit}
                         disabled=${isSubmitting}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
                     >
                         ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span>`}
                     </button>
@@ -208,7 +208,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2.5">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
+                                        <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-colors hover:border-[#e09900]">
                                             <div className="flex-1 min-w-0">
                                                 <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
                                                 <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
@@ -220,7 +220,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                                 <button
                                                     type="button"
                                                     onClick=${() => onRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
+                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors transform active:scale-95 shrink-0"
                                                     title="Eltávolítás"
                                                 >
                                                     <${Icons.XIcon} size=${18} />
@@ -1400,13 +1400,13 @@ const StudentAppointmentsApp = () => {
                         <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center gap-3 shrink-0">
                             <button
                                 onClick=${clearMobileFilters}
-                                className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-all active:scale-95"
+                                className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-colors transform active:scale-95"
                             >
                                 Törlés
                             </button>
                             <button 
                                 onClick=${applyMobileFilters}
-                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-colors transform shadow-md active:scale-95 text-center text-sm"
                             >
                                 Szűrés
                             </button>
