@@ -229,7 +229,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     ${cart.map((item, index) => html`
                                         <li key=${index} className="text-xs bg-gray-50 py-1.5 px-2.5 rounded border border-gray-200 flex justify-between items-center gap-2 transition-all hover:border-[#e09900]">
                                             <div className="flex-1 min-w-0 leading-tight">
-                                                <span className="font-bold text-gray-800 text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">(Várólista)</span>` : ''}</span>
+                                                <span className="font-bold text-gray-800 text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">Várólista</span>` : ''}</span>
                                                 <div className="text-gray-500 mt-0.5 flex items-center gap-1 text-[10px]">
                                                     <${Icons.CalendarIcon} size=${10} className="text-[#888888]" />
                                                     <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
@@ -990,7 +990,7 @@ const StudentAppointmentsApp = () => {
             if (isFirstAid) {
                 buttonArea = html`
                     <span className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-200 rounded-md text-xs font-medium text-[#888888] bg-[#efefef] cursor-not-allowed">
-                        Betelt (Nincs várólista)
+                        Betelt
                     </span>
                 `;
             } else {
@@ -1019,18 +1019,18 @@ const StudentAppointmentsApp = () => {
         const isCompletelyFull = isFull && isFirstAid;
 
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
+            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : isFull ? 'border-gray-200 bg-gray-50/30' : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
                 <div className="flex flex-col h-full justify-between gap-3">
                     <div>
                         <div className="flex justify-between items-start mb-1.5 gap-2">
                             <h4 className="font-extrabold text-[#333333] text-base leading-tight pr-2">${course.name}</h4>
-                            ${isFull ? html`
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
-                            ` : isInCart ? (isWaitlistInCart ? html`
+                            ${isInCart ? (isWaitlistInCart ? html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-[#c98900] shrink-0">Várólistán</span>
                             ` : html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-[#c98900] shrink-0">Kiválasztva</span>
-                            `) : html`
+                            `) : isFull ? html`
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
+                            ` : html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#333333] shrink-0">${availableSeats} hely</span>
                             `}
                         </div>
@@ -1271,7 +1271,7 @@ const StudentAppointmentsApp = () => {
                                         <div className="flex-1">
                                             <div className="font-semibold text-[#e09900] text-xs">
                                                 ${item.course.name}
-                                                ${item.isWaitlist ? html`<span className="ml-1.5 text-[10px] text-[#c98900] bg-orange-50 px-1 py-0.5 rounded border border-orange-200">(Várólista)</span>` : ''}
+                                                ${item.isWaitlist ? html`<span className="ml-1.5 text-[10px] text-[#c98900] bg-orange-50 px-1 py-0.5 rounded border border-orange-200">Várólista</span>` : ''}
                                             </div>
                                             <div className="text-[11px] text-[#888888] mt-1 flex items-center gap-1">
                                                 <${Icons.CalendarIcon} size=${10} className="text-[#888888]" />
