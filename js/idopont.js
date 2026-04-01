@@ -129,7 +129,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button 
                         onClick=${() => handleClose(results)}
-                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-sm"
+                        className="px-6 py-2 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-sm"
                     >
                         Bezárás
                     </button>
@@ -143,7 +143,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     <button
                         key="btn-next"
                         onClick=${() => handleStepChange(2)}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
                     >
                         <span>Tovább</span>
                     </button>
@@ -161,7 +161,6 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             onClick=${() => handleStepChange(1)}
                             className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-colors lg:active:scale-95 text-sm"
                         >
-                            <${Icons.ChevronRightIcon} size=${16} className="rotate-180" />
                             <span>Vissza</span>
                         </button>
                     ` : html`<div key="btn-back-placeholder"></div>`}
@@ -169,7 +168,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                         key="btn-submit"
                         onClick=${handleSubmit}
                         disabled=${isSubmitting}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
                     >
                         ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span>`}
                     </button>
@@ -181,7 +180,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
@@ -1189,10 +1188,10 @@ const StudentAppointmentsApp = () => {
                                                     setTimeFilter('all');
                                                 }}
                                                 disabled=${!isAnyFilterActive}
-                                                className=${`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full transition-colors ${isAnyFilterActive ? 'text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
+                                                className=${`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full transition-colors ${isAnyFilterActive ? 'text-[#e09900] hover:text-[#c98900] bg-orange-50 hover:bg-orange-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
                                                 title="Összes szűrés törlése"
                                             >
-                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-red-100 text-red-600' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${12} /></span>
+                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-orange-100 text-[#e09900]' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${12} /></span>
                                                 Törlés
                                             </button>
                                         `;
@@ -1253,11 +1252,14 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- Cart Panel -->
-                        <div className="hidden lg:flex bg-white shadow-lg sm:rounded-xl p-4 border border-gray-100 flex-col flex-1 min-h-0">
-                        <h3 className="text-base font-bold text-gray-900 mb-3 border-b pb-2 shrink-0 flex items-center gap-2">
-                            <svg className="w-4 h-4 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                            Kiválasztott időpontok
-                        </h3>
+                        <div className="hidden lg:flex bg-white shadow-lg sm:rounded-xl border border-gray-200 flex-col flex-1 min-h-0 overflow-hidden">
+                        <div className="bg-gray-200 px-4 py-3 flex justify-between items-center shrink-0 border-b border-gray-300">
+                            <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
+                                <svg className="w-4 h-4 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                                Kiválasztott időpontok
+                            </h3>
+                        </div>
+                        <div className="p-4 flex flex-col flex-1 min-h-0 bg-white">
                         ${cart.length === 0 ? html`
                             <div className="text-gray-500 text-xs italic py-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
                                 Még nem választottál ki időpontot.<br/>Kattints a "Kiválasztom" gombra a hozzáadáshoz.
@@ -1278,7 +1280,7 @@ const StudentAppointmentsApp = () => {
                                         </div>
                                         <button 
                                             onClick=${() => removeFromCart(item.course.id)}
-                                            className="ml-2 text-red-500 hover:text-red-700 bg-white hover:bg-red-50 rounded shadow-sm border border-red-100 p-1 transition-colors"
+                                            className="ml-2 text-gray-400 hover:text-gray-600 bg-white hover:bg-gray-200 rounded shadow-sm border border-gray-200 p-1 transition-colors"
                                             title="Eltávolítás"
                                         >
                                             <${Icons.XIcon} size=${12} />
@@ -1289,12 +1291,13 @@ const StudentAppointmentsApp = () => {
                             <div className="mt-4 pt-3 border-t border-gray-200 shrink-0">
                                 <button
                                     onClick=${() => setIsCheckoutOpen(true)}
-                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
+                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] lg:hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
                                     Véglegesítés (${cart.length})
                                 </button>
                             </div>
                         `}
+                        </div>
                         </div>
                     </div>
                 `}
@@ -1312,7 +1315,7 @@ const StudentAppointmentsApp = () => {
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     ${isAnyFilterActive ? html`
-                        <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full"></span>
+                        <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-[#e09900] border-2 border-white rounded-full shadow-sm"></span>
                     ` : ''}
                 </button>
 
@@ -1320,7 +1323,7 @@ const StudentAppointmentsApp = () => {
                 <div className=${`transition-all duration-300 flex-1 flex justify-center ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none max-w-0 overflow-hidden'}`}>
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
-                        className="bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-2 sm:gap-3 lg:active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
+                        className="bg-[#e09900] lg:hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-2 sm:gap-3 lg:active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
                     >
                         <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 shrink-0 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
                             ${cart.length}
@@ -1334,7 +1337,7 @@ const StudentAppointmentsApp = () => {
                 <!-- Info Button -->
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-white lg:hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
+                    className="pointer-events-auto bg-white lg:lg:hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1348,7 +1351,7 @@ const StudentAppointmentsApp = () => {
             <div className="hidden lg:flex fixed z-40 right-6 bottom-6 pointer-events-none flex-col items-end gap-3 transition-all duration-300">
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-[#ea9f21] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-[#ea9f21]"
+                    className="pointer-events-auto bg-[#ea9f21] lg:hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-[#ea9f21]"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1426,7 +1429,7 @@ const StudentAppointmentsApp = () => {
                             </button>
                             <button 
                                 onClick=${applyMobileFilters}
-                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-center text-sm"
+                                className="flex-1 px-4 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-center text-sm"
                             >
                                 Szűrés
                             </button>
