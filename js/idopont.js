@@ -499,11 +499,19 @@ const InfoModal = ({ onClose }) => {
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="kresz">
                             <div>
                                 <h4 className="text-lg font-bold text-gray-900 mb-2">Fejleszd a tudásod személyesen a Kreszprofesszorral!</h4>
-                                <p className="mb-4 text-base sm:text-sm text-gray-600">A hivatalos elméleti képzésed az E-learning felületen zajlik, de ha jobban szeretsz tanteremben is tanulni, vagy elakadtál, várunk szeretettel az opcionális előadásainkon.</p>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">A hivatalos elméleti képzésed az E-learning felületen zajlik. Fontos tudnod, hogy a tantermi előadások nem az e-learninget helyettesítik, hanem tökéletesen kiegészítik azt! Ha szereted hallani a szabályok mögötti extra magyarázatokat, jobban megérteni a gyakorlati összefüggéseket, vagy ha valahol elakadtál, várunk szeretettel az opcionális előadásainkon.</p>
                                 
                                 <h5 className="text-lg font-bold text-gray-800 mb-2">Miért érdemes beülnöd?</h5>
                                 
                                 <div className="space-y-4">
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
+                                        <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Mélyebb megértés</div>
+                                            <p className="text-base sm:text-sm text-gray-600">Nem csak a száraz szabályokat hallod, hanem az összefüggéseket és a miérteket is elmagyarázzuk.</p>
+                                        </div>
+                                    </div>
+
                                     <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
                                         <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
                                         <div>
@@ -516,15 +524,15 @@ const InfoModal = ({ onClose }) => {
                                         <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
                                         <div>
                                             <div className="font-bold text-gray-900 mb-1">Kötetlen</div>
-                                            <p className="text-base sm:text-sm text-gray-600">A modulok (1-4) tetszőleges sorrendben hallgathatók meg - te állítod össze a tanrended!</p>
+                                            <p className="text-base sm:text-sm text-gray-600">A modulok (1-4) tetszőleges sorrendben hallgathatók meg – te állítod össze a tanrended!</p>
                                         </div>
                                     </div>
                                     
-                                    <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 flex gap-3 items-start">
-                                        <${Icons.InfoIcon} size=${20} className="text-blue-600 mt-0.5 shrink-0" />
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
+                                        <${Icons.InfoIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
                                         <div>
-                                            <div className="font-bold text-blue-900 mb-1">Tipp</div>
-                                            <p className="text-blue-800 font-medium text-base sm:text-sm">Egy modult elég csak egyszer elvégezned, mert a tartalom ismétlődik.</p>
+                                            <div className="font-bold text-gray-900 mb-1">Tipp</div>
+                                            <p className="text-gray-800 font-medium text-base sm:text-sm">Egy modult elég csak egyszer elvégezned, mert a tartalom ismétlődik.</p>
                                         </div>
                                     </div>
                                 </div>
@@ -538,13 +546,20 @@ const InfoModal = ({ onClose }) => {
                                 <!-- Modul 1 -->
                                 <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
                                     <button onClick=${() => toggleAccordion(1)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
-                                        <span className="font-bold text-[#e09900]">1. modul – Alapozó</span>
+                                        <span className="font-bold text-[#e09900]">1. modul – Tanfolyamtájékoztató, alapozó foglalkozás</span>
                                         <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 1 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
                                     </button>
                                     <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 1 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                         <div className="overflow-hidden">
                                             <div className="p-4 text-gray-600 border-t border-gray-100">
-                                                Tájékoztató, emberi tényezők (látás, figyelem), járművezető munkatere, KRESZ-alapok.
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>Általános információk a képzés menetéről</li>
+                                                    <li>Vezetéselmélet: emberi tényezők</li>
+                                                    <li>Érzékelés: látás, figyelem</li>
+                                                    <li>A vezető munkatere: ülés, tükrök beállítása</li>
+                                                    <li>Alapvető műszaki információk a járműről</li>
+                                                    <li>KRESZ-alapok, fogalmak, közúti jelzések</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
@@ -552,13 +567,20 @@ const InfoModal = ({ onClose }) => {
                                 <!-- Modul 2 -->
                                 <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
                                     <button onClick=${() => toggleAccordion(2)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
-                                        <span className="font-bold text-[#e09900]">2. modul – Haladás</span>
+                                        <span className="font-bold text-[#e09900]">2. modul – KRESZ, haladás közben</span>
                                         <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 2 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
                                     </button>
                                     <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 2 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                         <div className="overflow-hidden">
                                             <div className="p-4 text-gray-600 border-t border-gray-100">
-                                                Elindulás, megállás, párhuzamos közlekedés, előzés, kikerülés, megfordulás.
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>Elindulás, megállás, várakozás</li>
+                                                    <li>Haladás az úton: jobbratartás, egyirányú út, osztottpályás út</li>
+                                                    <li>Párhuzamos közlekedés, villamos sínen közlekedés</li>
+                                                    <li>Kitérés, kikerülés</li>
+                                                    <li>Előzés</li>
+                                                    <li>Megfordulás, hátramenet</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
@@ -566,13 +588,22 @@ const InfoModal = ({ onClose }) => {
                                 <!-- Modul 3 -->
                                 <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
                                     <button onClick=${() => toggleAccordion(3)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
-                                        <span className="font-bold text-[#e09900]">3. modul – Manőverek</span>
+                                        <span className="font-bold text-[#e09900]">3. modul – KRESZ, manőverezések</span>
                                         <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 3 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
                                     </button>
                                     <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 3 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                         <div className="overflow-hidden">
                                             <div className="p-4 text-gray-600 border-t border-gray-100">
-                                                Személy- és teherszállítás, vontatás, irányváltoztatás, követési távolság, autópálya.
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>A járművezetés személyi és tárgyi feltételei</li>
+                                                    <li>Személyszállítás, teherszállítás szabályai</li>
+                                                    <li>Műszaki hiba, vontatás</li>
+                                                    <li>Irányváltoztatás, körforgalom, kanyarodó főútvonal</li>
+                                                    <li>Követési távolság, féktávolság</li>
+                                                    <li>Vasúti átjáró</li>
+                                                    <li>Autópálya, autóút, lakó-pihenő övezet</li>
+                                                    <li>Megkülönböztető és figyelmeztető jelzések</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
@@ -580,13 +611,18 @@ const InfoModal = ({ onClose }) => {
                                 <!-- Modul 4 -->
                                 <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
                                     <button onClick=${() => toggleAccordion(4)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
-                                        <span className="font-bold text-[#e09900]">4. modul – Kereszteződések</span>
+                                        <span className="font-bold text-[#e09900]">4. modul – KRESZ, útkereszteződések</span>
                                         <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 4 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
                                     </button>
                                     <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 4 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
                                         <div className="overflow-hidden">
                                             <div className="p-4 text-gray-600 border-t border-gray-100">
-                                                Elsőbbségadás szabályai, lámpák, rendőri irányítás, villamos és gyalogos elsőbbsége.
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>Elsőbbségadás szabályai</li>
+                                                    <li>Sorrend a kereszteződésekben</li>
+                                                    <li>Villamos és gyalogos elsőbbsége</li>
+                                                    <li>Lámpák és rendőri forgalomirányítás jelzései</li>
+                                                </ul>
                                             </div>
                                         </div>
                                     </div>
@@ -695,7 +731,7 @@ const InfoModal = ({ onClose }) => {
                                         </div>
                                         <div>
                                             <div className="font-bold text-gray-900">Időpont</div>
-                                            <div className="text-gray-600 text-sm mt-0.5">Háromhetente, péntekenként 16:30-tól 20:30-ig.</div>
+                                            <div className="text-gray-600 text-sm mt-0.5">Péntekenként 16:30-tól 20:30-ig.</div>
                                         </div>
                                     </div>
 
@@ -755,10 +791,10 @@ const InfoModal = ({ onClose }) => {
                             </div>
 
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="bg-red-50 p-5 rounded-xl border border-red-200 flex flex-col justify-center items-center text-center shadow-sm">
-                                    <${Icons.ClockIcon} size=${28} className="text-red-600 mb-2" />
-                                    <div className="font-bold text-red-900 text-lg mb-1">Érkezés</div>
-                                    <p className="text-red-800 text-sm font-medium">Kérjük, hogy a lefoglalt napon <strong>legkésőbb 17:00-ig</strong> érkezz meg!</p>
+                                <div className="bg-orange-50 p-5 rounded-xl border border-orange-200 flex flex-col justify-center items-center text-center shadow-sm">
+                                    <${Icons.ClockIcon} size=${28} className="text-[#ea9f21] mb-2" />
+                                    <div className="font-bold text-orange-900 text-lg mb-1">Érkezés</div>
+                                    <p className="text-orange-800 text-sm font-medium">Kérjük, hogy a lefoglalt napon <strong>legkésőbb 17:00-ig</strong> érkezz meg!</p>
                                 </div>
 
                                 <div className="bg-[#e09900] p-5 rounded-xl border border-[#c98900] flex flex-col justify-center items-center text-center shadow-sm text-white">
