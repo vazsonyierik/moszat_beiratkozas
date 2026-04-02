@@ -51,14 +51,13 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [isClosing, setIsClosing] = useState(false);
     const contentRef = useRef(null);
 
-    // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
+    // Desktop layout logic updates: skip summary list on desktop. On mobile/tablet, always show 2-step wizard.
     const isDesktop = window.innerWidth >= 1024;
-    const isMobile = window.innerWidth < 640;
-    const needsWizard = isMobile;
+    const needsWizard = !isDesktop;
 
     // Determine what to render based on wizard step and view mode
-    const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
-    const showForm = isDesktop ? true : (!needsWizard || step === 2);
+    const showSummaryList = isDesktop ? false : step === 1;
+    const showForm = isDesktop ? true : step === 2;
 
     const handleStepChange = (newStep) => {
         setStep(newStep);
@@ -126,7 +125,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const renderFooter = () => {
         if (results) {
             return html`
-                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0 transition-all duration-300">
                     <button 
                         onClick=${() => handleClose(results)}
                         className="px-6 py-2 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-sm"
@@ -139,13 +138,13 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
         if (showSummaryList && needsWizard && step === 1) {
             return html`
-                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0 transition-all duration-300">
                     <button
                         key="btn-next"
                         onClick=${() => handleStepChange(2)}
                         className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
                     >
-                        <span>Tovább</span>
+                        <span>Tovább az adatokhoz</span>
                     </button>
                 </div>
             `;
@@ -153,7 +152,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
         if (showForm) {
             return html`
-                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center shrink-0">
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center shrink-0 transition-all duration-300">
                     ${needsWizard && step === 2 && !results ? html`
                         <button
                             key="btn-back"
@@ -184,8 +183,8 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
             if (showForm && !results) return;
             handleClose(results || undefined);
         }}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-sm sm:max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
-                <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-sm sm:max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[420px]`} onClick=${e => e.stopPropagation()}>
+                <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0 transition-all duration-300">
                     <div className="flex items-center gap-3">
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                             ${!results && html`<${Icons.DocumentIcon} size=${18} className="text-[#e09900] shrink-0" />`}
@@ -206,13 +205,20 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                                         Sikeres jelentkezés (${results.success.length} db)
                                     </h4>
-                                    <ul className="text-sm text-green-700 list-disc list-inside">
-                                        ${results.success.map(s => html`<li key=${s.course.id}>${s.course.name} (${s.course.date})</li>`)}
+                                    <ul className="text-[13px] text-green-800 space-y-1.5 mt-2">
+                                        ${results.success.map(s => html`
+                                            <li key=${s.course.id} className="flex items-start gap-2">
+                                                <span className="text-green-500 mt-0.5"><${Icons.CheckCircle} size=${14} /></span>
+                                                <span><span className="font-semibold">${s.course.name}</span> <span className="text-green-600/80">(${s.course.date.replace(/-/g, '. ')})</span></span>
+                                            </li>
+                                        `)}
                                     </ul>
-                                    <p className="mt-3 text-sm text-green-800 border-t border-green-200/50 pt-3">
-                                        A foglalásokról (tételenként) visszaigazoló e-maileket fogsz kapni hamarosan. 
-                                        <strong>Kérjük, ellenőrizd a Spam és Promóciók mappákat is!</strong>
-                                    </p>
+                                    <div className="mt-4 bg-green-100/50 p-3 rounded-lg border border-green-200/50">
+                                        <p className="text-[12px] text-green-900 leading-snug font-medium">
+                                            A foglalásokról (tételenként) visszaigazoló e-maileket fogsz kapni hamarosan.
+                                            <strong className="block mt-1">Kérjük, ellenőrizd a Spam és Promóciók mappákat is!</strong>
+                                        </p>
+                                    </div>
                                 </div>
                             ` : ''}
                             
@@ -220,10 +226,15 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <div className="mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
                                     <h4 className="font-bold text-orange-900 mb-2 flex items-center gap-2">
                                         <svg className="w-5 h-5 text-[#ea9f21]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                                        Sikertelen (${results.errors.length} db)
+                                        Sikertelen jelentkezés (${results.errors.length} db)
                                     </h4>
-                                    <ul className="text-sm text-orange-800 list-disc list-inside">
-                                        ${results.errors.map(e => html`<li key=${e.item.course.id}>${e.item.course.name} - ${e.error}</li>`)}
+                                    <ul className="text-[13px] text-orange-800 space-y-1.5 mt-2">
+                                        ${results.errors.map(e => html`
+                                            <li key=${e.item.course.id} className="flex items-start gap-2">
+                                                <span className="text-[#ea9f21] mt-0.5"><${Icons.XIcon} size=${14} /></span>
+                                                <span><span className="font-semibold">${e.item.course.name}</span> <span className="text-orange-600/80 text-xs block mt-0.5">${e.error}</span></span>
+                                            </li>
+                                        `)}
                                     </ul>
                                 </div>
                             ` : ''}
@@ -1158,8 +1169,25 @@ const StudentAppointmentsApp = () => {
                         `}
 
                         ${(desktopWeeks.length === 0) && html`
-                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex items-center justify-center">
-                                <p className="text-gray-500 text-lg">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-4">
+                                <div className="text-gray-300 mb-2">
+                                    <${Icons.SearchIcon} size=${48} />
+                                </div>
+                                <h3 className="text-xl font-bold text-gray-700">Nincs találat</h3>
+                                <p className="text-gray-500 text-base max-w-sm">A megadott szűrési feltételekkel jelenleg nincs meghirdetett időpontunk.</p>
+                                ${isAnyFilterActive && html`
+                                    <button
+                                        onClick=${() => {
+                                            setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                            setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                            setTimeFilter('all');
+                                        }}
+                                        className="mt-4 px-6 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-full transition-colors flex items-center gap-2 lg:active:scale-95"
+                                    >
+                                        <${Icons.XIcon} size=${16} />
+                                        Szűrők törlése
+                                    </button>
+                                `}
                             </div>
                         `}
                     </div>
@@ -1242,10 +1270,10 @@ const StudentAppointmentsApp = () => {
 
                                         <div className="border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
-                                            <div className="flex bg-[#efefef] p-1 rounded-lg">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                            <div className="flex bg-[#efefef] p-1 rounded-full border border-gray-200 shadow-inner">
+                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-bold rounded-full transition-all lg:active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-bold rounded-full transition-all lg:active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-bold rounded-full transition-all lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1415,10 +1443,10 @@ const StudentAppointmentsApp = () => {
 
                             <div className="border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Napszak</p>
-                                <div className="flex bg-[#efefef] p-1.5 rounded-xl border border-gray-200 shadow-inner">
-                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                <div className="flex bg-[#efefef] p-1 rounded-full border border-gray-200 shadow-inner">
+                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-bold rounded-full transition-all lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-bold rounded-full transition-all lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-bold rounded-full transition-all lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                 </div>
                             </div>
                         </main>
