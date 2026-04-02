@@ -1166,126 +1166,135 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 items-start relative z-10">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10">
 
-                <!-- Info Banners - Span 2 columns, Row 1 -->
-                <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-3 mb-4 lg:mb-0">
-                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
-                        <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                            <span className="font-serif italic font-bold text-xl leading-none">i</span>
+                <!-- Left Column (Span 2) -->
+                <div className="lg:col-span-2 flex flex-col gap-8 w-full">
+                    <!-- Info Banners -->
+                    <div className="space-y-3">
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
+                            <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                <span className="font-serif italic font-bold text-xl leading-none">i</span>
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                                <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
+                                <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Kattints ide a részletekért!</p>
+                            </div>
+                            <div className="hidden sm:block text-orange-400">
+                                <${Icons.ChevronRightIcon} size=${24} />
+                            </div>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                            <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
-                            <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Kattints ide a részletekért!</p>
-                        </div>
-                        <div className="hidden sm:block text-orange-400">
-                            <${Icons.ChevronRightIcon} size=${24} />
+
+                        <!-- Mobile only filter hint banner -->
+                        <div className="lg:hidden bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick=${openMobileFilterModal}>
+                            <div className="bg-[#888888] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                                <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Mobile only filter hint banner -->
-                    <div className="lg:hidden bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick=${openMobileFilterModal}>
-                        <div className="bg-[#888888] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                    <!-- Title & Main Content Area -->
+                    <div className="flex flex-col gap-6">
+                        <!-- Title Area -->
+                        <div className="flex items-center gap-2.5 pb-2 border-b-2 border-gray-100 shrink-0">
+                            <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
+                                <${Icons.CalendarIcon} size=${20} />
+                            </div>
+                            <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
                         </div>
-                        <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                            <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
-                        </div>
-                    </div>
-                </div>
 
-                <!-- Left Column Container: Title Area & Main Content Area -->
-                <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2 lg:row-span-2 w-full flex flex-col gap-6">
-                    <!-- Title Area -->
-                    <div className="flex items-center gap-2.5 pb-2 border-b-2 border-gray-100 shrink-0">
-                        <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
-                            <${Icons.CalendarIcon} size=${20} />
-                        </div>
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
-                    </div>
-
-                    <!-- Main Content Area (Unified) -->
-                    <div className="space-y-8 min-h-[70vh] flex-1" key=${`desktop-list-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`}>
-                        ${(desktopWeeks.length > 0) && html`
-                            <div className="space-y-8 animate-fade-in-up">
-                                ${desktopWeeks.map(week => html`
-                                    <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
-                                        <div 
-                                            className="bg-gray-200 border-b border-gray-300 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-300 transition-colors"
-                                            onClick=${() => toggleWeek(week.weekKey)}
-                                        >
-                                            <h3 className="text-base sm:text-lg font-bold text-[#333333] flex items-center gap-2">
-                                                <${Icons.CalendarIcon} size=${18} className="text-[#333333]"/>
-                                                ${week.name}
-                                            </h3>
-                                            <span className=${`text-gray-500 transition-transform duration-300 ${collapsedWeeks[week.weekKey] ? '' : 'rotate-90'}`}>
-                                                <${Icons.ChevronRightIcon} size=${24} />
-                                            </span>
-                                        </div>
-                                        <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${collapsedWeeks[week.weekKey] ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}>
-                                            <div className="overflow-hidden">
-                                                <div className="p-4 sm:p-5 space-y-5">
-                                                    ${Object.keys(week.days).sort().map(dateStr => html`
-                                                        <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
-                                                            <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
-                                                            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
-                                                                ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                        <!-- Content Rendering (Unified) -->
+                        <div className="space-y-8 min-h-[70vh] flex-1" key=${`desktop-list-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`}>
+                            ${(desktopWeeks.length > 0) && html`
+                                <div className="space-y-8 animate-fade-in-up">
+                                    ${desktopWeeks.map(week => html`
+                                        <div key=${week.weekKey} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden transition-all duration-300">
+                                            <div
+                                                className="bg-gray-200 border-b border-gray-300 px-5 py-3.5 cursor-pointer flex justify-between items-center hover:bg-gray-300 transition-colors"
+                                                onClick=${() => toggleWeek(week.weekKey)}
+                                            >
+                                                <h3 className="text-base sm:text-lg font-bold text-[#333333] flex items-center gap-2">
+                                                    <${Icons.CalendarIcon} size=${18} className="text-[#333333]"/>
+                                                    ${week.name}
+                                                </h3>
+                                                <span className=${`text-gray-500 transition-transform duration-300 ${collapsedWeeks[week.weekKey] ? '' : 'rotate-90'}`}>
+                                                    <${Icons.ChevronRightIcon} size=${24} />
+                                                </span>
+                                            </div>
+                                            <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${collapsedWeeks[week.weekKey] ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'}`}>
+                                                <div className="overflow-hidden">
+                                                    <div className="p-4 sm:p-5 space-y-5">
+                                                        ${Object.keys(week.days).sort().map(dateStr => html`
+                                                            <div key=${dateStr} className="border-l-4 border-[#ea9f21] pl-4 sm:pl-5">
+                                                                <h4 className="font-semibold text-gray-800 mb-3 text-sm sm:text-base">${getDayName(dateStr)}</h4>
+                                                                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-2 gap-4">
+                                                                    ${week.days[dateStr].map(course => renderCourseCard(course, false))}
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    `)}
+                                                        `)}
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
-                                    </div>
-                                `)}
-                            </div>
-                        `}
-
-                        ${(desktopWeeks.length === 0) && html`
-                            <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-4">
-                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-2">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                    `)}
                                 </div>
-                                <p className="text-gray-500 text-base sm:text-lg max-w-md mx-auto">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
-                                <button
-                                    onClick=${() => {
-                                        setSelectedCategories({ consultation: false, medical: false, firstaid: false });
-                                        setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
-                                        setTimeFilter('all');
-                                    }}
-                                    className="mt-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-semibold transition-colors flex items-center gap-2 text-sm"
-                                >
-                                    <${Icons.XIcon} size=${16} /> Szűrések törlése
-                                </button>
-                            </div>
-                        `}
-                    </div>
-                </div>
+                            `}
 
-                <!-- KRESZ TV Banner - Span 1 column, Row 2 (Desktop Only) -->
-                <div className="hidden lg:flex lg:col-span-1 lg:col-start-3 lg:row-start-2 w-full items-end pb-2">
-                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
-                        <div className="flex items-center gap-2 mb-2">
-                            <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
-                            <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
+                            ${(desktopWeeks.length === 0) && html`
+                                <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-4">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-2">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                    </div>
+                                    <p className="text-gray-500 text-base sm:text-lg max-w-md mx-auto">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                                    <button
+                                        onClick=${() => {
+                                            setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                            setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                            setTimeFilter('all');
+                                        }}
+                                        className="mt-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-semibold transition-colors flex items-center gap-2 text-sm"
+                                    >
+                                        <${Icons.XIcon} size=${16} /> Szűrések törlése
+                                    </button>
+                                </div>
+                            `}
                         </div>
-                        <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                            Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
-                        </p>
-                        <a
-                            href="https://www.youtube.com/watch?v=I3_ZJ46Oggs&list=PLyBTUlfT1smVc4xNCuiNHTkHzRRihBvRn&index=2"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
-                        >
-                            Kattints ide!
-                        </a>
                     </div>
                 </div>
 
-                <!-- Sticky Sidebar (Filter & Cart) - Span 1 column, Row 3 -->
-                ${html`
-                    <div className="lg:col-span-1 lg:col-start-3 lg:row-start-3 w-full sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
+                <!-- Right Column (Span 1) -->
+                <div className="lg:col-span-1 flex flex-col gap-4 w-full h-full relative">
+
+                    <!-- Spacer to align KRESZ TV Banner with 'Időpontok' title mathematically -->
+                    <div className="hidden lg:block h-[74px] shrink-0"></div>
+
+                    <!-- KRESZ TV Banner (Desktop Only) -->
+                    <div className="hidden lg:flex w-full items-end pb-2">
+                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
+                            <div className="flex items-center gap-2 mb-2">
+                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
+                                <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
+                            </div>
+                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                                Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
+                            </p>
+                            <a
+                                href="https://www.youtube.com/watch?v=I3_ZJ46Oggs&list=PLyBTUlfT1smVc4xNCuiNHTkHzRRihBvRn&index=2"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
+                            >
+                                Kattints ide!
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Sticky Sidebar Wrapper (Filter & Cart) -->
+                    ${html`
+                    <div className="sticky top-6 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
@@ -1419,7 +1428,8 @@ const StudentAppointmentsApp = () => {
                         </div>
                         </div>
                     </div>
-                `}
+                    `}
+                </div>
             </div>
 
             
