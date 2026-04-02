@@ -679,11 +679,20 @@ const InfoModal = ({ onClose }) => {
                                 </ul>
                             </div>
 
-                            <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
-                                <${Icons.MapPinIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
-                                <div>
-                                    <div className="font-bold text-gray-900 mb-1">Helyszín</div>
-                                    <p className="text-gray-700">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
+                                    <${Icons.ClockIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                    <div>
+                                        <div className="font-bold text-gray-900 mb-1">Időpont</div>
+                                        <p className="text-gray-700">Szombatonként 09:00-tól 12:15-ig.</p>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
+                                    <${Icons.MapPinIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                    <div>
+                                        <div className="font-bold text-gray-900 mb-1">Helyszín</div>
+                                        <p className="text-gray-700">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -737,7 +746,7 @@ const InfoModal = ({ onClose }) => {
 
                                     <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
                                         <div className="bg-white text-[#888888] w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0">
-                                            <${Icons.MapPinIcon} size=${24} />
+                                            <${Icons.HelpIcon} size=${24} />
                                         </div>
                                         <div>
                                             <div className="font-bold text-gray-900">Helyszín</div>
@@ -1347,9 +1356,10 @@ const StudentAppointmentsApp = () => {
                                 href="https://www.youtube.com/@KRESZTV"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block w-full text-center px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors border border-transparent shadow-sm"
+                                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors border border-transparent shadow-sm"
                             >
-                                Tovább a csatornára
+                                <span>Tovább a csatornára</span>
+                                <${Icons.ChevronRightIcon} size=${16} />
                             </a>
                         </div>
                     </div>
