@@ -1194,16 +1194,18 @@ const StudentAppointmentsApp = () => {
                     </div>
                 </div>
 
-                <!-- Main Content Area - Span 2 columns, Row 2 -->
+                <!-- Title Area - Span 2 columns, Row 2 -->
                 <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2 w-full">
-
-                    <div className="mb-5 flex items-center gap-2.5 pb-2 border-b-2 border-gray-100">
+                    <div className="flex items-center gap-2.5 pb-2 border-b-2 border-gray-100">
                         <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
                             <${Icons.CalendarIcon} size=${20} />
                         </div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
                     </div>
+                </div>
 
+                <!-- Main Content Area - Span 2 columns, Row 3 -->
+                <div className="lg:col-span-2 lg:col-start-1 lg:row-start-3 w-full">
                     <!-- Content Rendering (Unified) -->
                     <div className="space-y-8 min-h-[70vh]" key=${`desktop-list-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`}>
                         ${(desktopWeeks.length > 0) && html`
@@ -1263,9 +1265,9 @@ const StudentAppointmentsApp = () => {
 
                 </div>
 
-                <!-- Sticky Sidebar (Filter & Cart) - Span 1 column, Row 2 -->
+                <!-- Sticky Sidebar (Filter & Cart) - Span 1 column, Row 3 -->
                 ${html`
-                    <div className="lg:col-span-1 lg:col-start-3 lg:row-start-2 w-full sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
+                    <div className="lg:col-span-1 lg:col-start-3 lg:row-start-3 w-full sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
