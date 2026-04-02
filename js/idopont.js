@@ -1344,7 +1344,7 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- KRESZ TV (Csak asztali nézetben, a Fontos Tudnivalók mellett) -->
-                        <div className="hidden lg:flex bg-gray-50 border border-gray-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
+                        <div className="hidden lg:flex bg-gray-50 lg:hover:bg-gray-100 transition-colors border border-gray-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
                             <div className="flex items-center gap-2 mb-2">
                                 <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
                                 <h3 className="font-bold text-[#333333] text-sm sm:text-base">KRESZ TV</h3>
