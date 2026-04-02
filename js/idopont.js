@@ -72,6 +72,18 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
         setTimeout(() => onClose(resultsToPass), 240);
     };
 
+    const handleRemoveItem = (courseId) => {
+        if (cart.length === 1 && onRemoveItem) {
+            // Trigger exit animation if this is the last item
+            setIsClosing(true);
+            setTimeout(() => {
+                onRemoveItem(courseId);
+            }, 240);
+        } else if (onRemoveItem) {
+            onRemoveItem(courseId);
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -117,7 +129,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button 
                         onClick=${() => handleClose(results)}
-                        className="px-6 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-sm"
+                        className="px-6 py-2 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-sm"
                     >
                         Bezárás
                     </button>
@@ -129,10 +141,11 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
             return html`
                 <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
                     <button
+                        key="btn-next"
                         onClick=${() => handleStepChange(2)}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
                     >
-                        Tovább
+                        <span>Tovább</span>
                     </button>
                 </div>
             `;
@@ -140,11 +153,22 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
         if (showForm) {
             return html`
-                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-end shrink-0">
+                <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center shrink-0">
+                    ${needsWizard && step === 2 && !results ? html`
+                        <button
+                            key="btn-back"
+                            type="button"
+                            onClick=${() => handleStepChange(1)}
+                            className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold flex items-center justify-center gap-1.5 transition-colors lg:active:scale-95 text-sm"
+                        >
+                            <span>Vissza</span>
+                        </button>
+                    ` : html`<div key="btn-back-placeholder"></div>`}
                     <button
+                        key="btn-submit"
                         onClick=${handleSubmit}
                         disabled=${isSubmitting}
-                        className="px-6 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md active:scale-95 text-sm"
+                        className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold disabled:opacity-70 disabled:hover:bg-[#e09900] flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm"
                     >
                         ${isSubmitting ? html`<span className="animate-spin h-4 w-4 border-2 border-white/30 border-t-white rounded-full"></span> <span>Feldolgozás...</span>` : html`<span>Véglegesítés</span>`}
                     </button>
@@ -155,15 +179,14 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     };
 
     return html`
-        <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => handleClose(results || undefined)}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden min-h-[300px]`} onClick=${e => e.stopPropagation()}>
+        <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${() => {
+            // Prevent closing by clicking outside if the user is actively filling out the form (Step 2)
+            if (showForm && !results) return;
+            handleClose(results || undefined);
+        }}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-sm sm:max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
-                        ${!results && needsWizard && step === 2 ? html`
-                            <button onClick=${() => handleStepChange(1)} className="text-gray-500 hover:text-gray-800 transition-colors p-1 -ml-1">
-                                <${Icons.ChevronRightIcon} size=${20} className="rotate-180" />
-                            </button>
-                        ` : ''}
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                             ${!results && html`<${Icons.DocumentIcon} size=${18} className="text-[#e09900] shrink-0" />`}
                             ${results ? 'Összegzés' : 'Jelentkezés véglegesítése'}
@@ -174,7 +197,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     </button>
                 </header>
                 
-                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto max-h-[75vh] sm:max-h-[60vh] custom-scrollbar flex-1 bg-white">
+                <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 bg-white">
                     ${results ? html`
                         <div>
                             ${results.success.length > 0 ? html`
@@ -186,7 +209,10 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     <ul className="text-sm text-green-700 list-disc list-inside">
                                         ${results.success.map(s => html`<li key=${s.course.id}>${s.course.name} (${s.course.date})</li>`)}
                                     </ul>
-                                    <p className="mt-2 text-sm text-green-800">A visszaigazolásokat elküldtük e-mailben.</p>
+                                    <p className="mt-3 text-sm text-green-800 border-t border-green-200/50 pt-3">
+                                        A foglalásokról (tételenként) visszaigazoló e-maileket fogsz kapni hamarosan. 
+                                        <strong>Kérjük, ellenőrizd a Spam és Promóciók mappákat is!</strong>
+                                    </p>
                                 </div>
                             ` : ''}
                             
@@ -205,25 +231,27 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                     ` : html`
                         ${showSummaryList && html`
                             <div>
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Kiválasztott időpontok (${cart.length})</p>
-                                <ul className="space-y-2.5">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiválasztott időpontok (${cart.length})</p>
+                                <ul className="space-y-2">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="text-sm bg-gray-50 p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-center gap-3 transition-all hover:border-[#e09900]">
-                                            <div className="flex-1 min-w-0">
-                                                <span className="font-bold text-gray-800 block truncate text-base">${item.course.name} ${item.isWaitlist ? html`<span className="text-[10px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-2 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100">(Várólista)</span>` : ''}</span>
-                                                <div className="text-gray-500 mt-0.5 flex items-center gap-1.5 text-sm">
-                                                    <${Icons.CalendarIcon} size=${14} className="text-[#888888]" />
+                                        <li key=${index} className="bg-gray-50 p-2.5 sm:py-1.5 sm:px-2.5 rounded border border-gray-200 flex justify-between items-center gap-3 sm:gap-2 transition-all hover:border-[#e09900]">
+                                            <div className="flex-1 min-w-0 leading-tight">
+                                                <span className="font-bold text-gray-800 text-[14px] sm:text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">Várólista</span>` : ''}</span>
+                                                <div className="text-gray-500 mt-1 sm:mt-0.5 flex items-center gap-1.5 sm:gap-1 text-[12px] sm:text-[10px]">
+                                                    <div className="sm:hidden"><${Icons.CalendarIcon} size=${12} className="text-[#888888]" /></div>
+                                                    <div className="hidden sm:block"><${Icons.CalendarIcon} size=${10} className="text-[#888888]" /></div>
                                                     <span>${item.course.date.replace(/-/g, '. ')}. <span className="font-semibold text-[#333333] ml-1">${item.course.startTime} - ${item.course.endTime}</span></span>
                                                 </div>
                                             </div>
                                             ${onRemoveItem ? html`
                                                 <button
                                                     type="button"
-                                                    onClick=${() => onRemoveItem(item.course.id)}
-                                                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-colors shrink-0"
+                                                    onClick=${() => handleRemoveItem(item.course.id)}
+                                                    className="text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded-md p-2 sm:p-1 transition-colors shrink-0"
                                                     title="Eltávolítás"
                                                 >
-                                                    <${Icons.XIcon} size=${18} />
+                                                    <div className="sm:hidden"><${Icons.XIcon} size=${16} /></div>
+                                                    <div className="hidden sm:block"><${Icons.XIcon} size=${14} /></div>
                                                 </button>
                                             ` : ''}
                                         </li>
@@ -234,28 +262,28 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
 
                         ${showForm && html`
                             <div>
-                                ${error ? html`<div className="mb-4 p-3 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-sm font-medium flex items-start gap-2"><${Icons.AlertTriangleIcon} size=${18} className="mt-0.5 shrink-0 text-[#ea9f21]" />${error}</div>` : ''}
+                                ${error ? html`<div className="mb-3 p-2 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-xs font-medium flex items-center gap-1.5"><${Icons.AlertTriangleIcon} size=${14} className="shrink-0 text-[#ea9f21]" /><span>${error}</span></div>` : ''}
 
-                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-3">
+                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-2.5">
+                                    <div className="grid grid-cols-2 gap-2.5">
                                         <div>
-                                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Vezetéknév</label>
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">Vezetéknév</label>
                                             <input
                                                 type="text"
                                                 value=${lastName}
                                                 onChange=${e => setLastName(e.target.value)}
-                                                className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                                 required
                                                 placeholder="Kovács"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">Keresztnév</label>
+                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">Keresztnév</label>
                                             <input
                                                 type="text"
                                                 value=${firstName}
                                                 onChange=${e => setFirstName(e.target.value)}
-                                                className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                                 required
                                                 placeholder="János"
                                             />
@@ -263,24 +291,24 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím</label>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">E-mail cím</label>
                                         <input 
                                             type="email"
                                             value=${email}
                                             onChange=${e => setEmail(e.target.value)}
-                                            className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1 ml-1">E-mail cím megerősítése</label>
+                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">E-mail cím megerősítése</label>
                                         <input 
                                             type="email"
                                             value=${emailConfirm}
                                             onChange=${e => setEmailConfirm(e.target.value)}
-                                            className="w-full p-2 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
@@ -357,7 +385,7 @@ const InfoModal = ({ onClose }) => {
 
     return html`
         <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] overflow-y-auto font-[Poppins] ${isClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${handleClose}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-2xl my-8 flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                 
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
@@ -607,26 +635,19 @@ const StudentAppointmentsApp = () => {
         if (window.innerWidth >= 1024) return;
 
         if (isCheckoutOpen || isInfoModalOpen || isMobileFilterModalOpen) {
-            // Apply iOS safe scroll locking
+            // Apply scroll locking without changing position fixed, as that causes iOS Safari bottom bar to jump up
             document.body.style.overflow = 'hidden';
-            document.body.style.position = 'fixed';
-            document.body.style.top = `-${window.scrollY}px`;
-            document.body.style.width = '100%';
+            document.body.style.overscrollBehavior = 'none'; // Prevents pull-to-refresh
+            document.documentElement.style.overscrollBehavior = 'none';
         } else {
-            const scrollY = document.body.style.top;
             document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
-            if (scrollY) {
-                window.scrollTo(0, parseInt(scrollY || '0') * -1);
-            }
+            document.body.style.overscrollBehavior = '';
+            document.documentElement.style.overscrollBehavior = '';
         }
         return () => {
             document.body.style.overflow = '';
-            document.body.style.position = '';
-            document.body.style.top = '';
-            document.body.style.width = '';
+            document.body.style.overscrollBehavior = '';
+            document.documentElement.style.overscrollBehavior = '';
         };
     }, [isCheckoutOpen, isInfoModalOpen, isMobileFilterModalOpen]);
 
@@ -962,7 +983,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => removeFromCart(course.id)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] active:scale-95 transition-transform"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] lg:active:scale-95 transition-transform"
                 >
                     Mégse kérem
                 </button>
@@ -971,14 +992,14 @@ const StudentAppointmentsApp = () => {
             if (isFirstAid) {
                 buttonArea = html`
                     <span className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-200 rounded-md text-xs font-medium text-[#888888] bg-[#efefef] cursor-not-allowed">
-                        Betelt (Nincs várólista)
+                        Betelt
                     </span>
                 `;
             } else {
                 buttonArea = html`
                     <button 
                         onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
-                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition-colors active:scale-95"
+                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition-colors lg:active:scale-95"
                     >
                         <${Icons.ClockIcon} size=${14} className="text-[#e09900]" />
                         Várólistára jelentkezés
@@ -989,7 +1010,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] transition-colors active:scale-95"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] transition-colors lg:active:scale-95"
                 >
                     ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
                 </button>
@@ -1000,18 +1021,18 @@ const StudentAppointmentsApp = () => {
         const isCompletelyFull = isFull && isFirstAid;
 
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isFull ? 'border-gray-200 bg-gray-50/30' : isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
+            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : isFull ? 'border-gray-200 bg-gray-50/30' : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
                 <div className="flex flex-col h-full justify-between gap-3">
                     <div>
                         <div className="flex justify-between items-start mb-1.5 gap-2">
-                            <h4 className="font-extrabold text-[#333333] text-base leading-tight pr-2">${course.name}</h4>
-                            ${isFull ? html`
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
-                            ` : isInCart ? (isWaitlistInCart ? html`
+                            <h4 className=${`font-extrabold text-[#333333] leading-tight pr-2 ${course.name.length > 25 ? 'text-[14px]' : 'text-base'}`}>${course.name}</h4>
+                            ${isInCart ? (isWaitlistInCart ? html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-[#c98900] shrink-0">Várólistán</span>
                             ` : html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-[#c98900] shrink-0">Kiválasztva</span>
-                            `) : html`
+                            `) : isFull ? html`
+                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
+                            ` : html`
                                 <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#333333] shrink-0">${availableSeats} hely</span>
                             `}
                         </div>
@@ -1147,7 +1168,7 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Sticky Sidebar (Filter & Cart) -->
                 ${html`
-                    <div key=${`desktop-sidebar-${timeFilter}-${Object.values(selectedCategories).join('')}-${Object.values(selectedModules).join('')}`} className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2 animate-fade-in">
+                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
@@ -1169,10 +1190,10 @@ const StudentAppointmentsApp = () => {
                                                     setTimeFilter('all');
                                                 }}
                                                 disabled=${!isAnyFilterActive}
-                                                className=${`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full transition-colors ${isAnyFilterActive ? 'text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
+                                                className=${`flex items-center gap-1.5 text-[11px] font-bold px-2 py-1 rounded-full transition-colors ${isAnyFilterActive ? 'text-[#e09900] hover:text-[#c98900] bg-orange-50 hover:bg-orange-100' : 'text-[#888888] bg-[#efefef] cursor-not-allowed'}`}
                                                 title="Összes szűrés törlése"
                                             >
-                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-red-100 text-red-600' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${12} /></span>
+                                                <span className=${`rounded-full p-0.5 ${isAnyFilterActive ? 'bg-orange-100 text-[#e09900]' : 'bg-transparent text-[#888888]'}`}><${Icons.XIcon} size=${12} /></span>
                                                 Törlés
                                             </button>
                                         `;
@@ -1186,45 +1207,45 @@ const StudentAppointmentsApp = () => {
                             <div className=${`grid transition-[grid-template-rows] duration-300 ease-in-out ${isFilterExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                 <div className="overflow-hidden">
                                     <div className="p-4 bg-white">
-                                        <div className="mb-3 animate-fade-in">
+                                        <div className="mb-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Elméleti tanfolyam</p>
                                             <div className="flex flex-wrap gap-1.5">
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     1. modul
                                                 </button>
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     2. modul
                                                 </button>
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     3. modul
                                                 </button>
-                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => setSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     4. modul
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="mb-3 border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '50ms' }}>
+                                        <div className="mb-3 border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Kiegészítő szolgáltatások</p>
                                             <div className="flex flex-wrap gap-1.5">
-                                                <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleCategory('consultation')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     Konzultáció
                                                 </button>
-                                                <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleCategory('medical')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     Orvosi
                                                 </button>
-                                                <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+                                                <button onClick=${() => toggleCategory('firstaid')} className=${`px-2.5 py-1 rounded-full text-xs font-medium border transition-all lg:active:scale-95 flex items-center gap-1.5 ${selectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
                                                     Elsősegély
                                                 </button>
                                             </div>
                                         </div>
 
-                                        <div className="border-t border-gray-100 pt-3 animate-fade-in" style=${{ animationDelay: '100ms' }}>
+                                        <div className="border-t border-gray-100 pt-3">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
                                             <div className="flex bg-[#efefef] p-1 rounded-lg">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1233,11 +1254,14 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- Cart Panel -->
-                        <div className="hidden lg:flex bg-white shadow-lg sm:rounded-xl p-4 border border-gray-100 flex-col flex-1 min-h-0">
-                        <h3 className="text-base font-bold text-gray-900 mb-3 border-b pb-2 shrink-0 flex items-center gap-2">
-                            <svg className="w-4 h-4 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
-                            Kiválasztott időpontok
-                        </h3>
+                        <div className="hidden lg:flex bg-white shadow-lg sm:rounded-xl border border-gray-200 flex-col flex-1 min-h-0 overflow-hidden">
+                        <div className="bg-gray-200 px-4 py-3 flex justify-between items-center shrink-0 border-b border-gray-300">
+                            <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
+                                <svg className="w-4 h-4 text-[#333333]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"></path></svg>
+                                Kiválasztott időpontok
+                            </h3>
+                        </div>
+                        <div className="p-4 flex flex-col flex-1 min-h-0 bg-white">
                         ${cart.length === 0 ? html`
                             <div className="text-gray-500 text-xs italic py-6 text-center bg-gray-50 rounded-lg border border-dashed border-gray-200">
                                 Még nem választottál ki időpontot.<br/>Kattints a "Kiválasztom" gombra a hozzáadáshoz.
@@ -1249,7 +1273,7 @@ const StudentAppointmentsApp = () => {
                                         <div className="flex-1">
                                             <div className="font-semibold text-[#e09900] text-xs">
                                                 ${item.course.name}
-                                                ${item.isWaitlist ? html`<span className="ml-1.5 text-[10px] text-[#c98900] bg-orange-50 px-1 py-0.5 rounded border border-orange-200">(Várólista)</span>` : ''}
+                                                ${item.isWaitlist ? html`<span className="ml-1.5 text-[10px] text-[#c98900] bg-orange-50 px-1 py-0.5 rounded border border-orange-200">Várólista</span>` : ''}
                                             </div>
                                             <div className="text-[11px] text-[#888888] mt-1 flex items-center gap-1">
                                                 <${Icons.CalendarIcon} size=${10} className="text-[#888888]" />
@@ -1258,7 +1282,7 @@ const StudentAppointmentsApp = () => {
                                         </div>
                                         <button 
                                             onClick=${() => removeFromCart(item.course.id)}
-                                            className="ml-2 text-red-500 hover:text-red-700 bg-white hover:bg-red-50 rounded shadow-sm border border-red-100 p-1 transition-colors"
+                                            className="ml-2 text-gray-400 hover:text-gray-600 bg-white hover:bg-gray-200 rounded shadow-sm border border-gray-200 p-1 transition-colors"
                                             title="Eltávolítás"
                                         >
                                             <${Icons.XIcon} size=${12} />
@@ -1269,12 +1293,13 @@ const StudentAppointmentsApp = () => {
                             <div className="mt-4 pt-3 border-t border-gray-200 shrink-0">
                                 <button
                                     onClick=${() => setIsCheckoutOpen(true)}
-                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
+                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] lg:hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
                                     Véglegesítés (${cart.length})
                                 </button>
                             </div>
                         `}
+                        </div>
                         </div>
                     </div>
                 `}
@@ -1287,12 +1312,12 @@ const StudentAppointmentsApp = () => {
                 <!-- Filter Button -->
                 <button 
                     onClick=${openMobileFilterModal}
-                    className="relative pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
+                    className="relative pointer-events-auto bg-white text-gray-800 w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
                     title="Szűrés és kategóriák"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     ${isAnyFilterActive ? html`
-                        <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-red-500 border-2 border-white rounded-full"></span>
+                        <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-[#e09900] border-2 border-white rounded-full shadow-sm"></span>
                     ` : ''}
                 </button>
 
@@ -1300,7 +1325,7 @@ const StudentAppointmentsApp = () => {
                 <div className=${`transition-all duration-300 flex-1 flex justify-center ${cart.length > 0 ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none max-w-0 overflow-hidden'}`}>
                     <button 
                         onClick=${() => setIsCheckoutOpen(true)}
-                        className="bg-[#e09900] hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-2 sm:gap-3 active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
+                        className="bg-[#e09900] lg:hover:bg-[#c98900] text-white pl-2 pr-4 sm:pr-6 py-3 rounded-full font-bold shadow-[0_10px_40px_rgba(224,153,0,0.3)] flex items-center gap-2 sm:gap-3 lg:active:scale-95 transition-all border border-[#c98900] backdrop-blur-md whitespace-nowrap"
                     >
                         <div className=${`bg-white text-[#e09900] w-10 h-10 flex items-center justify-center rounded-full font-black text-lg shadow-inner transition-transform duration-300 shrink-0 ${cartBump ? 'scale-125 bg-gray-100' : 'scale-100'}`}>
                             ${cart.length}
@@ -1314,7 +1339,7 @@ const StudentAppointmentsApp = () => {
                 <!-- Info Button -->
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-white hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-gray-200 shrink-0"
+                    className="pointer-events-auto bg-white lg:lg:hover:bg-orange-50 text-[#e09900] w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-gray-200 shrink-0"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1328,7 +1353,7 @@ const StudentAppointmentsApp = () => {
             <div className="hidden lg:flex fixed z-40 right-6 bottom-6 pointer-events-none flex-col items-end gap-3 transition-all duration-300">
                 <button 
                     onClick=${() => setIsInfoModalOpen(true)}
-                    className="pointer-events-auto bg-[#ea9f21] hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform hover:scale-105 active:scale-95 border border-[#ea9f21]"
+                    className="pointer-events-auto bg-[#ea9f21] lg:hover:bg-[#c98900] text-white w-14 h-14 rounded-full shadow-[0_4px_20px_rgba(0,0,0,0.15)] flex items-center justify-center transition-transform lg:hover:scale-105 lg:active:scale-95 border border-[#ea9f21]"
                     title="Fontos tudnivalók jelentkezés előtt"
                 >
                     <span className="font-serif italic font-bold text-3xl leading-none">i</span>
@@ -1352,7 +1377,7 @@ const StudentAppointmentsApp = () => {
             <!-- Mobile Filter Modal -->
             ${isMobileFilterModalOpen && html`
                 <div className=${`fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60] font-[Poppins] ${isMobileFilterClosing ? 'animate-fade-out' : 'animate-fade-in'}`} onClick=${closeMobileFilterModal}>
-                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out-down' : 'animate-fade-in-up'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
+                    <div className=${`bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm sm:max-w-md max-h-[90vh] flex flex-col overscroll-none ${isMobileFilterClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden`} onClick=${e => e.stopPropagation()}>
                         <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                             <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-[#e09900]"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
@@ -1366,23 +1391,23 @@ const StudentAppointmentsApp = () => {
                             <div className="mb-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Elméleti tanfolyam</p>
                                 <div className="flex flex-wrap gap-1.5">
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
                                 </div>
                             </div>
 
                             <div className="mb-4 border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Kiegészítő szolgáltatások</p>
                                 <div className="flex flex-wrap gap-1.5">
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Konzultáció
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Orvosi
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Elsősegély
                                     </button>
                                 </div>
@@ -1391,22 +1416,22 @@ const StudentAppointmentsApp = () => {
                             <div className="border-t border-gray-100 pt-4">
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Napszak</p>
                                 <div className="flex bg-[#efefef] p-1.5 rounded-xl border border-gray-200 shadow-inner">
-                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
+                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
                                 </div>
                             </div>
                         </main>
                         <div className="p-4 border-t border-gray-100 bg-white rounded-b-[1.5rem] flex justify-between items-center gap-3 shrink-0">
                             <button
                                 onClick=${clearMobileFilters}
-                                className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-all active:scale-95"
+                                className="px-4 py-2.5 text-xs font-bold text-gray-500 hover:text-gray-800 bg-[#efefef] hover:bg-gray-200 rounded-xl transition-all lg:active:scale-95"
                             >
                                 Törlés
                             </button>
                             <button 
                                 onClick=${applyMobileFilters}
-                                className="flex-1 px-4 py-2.5 bg-[#e09900] hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md active:scale-95 text-center text-sm"
+                                className="flex-1 px-4 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 text-center text-sm"
                             >
                                 Szűrés
                             </button>
