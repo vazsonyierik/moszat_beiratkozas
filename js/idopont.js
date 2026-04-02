@@ -1170,7 +1170,7 @@ const StudentAppointmentsApp = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10 mb-6 lg:mb-8">
                 
                 <!-- Bal oldal (Span 2) -->
-                <div className="lg:col-span-2 flex flex-col gap-8 w-full justify-end">
+                <div className="lg:col-span-2 flex flex-col justify-end">
                     <!-- Info Banners -->
                     <div className="space-y-3">
                         <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
@@ -1196,20 +1196,12 @@ const StudentAppointmentsApp = () => {
                             </div>
                         </div>
                     </div>
-
-                    <!-- Title Area -->
-                    <div className="flex items-center gap-2.5 pb-2 border-b-2 border-gray-100 shrink-0">
-                        <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
-                            <${Icons.CalendarIcon} size=${20} />
-                        </div>
-                        <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
-                    </div>
                 </div>
 
                 <!-- Jobb oldal (Span 1) - KRESZ TV -->
-                <div className="lg:col-span-1 w-full h-full relative flex flex-col justify-end hidden lg:flex">
+                <div className="lg:col-span-1 hidden lg:flex flex-col justify-end">
                     <!-- KRESZ TV Banner (Desktop Only) - Not Sticky -->
-                    <div className="w-full items-end">
+                    <div className="w-full">
                         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
                             <div className="flex items-center gap-2 mb-2">
                                 <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
@@ -1229,6 +1221,14 @@ const StudentAppointmentsApp = () => {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            <!-- Title Area (Moved out of grid) -->
+            <div className="flex items-center gap-2.5 mb-6 lg:mb-8 pb-2 border-b-2 border-gray-100 shrink-0">
+                <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
+                    <${Icons.CalendarIcon} size=${20} />
+                </div>
+                <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
             </div>
 
             <!-- Alsó Szekció (Listák és Szűrő) -->
