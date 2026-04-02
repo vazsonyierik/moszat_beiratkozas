@@ -1369,10 +1369,10 @@ const StudentAppointmentsApp = () => {
 
                                         <div className="border-t border-gray-100 pt-4">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
-                                            <div className="flex gap-1.5">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'all' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'am' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délután</button>
+                                            <div className="flex bg-gray-100 p-1 rounded-xl">
+                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-xs transition-all lg:active:scale-95 rounded-lg ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Mind</button>
+                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-xs transition-all lg:active:scale-95 rounded-lg ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délelőtt</button>
+                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs transition-all lg:active:scale-95 rounded-lg ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1519,23 +1519,23 @@ const StudentAppointmentsApp = () => {
                             <div className="mb-6">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
                                 <div className="flex flex-wrap gap-2.5">
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
                                 </div>
                             </div>
 
                             <div className="mb-6 border-t border-gray-100 pt-5">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
                                 <div className="flex flex-wrap gap-2.5">
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Konzultáció
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Orvosi
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Elsősegély
                                     </button>
                                 </div>
@@ -1543,10 +1543,10 @@ const StudentAppointmentsApp = () => {
 
                             <div className="border-t border-gray-100 pt-5">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
-                                <div className="flex gap-2">
-                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Mind</button>
-                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délelőtt</button>
-                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délután</button>
+                                <div className="flex bg-gray-100 p-1.5 rounded-2xl">
+                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-2 text-sm transition-all lg:active:scale-95 rounded-xl ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Mind</button>
+                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-2 text-sm transition-all lg:active:scale-95 rounded-xl ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-2 text-sm transition-all lg:active:scale-95 rounded-xl ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délután</button>
                                 </div>
                             </div>
                         </main>
