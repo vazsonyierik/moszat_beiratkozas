@@ -1166,37 +1166,36 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-            <div className="flex flex-col lg:flex-row gap-8 items-start relative z-10">
-                                
-                
-                <!-- Main Content Area -->
-                <div className="flex-1 w-full lg:w-2/3 order-2 lg:order-1">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 items-start relative z-10">
 
-                    <!-- Info Banners inside main column -->
-                    <div className="space-y-3 mb-8">
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
-                            <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                                <span className="font-serif italic font-bold text-xl leading-none">i</span>
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                                <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
-                                <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Kattints ide a részletekért!</p>
-                            </div>
-                            <div className="hidden sm:block text-orange-400">
-                                <${Icons.ChevronRightIcon} size=${24} />
-                            </div>
+                <!-- Info Banners - Span 2 columns, Row 1 -->
+                <div className="lg:col-span-2 lg:col-start-1 lg:row-start-1 space-y-3 mb-4 lg:mb-0">
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
+                        <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                            <span className="font-serif italic font-bold text-xl leading-none">i</span>
                         </div>
-
-                        <!-- Mobile only filter hint banner -->
-                        <div className="lg:hidden bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick=${openMobileFilterModal}>
-                            <div className="bg-[#888888] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                                <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
-                            </div>
+                        <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                            <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
+                            <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Kattints ide a részletekért!</p>
+                        </div>
+                        <div className="hidden sm:block text-orange-400">
+                            <${Icons.ChevronRightIcon} size=${24} />
                         </div>
                     </div>
+
+                    <!-- Mobile only filter hint banner -->
+                    <div className="lg:hidden bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick=${openMobileFilterModal}>
+                        <div className="bg-[#888888] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                            <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Content Area - Span 2 columns, Row 2 -->
+                <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2 w-full">
 
                     <div className="mb-5 flex items-center gap-2.5 pb-2 border-b-2 border-gray-100">
                         <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
@@ -1264,9 +1263,9 @@ const StudentAppointmentsApp = () => {
 
                 </div>
 
-                <!-- Sticky Sidebar (Filter & Cart) -->
+                <!-- Sticky Sidebar (Filter & Cart) - Span 1 column, Row 2 -->
                 ${html`
-                    <div className="w-full lg:w-1/3 sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)] order-1 lg:order-2">
+                    <div className="lg:col-span-1 lg:col-start-3 lg:row-start-2 w-full sticky top-6 mb-6 lg:mb-20 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
