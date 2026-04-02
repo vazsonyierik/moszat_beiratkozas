@@ -1272,9 +1272,6 @@ const StudentAppointmentsApp = () => {
                     ${html`
                     <div className="sticky top-6 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
                         
-                        <!-- Spacer to align KRESZ TV Banner with 'Időpontok' title mathematically -->
-                        <div className="hidden lg:block h-[74px] shrink-0"></div>
-
                         <!-- KRESZ TV Banner (Desktop Only) -->
                         <div className="hidden lg:flex w-full items-end pb-2">
                             <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
@@ -1297,7 +1294,7 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- Filter Panel -->
-                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
+                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0" style=${{marginTop: '-8px'}}>
                             <div className=${`bg-gray-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-300 transition-colors ${isFilterExpanded ? 'border-b border-gray-300' : ''}`} onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
                                 <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                     <${Icons.SearchIcon} size=${18} className="text-[#333333]" />
