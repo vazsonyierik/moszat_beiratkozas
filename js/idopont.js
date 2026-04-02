@@ -46,6 +46,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const [emailConfirm, setEmailConfirm] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
     const [results, setResults] = useState(null);
     const [step, setStep] = useState(1); // For 2-step wizard on mobile
     const [isClosing, setIsClosing] = useState(false);
@@ -87,14 +88,15 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setHasAttemptedSubmit(true);
 
         if (!firstName || !lastName || !email || !emailConfirm) {
-            setError('Kérjük, tölts ki minden mezőt!');
+            // Nem adunk globális hibát, az inline validáció kezeli
             return;
         }
 
         if (email !== emailConfirm) {
-            setError('A két e-mail cím nem egyezik!');
+            // E-mail egyezés hibáját továbbra is inline jelezzük majd
             return;
         }
 
@@ -264,54 +266,93 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             <div>
                                 ${error ? html`<div className="mb-3 p-2 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-xs font-medium flex items-center gap-1.5"><${Icons.AlertTriangleIcon} size=${14} className="shrink-0 text-[#ea9f21]" /><span>${error}</span></div>` : ''}
 
-                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-4">
+                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-4" noValidate>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Vezetéknév</label>
-                                            <input
-                                                type="text"
-                                                value=${lastName}
-                                                onChange=${e => setLastName(e.target.value)}
-                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
-                                                required
-                                                placeholder="Kovács"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value=${lastName}
+                                                    onChange=${e => setLastName(e.target.value)}
+                                                    className=${`w-full px-3 py-2.5 bg-gray-50 border text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base ${hasAttemptedSubmit && !lastName ? 'border-[#ea9f21] pr-10' : 'border-gray-200'}`}
+                                                    placeholder="Kovács"
+                                                />
+                                                ${hasAttemptedSubmit && !lastName && html`
+                                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <div className="w-5 h-5 bg-[#ea9f21] rounded-full flex items-center justify-center text-white font-bold text-xs">!</div>
+                                                    </div>
+                                                `}
+                                            </div>
+                                            ${hasAttemptedSubmit && !lastName && html`
+                                                <p className="mt-1 ml-1 text-xs text-[#ea9f21] font-semibold">A mező kitöltése kötelező!</p>
+                                            `}
                                         </div>
                                         <div>
                                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Keresztnév</label>
-                                            <input
-                                                type="text"
-                                                value=${firstName}
-                                                onChange=${e => setFirstName(e.target.value)}
-                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
-                                                required
-                                                placeholder="János"
-                                            />
+                                            <div className="relative">
+                                                <input
+                                                    type="text"
+                                                    value=${firstName}
+                                                    onChange=${e => setFirstName(e.target.value)}
+                                                    className=${`w-full px-3 py-2.5 bg-gray-50 border text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base ${hasAttemptedSubmit && !firstName ? 'border-[#ea9f21] pr-10' : 'border-gray-200'}`}
+                                                    placeholder="János"
+                                                />
+                                                ${hasAttemptedSubmit && !firstName && html`
+                                                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                        <div className="w-5 h-5 bg-[#ea9f21] rounded-full flex items-center justify-center text-white font-bold text-xs">!</div>
+                                                    </div>
+                                                `}
+                                            </div>
+                                            ${hasAttemptedSubmit && !firstName && html`
+                                                <p className="mt-1 ml-1 text-xs text-[#ea9f21] font-semibold">A mező kitöltése kötelező!</p>
+                                            `}
                                         </div>
                                     </div>
 
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím</label>
-                                        <input 
-                                            type="email"
-                                            value=${email}
-                                            onChange=${e => setEmail(e.target.value)}
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
-                                            required
-                                            placeholder="pelda@email.hu"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                value=${email}
+                                                onChange=${e => setEmail(e.target.value)}
+                                                className=${`w-full px-3 py-2.5 bg-gray-50 border text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base ${hasAttemptedSubmit && !email ? 'border-[#ea9f21] pr-10' : 'border-gray-200'}`}
+                                                placeholder="pelda@email.hu"
+                                            />
+                                            ${hasAttemptedSubmit && !email && html`
+                                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                    <div className="w-5 h-5 bg-[#ea9f21] rounded-full flex items-center justify-center text-white font-bold text-xs">!</div>
+                                                </div>
+                                            `}
+                                        </div>
+                                        ${hasAttemptedSubmit && !email && html`
+                                            <p className="mt-1 ml-1 text-xs text-[#ea9f21] font-semibold">A mező kitöltése kötelező!</p>
+                                        `}
                                     </div>
 
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím megerősítése</label>
-                                        <input 
-                                            type="email"
-                                            value=${emailConfirm}
-                                            onChange=${e => setEmailConfirm(e.target.value)}
-                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
-                                            required
-                                            placeholder="pelda@email.hu"
-                                        />
+                                        <div className="relative">
+                                            <input
+                                                type="email"
+                                                value=${emailConfirm}
+                                                onChange=${e => setEmailConfirm(e.target.value)}
+                                                className=${`w-full px-3 py-2.5 bg-gray-50 border text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base ${(hasAttemptedSubmit && !emailConfirm) || (hasAttemptedSubmit && email && emailConfirm && email !== emailConfirm) ? 'border-[#ea9f21] pr-10' : 'border-gray-200'}`}
+                                                placeholder="pelda@email.hu"
+                                            />
+                                            ${((hasAttemptedSubmit && !emailConfirm) || (hasAttemptedSubmit && email && emailConfirm && email !== emailConfirm)) && html`
+                                                <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                                                    <div className="w-5 h-5 bg-[#ea9f21] rounded-full flex items-center justify-center text-white font-bold text-xs">!</div>
+                                                </div>
+                                            `}
+                                        </div>
+                                        ${hasAttemptedSubmit && !emailConfirm && html`
+                                            <p className="mt-1 ml-1 text-xs text-[#ea9f21] font-semibold">A mező kitöltése kötelező!</p>
+                                        `}
+                                        ${hasAttemptedSubmit && email && emailConfirm && email !== emailConfirm && html`
+                                            <p className="mt-1 ml-1 text-xs text-[#ea9f21] font-semibold">A két e-mail cím nem egyezik!</p>
+                                        `}
                                     </div>
                                     <button type="submit" className="hidden" />
                                 </form>
@@ -983,7 +1024,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => removeFromCart(course.id)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] lg:active:scale-95 transition-transform"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] lg:active:scale-95 transition-transform"
                 >
                     Mégse kérem
                 </button>
@@ -991,7 +1032,7 @@ const StudentAppointmentsApp = () => {
         } else if (isFull) {
             if (isFirstAid) {
                 buttonArea = html`
-                    <span className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-gray-200 rounded-md text-xs font-medium text-[#888888] bg-[#efefef] cursor-not-allowed">
+                    <span className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 sm:py-2 border border-gray-200 rounded-md text-xs font-medium text-[#888888] bg-[#efefef] cursor-not-allowed">
                         Betelt
                     </span>
                 `;
@@ -999,7 +1040,7 @@ const StudentAppointmentsApp = () => {
                 buttonArea = html`
                     <button 
                         onClick=${() => isQuickBook ? openQuickBook(course, true) : addToCart(course, true)}
-                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-3 py-1.5 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition-colors lg:active:scale-95"
+                        className="w-full sm:w-auto inline-flex justify-center items-center gap-1.5 px-4 py-2.5 sm:py-2 border border-gray-300 rounded-md shadow-sm text-xs font-medium text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-400 transition-colors lg:active:scale-95"
                     >
                         <${Icons.ClockIcon} size=${14} className="text-[#e09900]" />
                         Várólistára jelentkezés
@@ -1010,7 +1051,7 @@ const StudentAppointmentsApp = () => {
             buttonArea = html`
                 <button 
                     onClick=${() => isQuickBook ? openQuickBook(course, false) : addToCart(course, false)}
-                    className="w-full sm:w-auto inline-flex justify-center items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] transition-colors lg:active:scale-95"
+                    className="w-full sm:w-auto inline-flex justify-center items-center px-4 py-2.5 sm:py-2 border border-transparent rounded-md shadow-sm text-xs font-bold text-[#e09900] bg-orange-50 hover:bg-orange-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[#e09900] transition-colors lg:active:scale-95"
                 >
                     ${isQuickBook ? 'Azonnali Jelentkezés' : 'Kiválasztom'}
                 </button>
@@ -1158,8 +1199,21 @@ const StudentAppointmentsApp = () => {
                         `}
 
                         ${(desktopWeeks.length === 0) && html`
-                            <div className="bg-white rounded-xl shadow p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex items-center justify-center">
-                                <p className="text-gray-500 text-lg">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                            <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-4">
+                                <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                </div>
+                                <p className="text-gray-500 text-base sm:text-lg max-w-md mx-auto">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                                <button
+                                    onClick=${() => {
+                                        setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                                        setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                                        setTimeFilter('all');
+                                    }}
+                                    className="mt-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-semibold transition-colors flex items-center gap-2 text-sm"
+                                >
+                                    <${Icons.XIcon} size=${16} /> Szűrések törlése
+                                </button>
                             </div>
                         `}
                     </div>
