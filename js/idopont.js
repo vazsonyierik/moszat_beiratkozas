@@ -1265,36 +1265,15 @@ const StudentAppointmentsApp = () => {
                     </div>
                 </div>
 
-                <!-- Right Column (Span 1) -->
-                <div className="lg:col-span-1 w-full h-full relative">
-                    
-                    ${html`
-                    <!-- KRESZ TV Banner (Desktop Only) - Not Sticky -->
-                    <div className="hidden lg:flex w-full items-end pb-2" style=${{marginBottom: '26px'}}>
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
-                                <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                                Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
-                            </p>
-                            <a
-                                href="https://www.youtube.com/@KRESZTV"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
-                            >
-                                Kattints ide!
-                            </a>
-                        </div>
-                    </div>
+                    <!-- Right Column (Span 1): Filters & Cart -->
+                    <div className="lg:col-span-1 w-full h-full relative">
 
-                    <!-- Sticky Sidebar Wrapper (Filter & Cart) -->
-                    <div className="sticky top-6 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
+                        <!-- Sticky Sidebar Wrapper (Filter & Cart) -->
+                        ${html`
+                        <div className="sticky top-6 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]" style=${{marginTop: '48px'}}>
 
-                        <!-- Filter Panel -->
-                        <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
+                            <!-- Filter Panel -->
+                            <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
                             <div className=${`bg-gray-200 px-4 py-3 flex justify-between items-center cursor-pointer hover:bg-gray-300 transition-colors ${isFilterExpanded ? 'border-b border-gray-300' : ''}`} onClick=${() => setIsFilterExpanded(!isFilterExpanded)}>
                                 <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
                                     <${Icons.SearchIcon} size=${18} className="text-[#333333]" />
