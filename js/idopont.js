@@ -1327,7 +1327,7 @@ const StudentAppointmentsApp = () => {
                             <p className="hidden sm:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
                                 Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
                             </p>
-                            <div className="inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm">
+                            <div className="hidden sm:inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm">
                                 <span>Részletek megtekintése</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
                             </div>
