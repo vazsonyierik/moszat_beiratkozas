@@ -750,6 +750,7 @@ const StudentAppointmentsApp = () => {
     const [isMobileFilterClosing, setIsMobileFilterClosing] = useState(false);
 
     const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
+    const [isScrolled, setIsScrolled] = useState(false);
 
     const isAnyFilterActive = useMemo(() => {
         return selectedCategories.consultation || selectedCategories.medical || selectedCategories.firstaid ||
@@ -759,8 +760,20 @@ const StudentAppointmentsApp = () => {
 
     useEffect(() => {
         const handleResize = () => setIsDesktop(window.innerWidth >= 1024);
+        const handleScroll = () => {
+            setIsScrolled(window.scrollY > 10);
+        };
+
         window.addEventListener('resize', handleResize);
-        return () => window.removeEventListener('resize', handleResize);
+        window.addEventListener('scroll', handleScroll);
+
+        // Initial check
+        handleScroll();
+
+        return () => {
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('scroll', handleScroll);
+        };
     }, []);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -1146,45 +1159,61 @@ const StudentAppointmentsApp = () => {
     };
 
     return html`
-        <div className="min-h-screen max-w-7xl mx-auto py-6 sm:py-8 px-4 sm:px-6 lg:px-8 font-[Poppins] [scrollbar-gutter:stable]">
-            ${isTestView && html`
-                <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
-                    <${Icons.AlertTriangleIcon} size=${20} />
-                    TESZT ÜZEMMÓD - Az adatok nem kerülnek mentésre az éles rendszerbe!
-                </div>
-            `}
+        <div className="min-h-screen font-[Poppins] [scrollbar-gutter:stable] bg-[#f9fafb]">
 
-            <header className="mb-8 text-center flex flex-col items-center">
+            <!-- Sticky Header with Logo -->
+            <div className=${`fixed top-0 left-0 right-0 z-50 transition-all duration-300 flex justify-center py-3 ${isScrolled ? 'bg-white/80 backdrop-blur-md shadow-sm border-b border-gray-200' : 'bg-transparent pt-6'}`}>
                 <img
                     src="https://mosolyzona.hu/wp-content/uploads/2019/10/cropped-mosoly-1.jpg"
                     alt="Mosolyzóna Logó"
-                    className="w-16 h-16 rounded-full mb-3 shadow-sm object-cover"
+                    className=${`rounded-full shadow-sm object-cover transition-all duration-300 ${isScrolled ? 'w-10 h-10' : 'w-20 h-20'}`}
                 />
-                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Időpontfoglalás</h1>
-                <p className="mt-3 max-w-2xl mx-auto text-base sm:text-lg text-gray-500 hidden sm:block">
-                    Szűrd ki a neked megfelelő időpontokat, és foglald le a helyed egyszerűen!
-                </p>
-                <p className="mt-3 max-w-2xl mx-auto text-base text-gray-500 sm:hidden px-4">
-                    A jelentkezéshez használd a bal alsó sarokban lévő szűrőt, és találd meg a tökéletes időpontot!
-                </p>
-            </header>
-
-            
-            
-            
-            <!-- Info Banner -->
-            <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
-                <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                    <span className="font-serif italic font-bold text-xl leading-none">i</span>
-                </div>
-                <div className="flex-1">
-                    <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
-                    <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Minden információ a modulok sorrendjéről, a fizetős szolgáltatásokról és az elsősegélyről. <strong>Kattints ide a részletekért!</strong></p>
-                </div>
-                <div className="hidden sm:block text-orange-400">
-                    <${Icons.ChevronRightIcon} size=${24} />
-                </div>
             </div>
+
+            <div className=${`max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-8 transition-all duration-300 ${isScrolled ? 'pt-24 sm:pt-28' : 'pt-32 sm:pt-40'}`}>
+                ${isTestView && html`
+                    <div className="bg-red-500 text-white text-center py-2 px-4 font-bold rounded-md mb-6 shadow flex items-center justify-center gap-2">
+                        <${Icons.AlertTriangleIcon} size=${20} />
+                        TESZT ÜZEMMÓD - Az adatok nem kerülnek mentésre az éles rendszerbe!
+                    </div>
+                `}
+
+                <header className="mb-8 text-center flex flex-col items-center">
+                    <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Időpontfoglalás</h1>
+                    <p className="mt-3 max-w-2xl mx-auto text-base sm:text-lg text-gray-500">
+                        Szűrd ki a neked megfelelő időpontokat, és foglald le a helyed egyszerűen!
+                    </p>
+                </header>
+
+
+
+
+                <!-- Info Banners -->
+                <div className="flex flex-col gap-3 mb-8">
+                    <!-- Narancs Info Box -->
+                    <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
+                        <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                            <span className="font-serif italic font-bold text-xl leading-none">i</span>
+                        </div>
+                        <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                            <h3 className="text-orange-900 font-bold text-sm sm:text-base m-0 leading-tight">Fontos tudnivalók jelentkezés előtt!</h3>
+                            <p className="hidden lg:block text-orange-800 text-sm mt-1">Minden információ a modulok sorrendjéről, a fizetős szolgáltatásokról és az elsősegélyről. <strong>Kattints ide a részletekért!</strong></p>
+                        </div>
+                        <div className="text-orange-400 self-center">
+                            <${Icons.ChevronRightIcon} size=${24} />
+                        </div>
+                    </div>
+
+                    <!-- Szürke Szűrő Infó Box (Csak Mobilon) -->
+                    <div className="lg:hidden bg-gray-100 border border-gray-200 rounded-xl p-4 flex items-center gap-4">
+                        <div className="bg-white text-gray-500 rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-sm border border-gray-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        </div>
+                        <p className="text-gray-600 text-sm font-medium leading-snug">
+                            A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.
+                        </p>
+                    </div>
+                </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start">
                                 
