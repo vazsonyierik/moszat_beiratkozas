@@ -466,28 +466,28 @@ const InfoModal = ({ onClose }) => {
                     </button>
                 </header>
 
-                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0" style=${{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0 snap-x" style=${{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     <button 
                         onClick=${() => handleTabChange('kresz')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'kresz' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'kresz' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Tantermi KRESZ
                     </button>
                     <button
                         onClick=${() => handleTabChange('consultation')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'consultation' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'consultation' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Konzultáció
                     </button>
                     <button 
                         onClick=${() => handleTabChange('firstaid')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'firstaid' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'firstaid' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Elsősegély
                     </button>
                     <button 
                         onClick=${() => handleTabChange('medical')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'medical' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'medical' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Orvosi
                     </button>
