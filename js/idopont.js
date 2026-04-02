@@ -1196,11 +1196,32 @@ const StudentAppointmentsApp = () => {
 
                 <!-- Title Area - Span 2 columns, Row 2 -->
                 <div className="lg:col-span-2 lg:col-start-1 lg:row-start-2 w-full">
-                    <div className="flex items-center gap-2.5 pb-2 border-b-2 border-gray-100">
+                    <div className="flex items-center gap-2.5 pb-2 border-b-2 border-gray-100 h-full">
                         <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
                             <${Icons.CalendarIcon} size=${20} />
                         </div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
+                    </div>
+                </div>
+
+                <!-- KRESZ TV Banner - Span 1 column, Row 2 (Desktop Only) -->
+                <div className="hidden lg:flex lg:col-span-1 lg:col-start-3 lg:row-start-2 w-full items-end pb-2">
+                    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
+                        <div className="flex items-center gap-2 mb-2">
+                            <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
+                            <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                            Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
+                        </p>
+                        <a
+                            href="https://www.youtube.com/watch?v=I3_ZJ46Oggs&list=PLyBTUlfT1smVc4xNCuiNHTkHzRRihBvRn&index=2"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
+                        >
+                            Kattints ide!
+                        </a>
                     </div>
                 </div>
 
