@@ -1266,35 +1266,35 @@ const StudentAppointmentsApp = () => {
                 </div>
 
                 <!-- Right Column (Span 1) -->
-                <div className="lg:col-span-1 flex flex-col gap-4 w-full h-full relative">
+                <div className="lg:col-span-1 w-full h-full relative">
 
-                    <!-- Spacer to align KRESZ TV Banner with 'Időpontok' title mathematically -->
-                    <div className="hidden lg:block h-[74px] shrink-0"></div>
-
-                    <!-- KRESZ TV Banner (Desktop Only) -->
-                    <div className="hidden lg:flex w-full items-end pb-2">
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
-                                <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                                Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
-                            </p>
-                            <a
-                                href="https://www.youtube.com/watch?v=I3_ZJ46Oggs&list=PLyBTUlfT1smVc4xNCuiNHTkHzRRihBvRn&index=2"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
-                            >
-                                Kattints ide!
-                            </a>
-                        </div>
-                    </div>
-
-                    <!-- Sticky Sidebar Wrapper (Filter & Cart) -->
+                    <!-- Sticky Sidebar Wrapper (Spacer, Banner, Filter & Cart) -->
                     ${html`
                     <div className="sticky top-6 flex flex-col gap-4 lg:max-h-[calc(100vh-3rem)]">
+
+                        <!-- Spacer to align KRESZ TV Banner with 'Időpontok' title mathematically -->
+                        <div className="hidden lg:block h-[74px] shrink-0"></div>
+
+                        <!-- KRESZ TV Banner (Desktop Only) -->
+                        <div className="hidden lg:flex w-full items-end pb-2">
+                            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
+                                    <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
+                                </div>
+                                <p className="text-xs text-gray-600 mb-3 leading-relaxed">
+                                    Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
+                                </p>
+                                <a
+                                    href="https://www.youtube.com/@KRESZTV"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
+                                >
+                                    Kattints ide!
+                                </a>
+                            </div>
+                        </div>
 
                         <!-- Filter Panel -->
                         <div className="hidden lg:block bg-white shadow-lg sm:rounded-xl border border-gray-200 overflow-hidden shrink-0">
