@@ -264,26 +264,26 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                             <div>
                                 ${error ? html`<div className="mb-3 p-2 bg-orange-50 border border-orange-200 text-orange-900 rounded-lg text-xs font-medium flex items-center gap-1.5"><${Icons.AlertTriangleIcon} size=${14} className="shrink-0 text-[#ea9f21]" /><span>${error}</span></div>` : ''}
 
-                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-2.5">
-                                    <div className="grid grid-cols-2 gap-2.5">
+                                <form id="checkout-form" onSubmit=${handleSubmit} className="space-y-4">
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <div>
-                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">Vezetéknév</label>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Vezetéknév</label>
                                             <input
                                                 type="text"
                                                 value=${lastName}
                                                 onChange=${e => setLastName(e.target.value)}
-                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
                                                 required
                                                 placeholder="Kovács"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">Keresztnév</label>
+                                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">Keresztnév</label>
                                             <input
                                                 type="text"
                                                 value=${firstName}
                                                 onChange=${e => setFirstName(e.target.value)}
-                                                className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                                className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
                                                 required
                                                 placeholder="János"
                                             />
@@ -291,24 +291,24 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">E-mail cím</label>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím</label>
                                         <input 
                                             type="email"
                                             value=${email}
                                             onChange=${e => setEmail(e.target.value)}
-                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
                                     </div>
 
                                     <div>
-                                        <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-0.5 ml-1">E-mail cím megerősítése</label>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5 ml-1">E-mail cím megerősítése</label>
                                         <input 
                                             type="email"
                                             value=${emailConfirm}
                                             onChange=${e => setEmailConfirm(e.target.value)}
-                                            className="w-full p-1.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-lg focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-sm"
+                                            className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 text-gray-900 rounded-xl focus:ring-2 focus:ring-[#ea9f21] focus:border-[#ea9f21] focus:bg-white transition-colors font-medium outline-none text-base"
                                             required
                                             placeholder="pelda@email.hu"
                                         />
@@ -1021,42 +1021,42 @@ const StudentAppointmentsApp = () => {
         const isCompletelyFull = isFull && isFirstAid;
 
         return html`
-            <div key=${course.id} className=${`bg-white border rounded-lg p-4 shadow-sm hover:shadow-md transition-all duration-300 ${isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : isFull ? 'border-gray-200 bg-gray-50/30' : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
-                <div className="flex flex-col h-full justify-between gap-3">
+            <div key=${course.id} className=${`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 ${isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : isFull ? 'border-gray-200 bg-gray-50/30' : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
+                <div className="flex flex-col h-full justify-between gap-4">
                     <div>
-                        <div className="flex justify-between items-start mb-1.5 gap-2">
-                            <h4 className=${`font-extrabold text-[#333333] leading-tight pr-2 ${course.name.length > 25 ? 'text-[14px]' : 'text-base'}`}>${course.name}</h4>
+                        <div className="flex justify-between items-start mb-2 gap-3">
+                            <h4 className=${`font-extrabold text-[#333333] leading-tight pr-2 ${course.name.length > 25 ? 'text-[15px]' : 'text-lg'}`}>${course.name}</h4>
                             ${isInCart ? (isWaitlistInCart ? html`
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-50 text-[#c98900] shrink-0">Várólistán</span>
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-[#c98900] border border-orange-100 shrink-0">Várólistán</span>
                             ` : html`
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-orange-100 text-[#c98900] shrink-0">Kiválasztva</span>
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-100 text-[#c98900] border border-orange-200 shrink-0">Kiválasztva</span>
                             `) : isFull ? html`
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#888888] shrink-0">Betelt</span>
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-[#888888] border border-gray-200 shrink-0">Betelt</span>
                             ` : html`
-                                <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#efefef] text-[#333333] shrink-0">${availableSeats} hely</span>
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-gray-100 text-[#333333] border border-gray-200 shrink-0">${availableSeats} hely</span>
                             `}
                         </div>
 
-                        <div className="text-[#888888] font-medium text-[13px] flex items-center gap-1 mb-1.5 mt-1">
-                            <${Icons.ClockIcon} size=${14} className="text-[#888888]" />
+                        <div className="text-[#888888] font-semibold text-sm flex items-center gap-1.5 mb-2 mt-1">
+                            <${Icons.ClockIcon} size=${16} className="text-[#888888]" />
                             <span>${course.startTime} - ${course.endTime}</span>
                         </div>
 
                         ${(isMedical || isFirstAid) && html`
-                            <div className=${`mt-1.5 inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold ${isCompletelyFull ? 'bg-[#efefef] border border-gray-200 text-[#888888]' : 'bg-[#ea9f21] text-white'}`}>
-                                <${Icons.CreditCardIcon} size=${12} className=${isCompletelyFull ? 'text-[#888888]' : 'text-white'} />
+                            <div className=${`mt-2 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isCompletelyFull ? 'bg-gray-100 border border-gray-200 text-[#888888]' : 'bg-orange-50 border border-orange-100 text-[#c98900]'}`}>
+                                <${Icons.CreditCardIcon} size=${14} className=${isCompletelyFull ? 'text-[#888888]' : 'text-[#c98900]'} />
                                 ${isFirstAid ? 'Előre fizetős' : 'Fizetős'}
                             </div>
                         `}
 
                         ${isQuickBook && html`
-                            <div className="text-xs text-[#888888] mt-1.5 flex items-center gap-1">
-                                <${Icons.CalendarIcon} size=${14} />
+                            <div className="text-sm font-medium text-[#888888] mt-2 flex items-center gap-1.5">
+                                <${Icons.CalendarIcon} size=${16} />
                                 ${course.date.replace(/-/g, '. ')}
                             </div>
                         `}
                     </div>
-                    <div className="mt-auto pt-3 pb-0.5 border-t border-gray-100 bg-gray-50/50 -mx-4 px-4 rounded-b-lg">
+                    <div className="mt-auto pt-4 pb-1 border-t border-gray-100 bg-gray-50/50 -mx-5 px-5 rounded-b-xl flex items-center">
                         ${buttonArea}
                     </div>
                 </div>
@@ -1240,12 +1240,12 @@ const StudentAppointmentsApp = () => {
                                             </div>
                                         </div>
 
-                                        <div className="border-t border-gray-100 pt-3">
+                                        <div className="border-t border-gray-100 pt-4">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
-                                            <div className="flex bg-[#efefef] p-1 rounded-lg">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1 text-xs font-medium rounded-md transition-all lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                                            <div className="flex gap-1.5">
+                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'all' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Mind</button>
+                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'am' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délelőtt</button>
+                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1388,37 +1388,37 @@ const StudentAppointmentsApp = () => {
                             </button>
                         </header>
                         <main className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1">
-                            <div className="mb-4">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Elméleti tanfolyam</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                            <div className="mb-6">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
+                                <div className="flex flex-wrap gap-2.5">
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
                                 </div>
                             </div>
 
-                            <div className="mb-4 border-t border-gray-100 pt-4">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Kiegészítő szolgáltatások</p>
-                                <div className="flex flex-wrap gap-1.5">
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                            <div className="mb-6 border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
+                                <div className="flex flex-wrap gap-2.5">
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Konzultáció
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Orvosi
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Elsősegély
                                     </button>
                                 </div>
                             </div>
 
-                            <div className="border-t border-gray-100 pt-4">
-                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2.5">Napszak</p>
-                                <div className="flex bg-[#efefef] p-1.5 rounded-xl border border-gray-200 shadow-inner">
-                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Mind</button>
-                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délelőtt</button>
-                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-extrabold rounded-lg transition-all lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm' : 'text-[#888888] hover:text-[#333333]'}`}>Délután</button>
+                            <div className="border-t border-gray-100 pt-5">
+                                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
+                                <div className="flex gap-2">
+                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Mind</button>
+                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délután</button>
                                 </div>
                             </div>
                         </main>
