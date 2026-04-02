@@ -1154,52 +1154,49 @@ const StudentAppointmentsApp = () => {
                 </div>
             `}
 
-            <header className="mb-8 text-center flex flex-col items-center">
+            <header className="mb-12 text-center flex flex-col items-center">
                 <img
                     src="https://mosolyzona.hu/wp-content/uploads/2019/10/cropped-mosoly-1.jpg"
                     alt="Mosolyzóna Logó"
-                    className="w-16 h-16 rounded-full mb-3 shadow-sm object-cover"
+                    className="w-16 h-16 rounded-full mb-5 shadow-sm object-cover"
                 />
-                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">Időpontfoglalás</h1>
-                <p className="mt-3 max-w-2xl mx-auto text-base sm:text-lg text-gray-500 px-4">
+                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-4">Időpontfoglalás</h1>
+                <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4">
                     Szűrd ki a neked megfelelő időpontokat, és foglald le a helyed egyszerűen!
                 </p>
             </header>
-
-            
-            
-            
-            <!-- Info Banners -->
-            <div className="space-y-3 mb-8 relative z-10">
-                <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
-                    <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                        <span className="font-serif italic font-bold text-xl leading-none">i</span>
-                    </div>
-                    <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                        <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
-                        <p className="text-orange-800 text-xs sm:text-sm mt-0.5 hidden sm:block">Minden információ a modulok sorrendjéről, a fizetős szolgáltatásokról és az elsősegélyről. <strong>Kattints ide a részletekért!</strong></p>
-                    </div>
-                    <div className="hidden sm:block text-orange-400">
-                        <${Icons.ChevronRightIcon} size=${24} />
-                    </div>
-                </div>
-
-                <!-- Mobile only filter hint banner -->
-                <div className="lg:hidden bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick=${openMobileFilterModal}>
-                    <div className="bg-[#888888] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
-                    </div>
-                    <div className="flex-1 flex flex-col justify-center min-h-[40px]">
-                        <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
-                    </div>
-                </div>
-            </div>
 
             <div className="flex flex-col lg:flex-row gap-8 items-start relative z-10">
                                 
                 
                 <!-- Main Content Area -->
                 <div className="flex-1 w-full lg:w-2/3 order-2 lg:order-1">
+
+                    <!-- Info Banners inside main column -->
+                    <div className="space-y-3 mb-8">
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
+                            <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                <span className="font-serif italic font-bold text-xl leading-none">i</span>
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                                <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
+                                <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Kattints ide a részletekért!</p>
+                            </div>
+                            <div className="hidden sm:block text-orange-400">
+                                <${Icons.ChevronRightIcon} size=${24} />
+                            </div>
+                        </div>
+
+                        <!-- Mobile only filter hint banner -->
+                        <div className="lg:hidden bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm flex items-start gap-4 cursor-pointer hover:bg-gray-100 transition-colors" onClick=${openMobileFilterModal}>
+                            <div className="bg-[#888888] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                            </div>
+                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                                <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
+                            </div>
+                        </div>
+                    </div>
 
                     <div className="mb-5 flex items-center gap-2.5 pb-2 border-b-2 border-gray-100">
                         <div className="bg-[#e09900] text-white p-1.5 rounded-lg shadow-sm">
