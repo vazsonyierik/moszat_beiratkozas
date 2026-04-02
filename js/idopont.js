@@ -186,7 +186,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
             if (showForm && !results) return;
             handleClose(results || undefined);
         }}>
-            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-sm sm:max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[390px] sm:h-[420px]`} onClick=${e => e.stopPropagation()}>
+            <div className=${`bg-white rounded-[1.5rem] shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)] w-full max-w-sm sm:max-w-md my-auto flex flex-col overscroll-none ${isClosing ? 'animate-fade-out' : 'animate-scale-in'} overflow-hidden h-[540px] sm:h-[480px]`} onClick=${e => e.stopPropagation()}>
                 <header className="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-gray-200 flex justify-between items-center bg-[#efefef] rounded-t-[1.5rem] shrink-0">
                     <div className="flex items-center gap-3">
                         <h3 className="text-base font-bold text-[#333333] flex items-center gap-2">
@@ -201,31 +201,54 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                 
                 <main ref=${contentRef} className="p-4 sm:p-5 overflow-y-auto custom-scrollbar flex-1 bg-white">
                     ${results ? html`
-                        <div>
+                        <div className="space-y-4">
                             ${results.success.length > 0 ? html`
-                                <div className="mb-4 p-4 bg-green-50 rounded-lg border border-green-200">
-                                    <h4 className="font-bold text-green-800 mb-2 flex items-center gap-2">
-                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                    <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-base">
+                                        <div className="bg-[#e09900] text-white rounded-full p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg></div>
                                         Sikeres jelentkezés (${results.success.length} db)
                                     </h4>
-                                    <ul className="text-sm text-green-700 list-disc list-inside">
-                                        ${results.success.map(s => html`<li key=${s.course.id}>${s.course.name} (${s.course.date})</li>`)}
+                                    <ul className="space-y-2">
+                                        ${results.success.map(s => html`
+                                            <li key=${s.course.id} className="bg-white p-2.5 rounded-lg border border-gray-100 flex items-start gap-2 shadow-sm text-sm">
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-gray-800">${s.course.name}</div>
+                                                    <div className="text-gray-500 text-xs mt-0.5 flex items-center gap-1">
+                                                        <${Icons.CalendarIcon} size=${12} className="text-[#888888]"/>
+                                                        ${s.course.date.replace(/-/g, '. ')}.
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        `)}
                                     </ul>
-                                    <p className="mt-3 text-sm text-green-800 border-t border-green-200/50 pt-3">
-                                        A foglalásokról (tételenként) visszaigazoló e-maileket fogsz kapni hamarosan. 
-                                        <strong>Kérjük, ellenőrizd a Spam és Promóciók mappákat is!</strong>
-                                    </p>
+                                    <div className="mt-4 text-xs text-gray-600 border-t border-gray-200 pt-3 bg-white p-3 rounded-lg flex items-start gap-2">
+                                        <div className="text-[#ea9f21] shrink-0 mt-0.5"><${Icons.InfoIcon} size=${16} /></div>
+                                        <div>
+                                            <p className="mb-1">A foglalásokról (tételenként) visszaigazoló e-maileket fogsz kapni hamarosan.</p>
+                                            <p className="font-semibold text-gray-800">Kérjük, ellenőrizd a Spam és Promóciók mappákat is!</p>
+                                        </div>
+                                    </div>
                                 </div>
                             ` : ''}
                             
                             ${results.errors.length > 0 ? html`
-                                <div className="mb-4 p-4 bg-orange-50 rounded-lg border border-orange-200">
-                                    <h4 className="font-bold text-orange-900 mb-2 flex items-center gap-2">
-                                        <svg className="w-5 h-5 text-[#ea9f21]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div className="p-4 bg-gray-50 rounded-xl border border-gray-200">
+                                    <h4 className="font-bold text-gray-900 mb-3 flex items-center gap-2 text-base">
+                                        <div className="bg-[#888888] text-white rounded-full p-1"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg></div>
                                         Sikertelen (${results.errors.length} db)
                                     </h4>
-                                    <ul className="text-sm text-orange-800 list-disc list-inside">
-                                        ${results.errors.map(e => html`<li key=${e.item.course.id}>${e.item.course.name} - ${e.error}</li>`)}
+                                    <ul className="space-y-2">
+                                        ${results.errors.map(e => html`
+                                            <li key=${e.item.course.id} className="bg-white p-2.5 rounded-lg border border-gray-100 flex items-start gap-2 shadow-sm text-sm">
+                                                <div className="flex-1">
+                                                    <div className="font-bold text-gray-800">${e.item.course.name}</div>
+                                                    <div className="text-[#ea9f21] text-xs mt-0.5 font-medium flex items-start gap-1">
+                                                        <div className="shrink-0 mt-0.5"><${Icons.AlertTriangleIcon} size=${12} /></div>
+                                                        <span>${e.error}</span>
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        `)}
                                     </ul>
                                 </div>
                             ` : ''}
