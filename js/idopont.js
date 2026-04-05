@@ -55,7 +55,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
     const isDesktop = window.innerWidth >= 1024;
     const isMobile = window.innerWidth < 640;
-    const needsWizard = isMobile;
+    const needsWizard = !isDesktop;
 
     // Determine what to render based on wizard step and view mode
     const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
