@@ -55,7 +55,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
     // Desktop layout logic updates: skip summary list on desktop. On mobile, show wizard if 3 or more items.
     const isDesktop = window.innerWidth >= 1024;
     const isMobile = window.innerWidth < 640;
-    const needsWizard = isMobile;
+    const needsWizard = !isDesktop;
 
     // Determine what to render based on wizard step and view mode
     const showSummaryList = isDesktop ? false : (!needsWizard || step === 1);
@@ -433,11 +433,16 @@ function getDayName(dateStr) {
 const InfoModal = ({ onClose }) => {
     const [activeTab, setActiveTab] = useState('kresz');
     const [isClosing, setIsClosing] = useState(false);
+    const [expandedModule, setExpandedModule] = useState(null);
     const contentRef = useRef(null);
 
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(onClose, 240);
+    };
+
+    const toggleAccordion = (mod) => {
+        setExpandedModule(expandedModule === mod ? null : mod);
     };
 
     const handleTabChange = (tab) => {
@@ -461,22 +466,28 @@ const InfoModal = ({ onClose }) => {
                     </button>
                 </header>
 
-                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0" style=${{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <div className="flex bg-gray-50 border-b border-gray-200 overflow-x-auto whitespace-nowrap scrollbar-hide shrink-0 snap-x" style=${{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
                     <button 
                         onClick=${() => handleTabChange('kresz')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'kresz' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'kresz' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Tantermi KRESZ
                     </button>
+                    <button
+                        onClick=${() => handleTabChange('consultation')}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'consultation' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                    >
+                        Konzultáció
+                    </button>
                     <button 
                         onClick=${() => handleTabChange('firstaid')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'firstaid' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'firstaid' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Elsősegély
                     </button>
                     <button 
                         onClick=${() => handleTabChange('medical')}
-                        className=${`flex-1 min-w-[120px] py-3 px-4 text-sm font-bold border-b-2 transition-colors ${activeTab === 'medical' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
+                        className=${`flex-none sm:flex-1 py-3 px-3 sm:px-4 text-[13px] sm:text-sm font-bold border-b-2 transition-colors snap-start ${activeTab === 'medical' ? 'border-[#e09900] text-[#e09900] bg-white' : 'border-transparent text-gray-500 hover:text-gray-800 hover:bg-gray-100'}`}
                     >
                         Orvosi
                     </button>
@@ -487,147 +498,272 @@ const InfoModal = ({ onClose }) => {
                     ${activeTab === 'kresz' && html`
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="kresz">
                             <div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2">Tantermi képzéseink – Rugalmasan, ahogy neked a legjobb!</h4>
-                                <p className="mb-4 text-base sm:text-sm text-gray-600">Autósiskolánk folyamatosan szervez tantermi képzéseket, amelyeken Pető Attila, azaz a Kreszprofesszor segít téged a sikeres felkészülésben.</p>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2">Fejleszd a tudásod személyesen a Kreszprofesszorral!</h4>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">A hivatalos elméleti képzésed az E-learning felületen zajlik. Fontos tudnod, hogy a tantermi előadások nem az e-learninget helyettesítik, hanem tökéletesen kiegészítik azt! Ha szereted hallani a szabályok mögötti extra magyarázatokat, jobban megérteni a gyakorlati összefüggéseket, vagy ha valahol elakadtál, várunk szeretettel az opcionális előadásainkon.</p>
                                 
-                                <h5 className="text-lg font-bold text-gray-800 mb-2">Miért jó ez neked?</h5>
+                                <h5 className="text-lg font-bold text-gray-800 mb-2">Miért érdemes beülnöd?</h5>
                                 
                                 <div className="space-y-4">
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Rugalmas időpontok:</div>
-                                        <p className="mb-2 text-base sm:text-sm text-gray-600">Képzéseink reggel és este is indulnak, így te döntöd el, mikor szeretnél részt venni.</p>
-                                        <div className="text-[#e09900] font-medium flex gap-2 items-start"><${Icons.ChevronRightIcon} size=${18} className="shrink-0 mt-0.5" /> <span className="text-base sm:text-sm">Járhatsz akár reggeli, akár esti alkalmakra – sőt, ezt akár hetente is variálhatod, ahogy neked a legjobban megfelel!</span></div>
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
+                                        <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Mélyebb megértés</div>
+                                            <p className="text-base sm:text-sm text-gray-600">Nem csak a száraz szabályokat hallod, hanem az összefüggéseket és a miérteket is elmagyarázzuk.</p>
+                                        </div>
                                     </div>
 
-                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100">
-                                        <div className="font-bold text-gray-900 flex items-center gap-2 mb-1"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Szabad modulválasztás:</div>
-                                        <p className="mb-2 text-base sm:text-sm text-gray-600">Oktatásunk modulrendszerű, így bármikor csatlakozhatsz, és a modulokat tetszőleges sorrendben hallgathatod meg.</p>
-                                        <div className="text-[#e09900] font-medium flex gap-2 items-start"><${Icons.ChevronRightIcon} size=${18} className="shrink-0 mt-0.5" /> <span className="text-base sm:text-sm">Nincs előre meghatározott sorrend – te állítod össze a saját tanrendeted!</span></div>
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
+                                        <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Rugalmas</div>
+                                            <p className="text-base sm:text-sm text-gray-600">Reggel és este is indulnak órák, így az időbeosztásodhoz igazíthatod őket.</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
+                                        <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Kötetlen</div>
+                                            <p className="text-base sm:text-sm text-gray-600">A modulok (1-4) tetszőleges sorrendben hallgathatók meg – te állítod össze a tanrended!</p>
+                                        </div>
                                     </div>
                                     
-                                    <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                                        <div className="font-bold text-red-800 flex items-center gap-2 mb-1"><${Icons.AlertTriangleIcon} size=${18} className="text-red-600" /> Fontos!</div>
-                                        <p className="text-red-800 font-medium text-base sm:text-sm">Arra figyelj, hogy ugyanazt a modult nem érdemes kétszer elvégezni, mert minden alkalommal ugyanazt az anyagot ismételjük.</p>
+                                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 flex gap-3 items-start">
+                                        <${Icons.InfoIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Tipp</div>
+                                            <p className="text-gray-800 font-medium text-base sm:text-sm">Egy modult elég csak egyszer elvégezned, mert a tartalom ismétlődik.</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="font-medium text-gray-800 bg-orange-50 p-3 border-l-4 border-[#e09900] rounded-r-lg flex items-start gap-3">
-                                <${Icons.CalendarIcon} size=${20} className="text-[#e09900] shrink-0 mt-0.5" />
-                                <span className="text-base sm:text-sm">Tanulj a saját időbeosztásod szerint, válaszd ki, mikor szeretnél jönni, és számíthatsz ránk, hogy végigkísérünk a sikeres vizsgáig!</span>
-                            </div>
-
-                            <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm">
-                                Nem találsz számodra megfelelő tantermi időpontot? Semmi gond! A tanórákat végig is nézheted Pető Attila, a Kreszprofesszor előadásában a YouTube-on, teljesen ingyenesen. <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV</a>
-                            </p>
-
                             <hr className="border-gray-200" />
 
-                            <h4 className="text-lg font-bold text-gray-900 mb-4">Modulok felépítése</h4>
+                            <h4 className="text-lg font-bold text-gray-900 mb-4">A 4 alapmodul témái</h4>
+
+                            <div className="space-y-3">
+                                <!-- Modul 1 -->
+                                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <button onClick=${() => toggleAccordion(1)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                                        <span className="font-bold text-[#e09900]">1. modul – Tanfolyamtájékoztató, alapozó foglalkozás</span>
+                                        <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 1 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
+                                    </button>
+                                    <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 1 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                        <div className="overflow-hidden">
+                                            <div className="p-4 text-gray-600 border-t border-gray-100">
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>Általános információk a képzés menetéről</li>
+                                                    <li>Vezetéselmélet: emberi tényezők</li>
+                                                    <li>Érzékelés: látás, figyelem</li>
+                                                    <li>A vezető munkatere: ülés, tükrök beállítása</li>
+                                                    <li>Alapvető műszaki információk a járműről</li>
+                                                    <li>KRESZ-alapok, fogalmak, közúti jelzések</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Modul 2 -->
+                                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <button onClick=${() => toggleAccordion(2)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                                        <span className="font-bold text-[#e09900]">2. modul – KRESZ, haladás közben</span>
+                                        <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 2 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
+                                    </button>
+                                    <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 2 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                        <div className="overflow-hidden">
+                                            <div className="p-4 text-gray-600 border-t border-gray-100">
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>Elindulás, megállás, várakozás</li>
+                                                    <li>Haladás az úton: jobbratartás, egyirányú út, osztottpályás út</li>
+                                                    <li>Párhuzamos közlekedés, villamos sínen közlekedés</li>
+                                                    <li>Kitérés, kikerülés</li>
+                                                    <li>Előzés</li>
+                                                    <li>Megfordulás, hátramenet</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Modul 3 -->
+                                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <button onClick=${() => toggleAccordion(3)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                                        <span className="font-bold text-[#e09900]">3. modul – KRESZ, manőverezések</span>
+                                        <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 3 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
+                                    </button>
+                                    <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 3 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                        <div className="overflow-hidden">
+                                            <div className="p-4 text-gray-600 border-t border-gray-100">
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>A járművezetés személyi és tárgyi feltételei</li>
+                                                    <li>Személyszállítás, teherszállítás szabályai</li>
+                                                    <li>Műszaki hiba, vontatás</li>
+                                                    <li>Irányváltoztatás, körforgalom, kanyarodó főútvonal</li>
+                                                    <li>Követési távolság, féktávolság</li>
+                                                    <li>Vasúti átjáró</li>
+                                                    <li>Autópálya, autóút, lakó-pihenő övezet</li>
+                                                    <li>Megkülönböztető és figyelmeztető jelzések</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <!-- Modul 4 -->
+                                <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm">
+                                    <button onClick=${() => toggleAccordion(4)} className="w-full px-4 py-3 flex justify-between items-center bg-gray-50 hover:bg-gray-100 transition-colors text-left">
+                                        <span className="font-bold text-[#e09900]">4. modul – KRESZ, útkereszteződések</span>
+                                        <span className=${`text-gray-500 transition-transform duration-300 ${expandedModule === 4 ? 'rotate-180' : ''}`}><${Icons.ChevronRightIcon} className="rotate-90" size=${20}/></span>
+                                    </button>
+                                    <div className=${`grid transition-all duration-300 ease-in-out ${expandedModule === 4 ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
+                                        <div className="overflow-hidden">
+                                            <div className="p-4 text-gray-600 border-t border-gray-100">
+                                                <ul className="list-disc list-inside space-y-1">
+                                                    <li>Elsőbbségadás szabályai</li>
+                                                    <li>Sorrend a kereszteződésekben</li>
+                                                    <li>Villamos és gyalogos elsőbbsége</li>
+                                                    <li>Lámpák és rendőri forgalomirányítás jelzései</li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3 mt-6">
+                                <${Icons.MapPinIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                <div>
+                                    <div className="font-bold text-gray-900 mb-1">Helyszín</div>
+                                    <p className="text-gray-700">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</p>
+                                </div>
+                            </div>
+
+                            <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm mt-4">
+                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
+                            </p>
+                        </div>
+                    `}
+
+                    ${activeTab === 'consultation' && html`
+                        <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="consultation">
                             
-                            <ul className="space-y-4 text-base sm:text-sm">
-                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">1. modul – Tanfolyamtájékoztató, alapozó foglalkozás</div>
-                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
-                                        <li>Általános információk a képzés menetéről</li>
-                                        <li>Vezetéselmélet: emberi tényezők</li>
-                                        <li>Érzékelés: látás, figyelem</li>
-                                        <li>A vezető munkatere: ülés, tükrök beállítása</li>
-                                        <li>Alapvető műszaki információk a járműről</li>
-                                        <li>KRESZ-alapok, fogalmak, közúti jelzések</li>
-                                    </ul>
-                                </li>
-                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">2. modul – KRESZ, haladás közben</div>
-                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
-                                        <li>Elindulás, megállás, várakozás</li>
-                                        <li>Haladás az úton: jobbratartás, egyirányú út, osztottpályás út</li>
-                                        <li>Párhuzamos közlekedés, villamos sínen közlekedés</li>
-                                        <li>Kitérés, kikerülés, előzés</li>
-                                        <li>Megfordulás, hátramenet</li>
-                                    </ul>
-                                </li>
-                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">3. modul – KRESZ, manőverezések</div>
-                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
-                                        <li>A járművezetés személyi és tárgyi feltételei</li>
-                                        <li>Személyszállítás, teherszállítás szabályai</li>
-                                        <li>Műszaki hiba, vontatás</li>
-                                        <li>Irányváltoztatás, körforgalom, kanyarodó főútvonal</li>
-                                        <li>Követési távolság, féktávolság, vasúti átjáró</li>
-                                        <li>Autópálya, autóút, lakó-pihenő övezet</li>
-                                        <li>Megkülönböztető és figyelmeztető jelzések</li>
-                                    </ul>
-                                </li>
-                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">4. modul – KRESZ, útkereszteződések</div>
-                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
-                                        <li>Elsőbbségadás szabályai, sorrend a kereszteződésekben</li>
-                                        <li>Villamos és gyalogos elsőbbsége</li>
-                                        <li>Lámpák és rendőri forgalomirányítás jelzései</li>
-                                    </ul>
-                                </li>
-                                <li className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                    <div className="font-bold text-[#e09900] mb-2 border-b border-gray-100 pb-2">Konzultáció</div>
-                                    <ul className="list-disc list-inside space-y-1 text-gray-600 ml-1">
-                                        <li>Hasznos tippek a sikeres vizsgához</li>
-                                        <li>KRESZ: gyalogosként, kerékpárral, egyéb járművekkel közlekedve</li>
-                                        <li>Összefoglalás, ismétlés, gyakorlás</li>
-                                    </ul>
-                                </li>
-                            </ul>
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2">Kérdezz, gyakorolj és biztosítsd be a vizsgád!</h4>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">A konzultáció nem egy hagyományos előadás, hanem egy célirányos, kiscsoportos felkészítő, ahol a Szakoktató kifejezetten a te egyéni kérdéseidre válaszol és segít a meg nem értett szabályok tisztázásában.</p>
+                            </div>
+
+                            <div className="bg-orange-50 border border-[#e09900] p-5 rounded-xl shadow-sm">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-[#e09900] text-white p-2 rounded-full shadow-md shrink-0">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                                    </div>
+                                    <h4 className="font-extrabold text-orange-900 text-lg">Vizsgagarancia</h4>
+                                </div>
+                                <p className="text-orange-800 text-base sm:text-sm font-medium">Ha részt veszel egy igazolt személyes konzultáción, egy esetleges sikertelen elméleti vizsga esetén Autósiskolánk átvállalja egy pótvizsga díját!</p>
+                            </div>
+
+                            <div>
+                                <h5 className="text-lg font-bold text-gray-800 mb-3">Fókuszált témák</h5>
+                                <ul className="space-y-3">
+                                    <li className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                        <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="text-base sm:text-sm text-gray-700">Hasznos tippek a sikeres vizsgához.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                        <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="text-base sm:text-sm text-gray-700">Összefoglalás és a szabályok ismétlése.</span>
+                                    </li>
+                                    <li className="flex items-start gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                                        <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="text-base sm:text-sm text-gray-700">A KRESZ áttekintése gyalogos és kerékpáros szemmel.</span>
+                                    </li>
+                                </ul>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
+                                    <${Icons.ClockIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                    <div>
+                                        <div className="font-bold text-gray-900 mb-1">Időpont</div>
+                                        <p className="text-gray-700">Szombatonként 09:00-tól 12:15-ig.</p>
+                                    </div>
+                                </div>
+                                <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
+                                    <${Icons.MapPinIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
+                                    <div>
+                                        <div className="font-bold text-gray-900 mb-1">Helyszín</div>
+                                        <p className="text-gray-700">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     `}
 
                     ${activeTab === 'firstaid' && html`
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="firstaid">
                             
-                            <div className="bg-orange-50 border border-[#e09900] p-4 rounded-xl text-orange-900">
-                                <h4 className="font-bold text-lg mb-1 flex items-center gap-2">Fontos tudnivaló a jogosítvány átvételéhez</h4>
-                                <p className="text-base sm:text-sm">A jogosítványod átvételének egyik feltétele, hogy rendelkezz érvényes és sikeres közúti elsősegélynyújtó vizsgával.</p>
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2">Szerezd meg a magabiztosságot a vizsgához!</h4>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">A jogosítvány kiváltásának feltétele a sikeres Vöröskeresztes elsősegély vizsga. Az elméleti felkészülést a tandíjadban szereplő E-learning biztosítja, de a vizsgán gyakorlati feladatokat is be kell mutatnod. Ezen a 4 órás tréningen pont ezt gyakoroljuk be!</p>
                             </div>
 
-                            <div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">E-learning – a tandíj része</h4>
-                                <p className="mb-2 text-base sm:text-sm text-gray-600">A tanfolyamon való részvétel nem kötelező, de minden tanulónk számára biztosítunk egy e-learninges felkészítőt, amely a tandíjban benne van. <strong>Ezért külön nem kell fizetned.</strong></p>
-                                <p className="text-base sm:text-sm text-gray-600">Az e-learning segít felkészülni az elsősegélynyújtó vizsgára saját tempódban, kényelmesen.</p>
+                            <div className="bg-orange-50 border border-orange-200 p-4 rounded-xl">
+                                <h5 className="font-bold text-orange-900 mb-3 text-base">Mit fogunk csinálni?</h5>
+                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-base sm:text-sm">
+                                    <li className="flex items-start gap-2 bg-white px-3 py-2.5 rounded-lg border border-orange-100 shadow-sm">
+                                        <${Icons.CheckCircle} size=${18} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="font-medium text-gray-800">Betegvizsgálat és Újraélesztés (BLS) a gyakorlatban</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 bg-white px-3 py-2.5 rounded-lg border border-orange-100 shadow-sm">
+                                        <${Icons.CheckCircle} size=${18} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="font-medium text-gray-800">Stabil oldalfektetés és Műfogások</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 bg-white px-3 py-2.5 rounded-lg border border-orange-100 shadow-sm">
+                                        <${Icons.CheckCircle} size=${18} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="font-medium text-gray-800">Sebellátás, kötözések</span>
+                                    </li>
+                                    <li className="flex items-start gap-2 bg-white px-3 py-2.5 rounded-lg border border-orange-100 shadow-sm">
+                                        <${Icons.CheckCircle} size=${18} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <span className="font-medium text-gray-800">Kérdések megválaszolása az E-learninggel kapcsolatban</span>
+                                    </li>
+                                </ul>
                             </div>
 
                             <hr className="border-gray-200" />
 
                             <div>
-                                <h4 className="text-lg font-bold text-gray-900 mb-2 flex items-center gap-2">Gyakorlati felkészítés</h4>
-                                <p className="mb-3 text-gray-600 italic text-base sm:text-sm">...ha magabiztosan szeretnél vizsgázni!</p>
-                                <p className="mb-4 text-base sm:text-sm text-gray-600">Rendszeresen tartunk gyakorlati foglalkozásokat, ahol személyesen is át tudjuk nézni a legfontosabb vizsgatémákat:</p>
+                                <h4 className="text-lg font-bold text-gray-900 mb-4">Tudnivalók a foglaláshoz</h4>
                                 
-                                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-6 text-base sm:text-sm">
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Betegvizsgálat</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Újraélesztés (BLS)</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Stabil oldalfektetés</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Műfogások</li>
-                                    <li className="flex items-center gap-2 bg-gray-50 px-3 py-2 rounded-lg"><${Icons.CheckCircle} size=${18} className="text-[#ea9f21]" /> Sebellátás, kötözések</li>
-                                </ul>
-
-                                <p className="font-bold text-gray-800 mb-4 bg-gray-100 p-3 rounded-lg border-l-4 border-gray-400 flex items-start gap-3">
-                                    <${Icons.CheckCircle} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
-                                    <span className="text-base sm:text-sm">És természetesen válaszolunk az e-learninggel kapcsolatos kérdéseidre is.</span>
-                                </p>
-
-                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center flex flex-col items-center">
-                                        <div className="mb-2 text-[#888888]"><${Icons.CalendarIcon} size=${24} /></div>
-                                        <div className="font-bold text-gray-900">Mikor?</div>
-                                        <div className="text-gray-600 text-sm mt-1">Háromhetente,<br/>péntekenként<br/>16:30-tól 20:30-ig</div>
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <div className="bg-white text-[#888888] w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0">
+                                            <${Icons.ClockIcon} size=${24} />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900">Időpont</div>
+                                            <div className="text-gray-600 text-sm mt-0.5">Péntekenként 16:30-tól 20:30-ig.</div>
+                                        </div>
                                     </div>
-                                    <div className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm text-center flex flex-col items-center">
-                                        <div className="mb-2 text-[#888888]"><${Icons.InfoIcon} size=${24} /></div>
-                                        <div className="font-bold text-gray-900">Helyszín</div>
-                                        <div className="text-gray-600 text-sm mt-2">Az autósiskola<br/>tanterme</div>
+
+                                    <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <div className="bg-white text-[#888888] w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0">
+                                            <${Icons.HelpIcon} size=${24} />
+                                        </div>
+                                        <div>
+                                            <div className="font-bold text-gray-900">Helyszín</div>
+                                            <div className="text-gray-600 text-sm mt-0.5">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</div>
+                                        </div>
                                     </div>
-                                    <div className="bg-[#e09900] text-white p-4 rounded-xl shadow-md text-center flex flex-col justify-center items-center">
-                                        <div className="mb-2"><${Icons.CreditCardIcon} size=${24} /></div>
-                                        <div className="font-bold">Részvételi díj</div>
-                                        <div className="text-xl font-extrabold mt-1">12.000 Ft</div>
+
+                                    <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 bg-[#e09900] text-white p-5 rounded-xl shadow-md mt-2">
+                                        <div className="bg-white text-[#e09900] w-12 h-12 rounded-full flex items-center justify-center shadow-sm shrink-0">
+                                            <${Icons.CreditCardIcon} size=${24} />
+                                        </div>
+                                        <div className="text-center sm:text-left flex-1">
+                                            <div className="font-bold text-lg mb-1">Részvételi díj: 12.000 Ft</div>
+                                            <div className="text-orange-100 text-xs font-medium bg-black/10 p-2 rounded-lg inline-block sm:block">
+                                                Kérjük, ezt legkésőbb a részvétel előtt <strong>1 munkanappal</strong> fizesd be Autósiskolánk felé.
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -636,41 +772,47 @@ const InfoModal = ({ onClose }) => {
 
                     ${activeTab === 'medical' && html`
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="medical">
-                            <h4 className="text-xl font-bold text-gray-900 mb-4 border-b pb-2">Orvosi alkalmassági vizsgálat – Gyorsan, kényelmesen!</h4>
                             
-                            <div className="space-y-4">
-                                <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
-                                    <p className="font-medium text-gray-800 text-base">Nincs sorban állás, a vizsgálatot gyorsan és kényelmesen el tudod végezni.</p>
-                                </div>
-                                
-                                <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <${Icons.ChevronRightIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
-                                    <p className="text-gray-700 text-base sm:text-sm">Akár egyéb vizsgálatok nélkül is elvégezhető, de ez <strong>mindig az orvos helyszíni döntésétől függ.</strong></p>
-                                </div>
-                                
-                                <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                                    <${Icons.DocumentIcon} size=${20} className="text-[#888888] mt-0.5 shrink-0" />
-                                    <p className="text-gray-700 text-base sm:text-sm">Az orvosi alkalmassági véleményt rövid időn belül, a vizsgálatot követően kézhez kapod.</p>
-                                </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-gray-900 mb-2">A KRESZ vizsgád intézésének alapfeltétele!</h4>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">Fontos tudnod: amíg nem rendelkezel érvényes, 1. csoportú orvosi alkalmassági véleménnyel, az első KRESZ vizsgádra még csak időpontot sem tudunk igényelni a hatóságnál. Nálunk ezt az orvosit gyorsan és sorban állás nélkül elintézheted!</p>
                             </div>
 
-                            <div className="mt-8 bg-orange-50 p-6 rounded-2xl border border-[#e09900] shadow-sm">
-                                <div className="flex flex-col sm:flex-row items-center gap-6">
-                                    <div className="bg-white w-16 h-16 rounded-full flex items-center justify-center shadow-sm shrink-0 text-[#ea9f21]">
-                                        <${Icons.CreditCardIcon} size=${32} />
+                            <div>
+                                <h5 className="text-lg font-bold text-gray-800 mb-3">Fontos infók a vizsgálathoz</h5>
+                                <div className="space-y-3">
+                                    <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Gyors ügymenet</div>
+                                            <p className="text-base sm:text-sm text-gray-600">Az alkalmassági véleményt a vizsgálat után azonnal kézhez kapod.</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h5 className="font-bold text-orange-900 text-lg mb-1 text-center sm:text-left">A vizsgálat díja: 10.000 Ft</h5>
-                                        <p className="text-orange-800 text-center sm:text-left text-base sm:text-sm">A díjat a helyszínen tudsz befizetni, <strong>kizárólag készpénzben.</strong></p>
+
+                                    <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                                        <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-gray-900 mb-1">Kényelmes</div>
+                                            <p className="text-base sm:text-sm text-gray-600">Akár egyéb előzetes vizsgálatok nélkül is elvégezhető (ez a helyszínen az orvos döntésétől függ).</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="mt-4 bg-red-50 p-4 rounded-xl border-l-4 border-red-500 text-red-800 font-medium flex items-start gap-3">
-                                <${Icons.ClockIcon} size=${20} className="mt-0.5 shrink-0" />
-                                <p className="text-base sm:text-sm"><strong>Fontos!</strong> Kérjük, hogy a vizsgálatra legkésőbb 17:00-ig érkezz meg.</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="bg-orange-50 p-5 rounded-xl border border-orange-200 flex flex-col justify-center items-center text-center shadow-sm">
+                                    <${Icons.ClockIcon} size=${28} className="text-[#ea9f21] mb-2" />
+                                    <div className="font-bold text-orange-900 text-lg mb-1">Érkezés</div>
+                                    <p className="text-orange-800 text-sm font-medium">Kérjük, hogy a lefoglalt napon <strong>legkésőbb 17:00-ig</strong> érkezz meg!</p>
+                                </div>
+
+                                <div className="bg-[#e09900] p-5 rounded-xl border border-[#c98900] flex flex-col justify-center items-center text-center shadow-sm text-white">
+                                    <${Icons.CreditCardIcon} size=${28} className="mb-2" />
+                                    <div className="font-bold text-lg mb-1">Díj: 10.000 Ft</div>
+                                    <p className="text-orange-100 text-sm font-medium bg-black/10 px-3 py-1.5 rounded-lg inline-block">Kizárólag a helyszínen, <strong>készpénzben fizetendő!</strong></p>
+                                </div>
                             </div>
+
                         </div>
                     `}
                 </main>
@@ -1166,23 +1308,28 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-            <!-- Felső Szekció (Info Banners, Title, KRESZ TV) -->
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10 mb-6 lg:mb-8">
+            <!-- Egységesített Fő Szekció -->
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10">
                 
                 <!-- Bal oldal (Span 2) -->
-                <div className="lg:col-span-2 flex flex-col gap-8 w-full justify-end">
-                    <!-- Info Banners -->
-                    <div className="space-y-3">
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
-                            <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                                <span className="font-serif italic font-bold text-xl leading-none">i</span>
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
+                <div className="lg:col-span-2 flex flex-col gap-8 w-full">
+
+                    <!-- Felső Kártyák (Fontos Tudnivalók & KRESZ TV) -->
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+                        <!-- Fontos Tudnivalók -->
+                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-orange-100 transition-colors h-full justify-center" onClick=${() => setIsInfoModalOpen(true)}>
+                            <div className="flex items-center gap-3">
+                                <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                    <span className="font-serif italic font-bold text-xl leading-none">i</span>
+                                </div>
                                 <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
-                                <p className="text-orange-800 text-xs sm:text-sm mt-0.5">Kattints ide a részletekért!</p>
                             </div>
-                            <div className="hidden sm:block text-orange-400">
-                                <${Icons.ChevronRightIcon} size=${24} />
+                            <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
+                                Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
+                            </p>
+                            <div className="hidden lg:inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm">
+                                <span>Részletek megtekintése</span>
+                                <${Icons.ChevronRightIcon} size=${16} />
                             </div>
                         </div>
 
@@ -1195,6 +1342,26 @@ const StudentAppointmentsApp = () => {
                                 <p className="text-gray-700 text-sm font-medium">A bal alsó sarokban található ikonnal tudsz szűrni az időpontok között.</p>
                             </div>
                         </div>
+
+                        <!-- KRESZ TV (Csak asztali nézetben, a Fontos Tudnivalók mellett) -->
+                        <div className="hidden lg:flex bg-gray-50 lg:hover:bg-gray-100 transition-colors border border-gray-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
+                            <div className="flex items-center gap-2 mb-2">
+                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
+                                <h3 className="font-bold text-[#333333] text-sm sm:text-base">KRESZ TV</h3>
+                            </div>
+                            <p className="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed flex-1">
+                                Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
+                            </p>
+                            <a
+                                href="https://www.youtube.com/@KRESZTV"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors border border-transparent shadow-sm"
+                            >
+                                <span>Tovább a csatornára</span>
+                                <${Icons.ChevronRightIcon} size=${16} />
+                            </a>
+                        </div>
                     </div>
 
                     <!-- Title Area -->
@@ -1204,38 +1371,7 @@ const StudentAppointmentsApp = () => {
                         </div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
                     </div>
-                </div>
 
-                <!-- Jobb oldal (Span 1) - KRESZ TV -->
-                <div className="lg:col-span-1 w-full h-full relative flex flex-col justify-end hidden lg:flex">
-                    <!-- KRESZ TV Banner (Desktop Only) - Not Sticky -->
-                    <div className="w-full items-end">
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
-                                <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                                Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
-                            </p>
-                            <a
-                                href="https://www.youtube.com/@KRESZTV"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
-                            >
-                                Kattints ide!
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alsó Szekció (Listák és Szűrő) -->
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10">
-
-                <!-- Left Column (Span 2) -->
-                <div className="lg:col-span-2 flex flex-col gap-8 w-full">
                     <!-- Main Content Area -->
                     <div className="flex flex-col gap-6">
                         <!-- Content Rendering (Unified) -->
@@ -1376,10 +1512,10 @@ const StudentAppointmentsApp = () => {
 
                                         <div className="border-t border-gray-100 pt-4">
                                             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 transition-colors">Napszak</p>
-                                            <div className="flex gap-1.5">
-                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'all' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Mind</button>
-                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'am' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délelőtt</button>
-                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs font-medium rounded-full transition-all border lg:active:scale-95 ${timeFilter === 'pm' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délután</button>
+                                            <div className="flex bg-gray-100 p-1 rounded-xl">
+                                                <button onClick=${() => setTimeFilter('all')} className=${`flex-1 py-1.5 text-xs transition-all lg:active:scale-95 rounded-lg ${timeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Mind</button>
+                                                <button onClick=${() => setTimeFilter('am')} className=${`flex-1 py-1.5 text-xs transition-all lg:active:scale-95 rounded-lg ${timeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délelőtt</button>
+                                                <button onClick=${() => setTimeFilter('pm')} className=${`flex-1 py-1.5 text-xs transition-all lg:active:scale-95 rounded-lg ${timeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délután</button>
                                             </div>
                                         </div>
                                     </div>
@@ -1526,23 +1662,23 @@ const StudentAppointmentsApp = () => {
                             <div className="mb-6">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Elméleti tanfolyam</p>
                                 <div className="flex flex-wrap gap-2.5">
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
-                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod1: !prev.mod1 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod1 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>1. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod2: !prev.mod2 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod2 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>2. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod3: !prev.mod3 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod3 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>3. modul</button>
+                                    <button onClick=${() => setTempSelectedModules(prev => ({ ...prev, mod4: !prev.mod4 }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedModules.mod4 ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>4. modul</button>
                                 </div>
                             </div>
 
                             <div className="mb-6 border-t border-gray-100 pt-5">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Kiegészítő szolgáltatások</p>
                                 <div className="flex flex-wrap gap-2.5">
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, consultation: !prev.consultation }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.consultation ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Konzultáció
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, medical: !prev.medical }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.medical ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Orvosi
                                     </button>
-                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-4 py-2.5 rounded-xl text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
+                                    <button onClick=${() => setTempSelectedCategories(prev => ({ ...prev, firstaid: !prev.firstaid }))} className=${`px-4 py-2.5 rounded-full text-sm font-bold border transition-all lg:active:scale-95 flex items-center gap-1.5 ${tempSelectedCategories.firstaid ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'}`}>
                                         Elsősegély
                                     </button>
                                 </div>
@@ -1550,10 +1686,10 @@ const StudentAppointmentsApp = () => {
 
                             <div className="border-t border-gray-100 pt-5">
                                 <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Napszak</p>
-                                <div className="flex gap-2">
-                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'all' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Mind</button>
-                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'am' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délelőtt</button>
-                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-2.5 text-sm font-bold rounded-full transition-all border lg:active:scale-95 ${tempTimeFilter === 'pm' ? 'bg-[#e09900] text-white border-[#e09900] shadow-sm' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>Délután</button>
+                                <div className="flex bg-gray-100 p-1.5 rounded-2xl">
+                                    <button onClick=${() => setTempTimeFilter('all')} className=${`flex-1 py-2 text-sm transition-all lg:active:scale-95 rounded-xl ${tempTimeFilter === 'all' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Mind</button>
+                                    <button onClick=${() => setTempTimeFilter('am')} className=${`flex-1 py-2 text-sm transition-all lg:active:scale-95 rounded-xl ${tempTimeFilter === 'am' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délelőtt</button>
+                                    <button onClick=${() => setTempTimeFilter('pm')} className=${`flex-1 py-2 text-sm transition-all lg:active:scale-95 rounded-xl ${tempTimeFilter === 'pm' ? 'bg-white text-[#e09900] shadow-sm font-bold' : 'text-gray-500 hover:text-gray-700 font-medium'}`}>Délután</button>
                                 </div>
                             </div>
                         </main>
