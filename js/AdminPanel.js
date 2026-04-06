@@ -1089,9 +1089,8 @@ const AdminPanel = ({ user, handleLogout }) => {
 
     if (viewTestDataType) {
         return html`
-            <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row font-sans text-gray-800">
+            <div className="fixed top-[40px] left-0 right-0 bottom-0 z-[60] bg-gray-100 flex flex-col md:flex-row font-sans text-gray-800 overflow-hidden">
 
-                {/* SIDEBAR */}
                 <aside className="w-full md:w-64 bg-gray-900 text-white flex flex-col shadow-2xl flex-shrink-0 z-20">
                     <div className="p-6 border-b border-gray-800 flex items-center justify-between">
                         <div>
@@ -1147,7 +1146,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                 <${Icons.ChevronDownIcon} size=${16} />
                             </button>
 
-                            {/* System Tools Dropdown for Sidebar */}
                             ${isSystemMenuOpen && html`
                                 <div className="absolute bottom-full left-0 mb-2 w-full bg-gray-800 rounded-xl shadow-2xl border border-gray-700 overflow-hidden z-50">
                                     <div className="p-3 space-y-2 max-h-96 overflow-y-auto custom-scrollbar">
@@ -1178,9 +1176,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     </div>
                 </aside>
 
-                {/* MAIN CONTENT AREA */}
                 <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-100">
-                    {/* TOP BAR */}
                     <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shrink-0 shadow-sm z-10">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-orange-100 text-orange-600 flex items-center justify-center font-black text-xl shadow-inner">
@@ -1250,11 +1246,9 @@ const AdminPanel = ({ user, handleLogout }) => {
                         </div>
                     </header>
 
-                    {/* CONTENT SCROLL AREA */}
                     <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
                         ${mainTab === 'registrations' ? html`
                             <${Fragment}>
-                                {/* MODERN FILTER BAR */}
                                 <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-2 mb-6 flex flex-col sm:flex-row items-center gap-2">
                                     <div className="relative flex-1 w-full">
                                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -1282,7 +1276,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     </button>
                                 </div>
 
-                                {/* EXPANDABLE FILTER DRAWER */}
                                 ${isFilterVisible && html`
                                     <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 animate-fade-in-down relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
@@ -1294,7 +1287,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                         </div>
 
                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                            {/* Date Filters */}
                                             <div className="space-y-4">
                                                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jelentkezés ideje</h4>
                                                 <div className="grid grid-cols-2 gap-3">
@@ -1319,7 +1311,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 </label>
                                             </div>
 
-                                            {/* Exam Results */}
                                             <div className="space-y-4">
                                                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Vizsgaeredmény (legalább egy)</h4>
                                                 <div className="flex flex-col gap-2">
@@ -1344,7 +1335,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                                 </div>
                                             </div>
 
-                                            {/* Icons */}
                                             <div className="space-y-4">
                                                 <div className="flex justify-between items-center">
                                                     <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Státusz Ikonok</h4>
@@ -1370,7 +1360,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     </div>
                                 `}
 
-                                {/* MAIN CONTENT RENDER (TABLES/LOGS) */}
                                 ${isSearchActive ? html`
                                     <${TestStudentTable}
                                         adminUser=${user}
@@ -1451,7 +1440,6 @@ const AdminPanel = ({ user, handleLogout }) => {
                     </div>
                 </main>
 
-                {/* MODALS */}
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => { setIsAddingStudent(false); setIsTransferStudentMode(false); }} adminUser=${user} isTestView=${viewTestDataType} isTransferMode=${isTransferStudentMode} />`}
