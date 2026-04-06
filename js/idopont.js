@@ -1308,7 +1308,6 @@ const StudentAppointmentsApp = () => {
                 </p>
             </header>
 
-<<<<<<< HEAD
             <!-- Egységesített Fő Szekció -->
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10">
                 
@@ -1323,20 +1322,6 @@ const StudentAppointmentsApp = () => {
                                 <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
                                     <span className="font-serif italic font-bold text-xl leading-none">i</span>
                                 </div>
-=======
-            <!-- Felső Szekció (Info Banners, Title, KRESZ TV) -->
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10 mb-6 lg:mb-8">
-                
-                <!-- Bal oldal (Span 2) -->
-                <div className="lg:col-span-2 flex flex-col gap-8 w-full justify-end">
-                    <!-- Info Banners -->
-                    <div className="space-y-3">
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 shadow-sm flex items-start sm:items-center gap-4 cursor-pointer hover:bg-orange-100 transition-colors" onClick=${() => setIsInfoModalOpen(true)}>
-                            <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
-                                <span className="font-serif italic font-bold text-xl leading-none">i</span>
-                            </div>
-                            <div className="flex-1 flex flex-col justify-center min-h-[40px]">
->>>>>>> a66cf6d5f3d5d4eba82cbb323db92a8cff5d280b
                                 <h3 className="text-orange-900 font-bold text-sm sm:text-base">Fontos tudnivalók jelentkezés előtt!</h3>
                             </div>
                             <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
@@ -1386,42 +1371,7 @@ const StudentAppointmentsApp = () => {
                         </div>
                         <h2 className="text-xl sm:text-2xl font-extrabold text-[#333333]">Időpontok</h2>
                     </div>
-<<<<<<< HEAD
 
-=======
-                </div>
-
-                <!-- Jobb oldal (Span 1) - KRESZ TV -->
-                <div className="lg:col-span-1 w-full h-full relative flex flex-col justify-end hidden lg:flex">
-                    <!-- KRESZ TV Banner (Desktop Only) - Not Sticky -->
-                    <div className="w-full items-end">
-                        <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 shadow-sm w-full">
-                            <div className="flex items-center gap-2 mb-2">
-                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
-                                <h3 className="font-bold text-[#333333] text-sm">KRESZ TV</h3>
-                            </div>
-                            <p className="text-xs text-gray-600 mb-3 leading-relaxed">
-                                Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
-                            </p>
-                            <a
-                                href="https://www.youtube.com/@KRESZTV"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-block w-full text-center px-4 py-2 bg-orange-50 hover:bg-orange-100 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-transparent"
-                            >
-                                Kattints ide!
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Alsó Szekció (Listák és Szűrő) -->
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-y-8 gap-x-8 relative z-10">
-
-                <!-- Left Column (Span 2) -->
-                <div className="lg:col-span-2 flex flex-col gap-8 w-full">
->>>>>>> a66cf6d5f3d5d4eba82cbb323db92a8cff5d280b
                     <!-- Main Content Area -->
                     <div className="flex flex-col gap-6">
                         <!-- Content Rendering (Unified) -->
