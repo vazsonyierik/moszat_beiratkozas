@@ -775,7 +775,7 @@ const InfoModal = ({ onClose }) => {
                             
                             <div>
                                 <h4 className="text-lg font-bold text-gray-900 mb-2">A KRESZ vizsgád intézésének alapfeltétele!</h4>
-                                <p className="mb-4 text-base sm:text-sm text-gray-600">Fontos tudnod: amíg nem rendelkezel érvényes, 1. csoportú orvosi alkalmassági véleménnyel, az első KRESZ vizsgádra még csak időpontot sem tudunk igényelni a hatóságnál. Nálunk ezt az orvosit gyorsan és sorban állás nélkül elintézheted!</p>
+                                <p className="mb-4 text-base sm:text-sm text-gray-600">Fontos tudnod: amíg nem rendelkezel érvényes, 1. csoportú orvosi alkalmassági véleménnyel, az első KRESZ vizsgádra még csak időpontot sem tudunk igényelni a Vizsgaközpontnál (KAV). Foglalj időpontot hozzánk, és tudd le a kötelező vizsgálatot zökkenőmentesen, rövid idő alatt!</p>
                             </div>
 
                             <div>
@@ -784,15 +784,15 @@ const InfoModal = ({ onClose }) => {
                                     <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
                                         <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
                                         <div>
-                                            <div className="font-bold text-gray-900 mb-1">Gyors ügymenet</div>
-                                            <p className="text-base sm:text-sm text-gray-600">Az alkalmassági véleményt a vizsgálat után azonnal kézhez kapod.</p>
+                                            <div className="font-bold text-gray-900 mb-1">Időtakarékos</div>
+                                            <p className="text-base sm:text-sm text-gray-600">Kerüld el a hosszú sorban állást a rendelőkben! Nálunk a vizsgálat gördülékeny, maximum 1 óra alatt végzel.</p>
                                         </div>
                                     </div>
                                     
                                     <div className="flex items-start gap-3 bg-gray-50 p-4 rounded-xl border border-gray-100">
                                         <${Icons.CheckCircle} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
                                         <div>
-                                            <div className="font-bold text-gray-900 mb-1">Kényelmes</div>
+                                            <div className="font-bold text-gray-900 mb-1">Praktikus</div>
                                             <p className="text-base sm:text-sm text-gray-600">Akár egyéb előzetes vizsgálatok nélkül is elvégezhető (ez a helyszínen az orvos döntésétől függ).</p>
                                         </div>
                                     </div>
@@ -1302,9 +1302,9 @@ const StudentAppointmentsApp = () => {
                     alt="Mosolyzóna Logó" 
                     className="w-16 h-16 rounded-full mb-5 shadow-sm object-cover"
                 />
-                <h1 className="text-3xl font-extrabold text-gray-900 sm:text-4xl mb-4">Időpontfoglalás</h1>
-                <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4">
-                    Szűrd ki a neked megfelelő időpontokat, és foglald le a helyed egyszerűen!
+                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-4 leading-tight px-2">Mosolyzóna, a Kreszprofesszor autósiskolája – Időpontfoglaló felület</h1>
+                <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4 mt-2">
+                    Válaszd ki a számodra megfelelő időpontot, és foglald le a helyed egyszerűen!
                 </p>
             </header>
 
