@@ -1302,7 +1302,7 @@ const StudentAppointmentsApp = () => {
                     alt="Mosolyzóna Logó" 
                     className="w-16 h-16 rounded-full mb-5 shadow-sm object-cover"
                 />
-                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-4 leading-tight px-2">Mosolyzóna, a Kreszprofesszor autósiskolája – Időpontfoglaló felület</h1>
+                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-4 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
                 <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4 mt-2">
                     Válaszd ki a számodra megfelelő időpontot, és foglald le a helyed egyszerűen!
                 </p>
