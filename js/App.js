@@ -184,6 +184,11 @@ function App() {
             if (authLoading) {
                 return html`<${LoadingOverlay} text="Azonosítás folyamatban..." />`;
             }
+            // Ha teszt üzemmódban vagyunk és admin nézetben, egyből engedjük be a mock userrel.
+            // Ezt csak lokális Playwright tesztelés miatt hagyjuk így a test url esetén.
+            if (isTest && new URLSearchParams(window.location.search).get('bypassAuth') === 'true') {
+                 return html`<${AdminPanel} user=${{email: 'test_admin@moszat.hu'}} handleLogout=${handleLogout} />`;
+            }
             return user ? html`<${AdminPanel} user=${user} handleLogout=${handleLogout} />` : html`<${AdminLogin} />`;
         }
         // Default view is the registration form
