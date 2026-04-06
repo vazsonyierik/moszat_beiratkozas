@@ -235,6 +235,139 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
 // ORVOSI ALKALMASSÁGI VIZSGÁLAT TEMPLATES
 // ==========================================
 
+exports.medicalWaitlistPromoted = (bookingData) => {
+    return {
+        id: 'medicalWaitlistPromoted',
+        subject: "Jó hír! Bekerültél az orvosi alkalmassági vizsgálatra",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Örömmel értesítünk, hogy felszabadult egy hely az alábbi orvosi alkalmassági vizsgálaton, és mivel a várólistán voltál, automatikusan be is osztottunk rá!</p>
+                <ul>
+                    <li><strong>Dátum:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Nincs más teendőd, mint pontosan megjelenni a megadott időpontban.</p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Mit kell magaddal hoznod a vizsgálatra?</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p>Ha esetleg már nem aktuális, és mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet, hogy a várólistán következő tanuló megkaphassa a helyet:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.medicalWaitlistLastMinuteSpot = (bookingData) => {
+    return {
+        id: 'medicalWaitlistLastMinuteSpot',
+        subject: "Utolsó pillanatos szabad hely az orvosi alkalmassági vizsgálaton!",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Váratlanul felszabadult egy hely az orvosi alkalmassági vizsgálaton, amely kevesebb mint 24 óra múlva kezdődik!</p>
+                <ul>
+                    <li><strong>Dátum:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Mivel az idő rövid, a helyet <strong>gyorsasági alapon lehet lefoglalni</strong>. Aki először kattint a lenti gombra, az kapja meg a helyet.</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lastminute.html?courseId=${bookingData.courseId}&email=${bookingData.encodedEmail}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #5cb85c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Lefoglalom a helyet!
+                    </a>
+                </p>
+                <p>Ha a gombra kattintva azt az üzenetet kapod, hogy a hely betelt, akkor valaki más már gyorsabb volt. Köszönjük a megértésedet!</p>
+                <p>Amennyiben már nem aktuális, és szeretnél leiratkozni a várólistáról, kérjük, kattints az alábbi gombra:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.medicalWaitlistModified = (combinedData) => {
+    return {
+        id: 'medicalWaitlistModified',
+        subject: "Orvosi alkalmassági vizsgálat várólistás időpont változás",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${combinedData.firstName}!</strong></p>
+                <p>Tájékoztatunk, hogy az alábbi orvosi alkalmassági vizsgálat időpontja, amire <strong>várólistán vagy</strong>, megváltozott:</p>
+
+                <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px; color: #666;">
+                        <li>Dátum: ${combinedData.oldCourseDate} (${combinedData.oldStartTime} - ${combinedData.oldEndTime})</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 2em; padding: 1em; background-color: #eef2ff; border-left: 4px solid #4f46e5;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Új adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Dátum:</strong> ${combinedData.newCourseDate} (${combinedData.newStartTime} - ${combinedData.newEndTime})</li>
+                    </ul>
+                </div>
+
+                <p>A várólistás jelentkezésed automatikusan érvényben maradt az új időpontra, nincs további teendőd.</p>
+                <p>Amennyiben az új időpont már nem megfelelő számodra, kérjük, az alábbi linkre kattintva iratkozz le a várólistáról:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${combinedData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.medicalCourseReminder3Days = (courseData, bookingData) => {
+    return {
+        id: 'medicalCourseReminder3Days',
+        subject: "Emlékeztető a közelgő orvosi alkalmassági vizsgálatról",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy 3 nap múlva orvosi alkalmassági vizsgálatra várunk az irodánkban.</p>
+                <p style="margin-left: 1.2em; font-size: 1.1em; color: #e53935;">
+                    <strong>Dátum:</strong> ${courseData.date} (${courseData.startTime} - ${courseData.endTime})<br>
+                    <strong>Helyszín:</strong> Irodánk (1088 Budapest, Krúdy u. 16-18. fszt. 3.)
+                </p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Kérjük, ne felejtsd otthon a következőket:</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p><strong>FONTOS KÉRÉS:</strong> Ha időközben közbejött valami, és mégsem tudsz részt venni, kérjük, az alábbi gombra kattintva mielőbb mondd le az időpontot! Ezzel esélyt adsz a várólistán lévő tanulóknak, hogy bejussanak a helyedre.</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+            </div>
+        `
+    };
+};
+
 exports.medicalBookingConfirmation = (courseData, bookingData) => {
     return {
         id: 'medicalBookingConfirmation',
@@ -1205,6 +1338,150 @@ exports.firstAidReminderDay3 = (bookingData) => {
                        Időpont lemondása
                     </a>
                 </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidCourseReminder3Days = (bookingData) => {
+    return {
+        id: 'firstAidCourseReminder3Days',
+        subject: "Emlékeztető a közelgő elsősegély tanfolyamról",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy 3 nap múlva várunk az elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Mivel a tanfolyam díját már sikeresen rendezted, nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
+                <p><strong>FONTOS KÉRÉS:</strong> Ha időközben közbejött valami, és mégsem tudsz részt venni, kérjük, az alábbi gombra kattintva mielőbb mondd le az időpontot!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidCourseReminder1Day = (bookingData) => {
+    return {
+        id: 'firstAidCourseReminder1Day',
+        subject: "Holnap találkozunk! Emlékeztető az elsősegély tanfolyamról",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy holnap várunk az elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Mivel a tanfolyam díját már sikeresen rendezted, nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
+                <p>Kérjük, ha váratlanul közbejött valami, és mégsem tudsz részt venni, az alábbi gombra kattintva haladéktalanul mondd le az időpontot!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${bookingData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidCourseModified = (combinedData) => {
+    return {
+        id: 'firstAidCourseModified',
+        subject: "Elsősegély tanfolyam időpont változás - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${combinedData.firstName}!</strong></p>
+                <p>Tájékoztatunk, hogy az alábbi elsősegély tanfolyam, amire jelentkeztél, <strong>megváltozott:</strong></p>
+
+                <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px; color: #666;">
+                        <li>Időpont: ${combinedData.oldCourseDate} (${combinedData.oldStartTime} - ${combinedData.oldEndTime})</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 2em; padding: 1em; background-color: #eef2ff; border-left: 4px solid #4f46e5;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Új adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Időpont:</strong> ${combinedData.newCourseDate} (${combinedData.newStartTime} - ${combinedData.newEndTime})</li>
+                    </ul>
+                </div>
+
+                <p>A jelentkezésed automatikusan átkerült az új időpontra, nincs további teendőd.</p>
+                <p>Amennyiben az új időpont nem megfelelő számodra, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token=${combinedData.cancellation_token}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidCourseDeleted = (bookingData) => {
+    return {
+        id: 'firstAidCourseDeleted',
+        subject: "Elsősegély tanfolyam elmarad - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sajnálattal tájékoztatunk, hogy a következő elsősegély tanfolyam, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
+                <ul>
+                    <li><strong>Eredeti időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                ${bookingData.reason ? `<p><strong>Indoklás:</strong> ${bookingData.reason}</p>` : ''}
+                <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
+                <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidBookingCancelledByStudent = (bookingData) => {
+    return {
+        id: 'firstAidBookingCancelledByStudent',
+        subject: "Elsősegély tanfolyam lemondva - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Sikeresen lemondtad a jelentkezésedet a következő elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                <p>Köszönjük, hogy jelezted felénk!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+exports.firstAidBookingCancelledByAdmin = (bookingData) => {
+    return {
+        id: 'firstAidBookingCancelledByAdmin',
+        subject: "Elsősegély jelentkezés törölve - Mosolyzóna Autósiskola",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
+                <p>Tájékoztatunk, hogy a következő elsősegély tanfolyamra leadott jelentkezésed törlésre került a rendszerünkben:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
+                </ul>
+                ${bookingData.reason ? `<p><strong>Indoklás:</strong> ${bookingData.reason}</p>` : ''}
+                <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
         `
