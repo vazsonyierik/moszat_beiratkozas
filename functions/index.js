@@ -350,8 +350,8 @@ const runDailyChecks = async () => {
             if (isFirstAidSpecific && !isFirstAidCourse) continue;
             if (!isFirstAidSpecific && isFirstAidCourse) continue;
 
-            // Az orvosi vizsgálatot csak 1 nappal előtte küldjük
-            if (!isFirstAidSpecific && isMedicalCourse && daysAhead !== 1) continue;
+            // Az orvosi vizsgálatot csak 1 és 3 nappal előtte küldjük
+            if (!isFirstAidSpecific && isMedicalCourse && daysAhead !== 1 && daysAhead !== 3) continue;
             
             if (courseData.bookingsCount > 0) {
                 const bookingsSnap = await courseDoc.ref.collection("bookings").get();
@@ -408,6 +408,10 @@ const runDailyChecks = async () => {
                             finalTemplateFunc = templates.medicalCourseReminder1Day;
                             templateId = "medicalCourseReminder1Day";
                             isMedicalTemplate = true;
+                        } else if (isMedicalCourse && daysAhead === 3) {
+                            finalTemplateFunc = templates.medicalCourseReminder3Days;
+                            templateId = "medicalCourseReminder3Days";
+                            isMedicalTemplate = true;
                         } else if (!isFirstAidSpecific) {
                             templateId = daysAhead === 1 ? "courseReminder1Day" : "courseReminder3Days";
                         } else {
@@ -436,11 +440,55 @@ const runDailyChecks = async () => {
     await processCourseReminders(3, templates.courseReminder3Days, "3 napos emlékeztető", false);
     await processCourseReminders(1, templates.courseReminder1Day, "1 napos emlékeztető", false);
 
-    // 2. Elsősegély tanfolyam fizetési/részvételi emlékeztetők (5 napos, 3 napos, 1 napos)
+    // 2. Elsősegély tanfolyam fizetési/részvételi emlékeztetők (5 napos, 3 napos, 1 napos) - Csak a nem fizetőknek!
     await processCourseReminders(5, templates.firstAidReminderDay5, "Elsősegély 5 napos fizetési emlékeztető", true);
     await processCourseReminders(3, templates.firstAidReminderDay3, "Elsősegély 3 napos sürgős emlékeztető", true);
     await processCourseReminders(1, templates.firstAidReminderDay1, "Elsősegély 1 napos eltiltó figyelmeztetés", true);
 
+    // Módosított Elsősegély logika: Külön hívás a fizetett diákok emlékeztetőihez is.
+    // Létrehozunk egy segédfüggvényt, ami hasonlít a `processCourseReminders`-re, de a fizetett diákokat célozza meg.
+    const processFirstAidPaidReminders = async (daysAhead, templateFunc, templateId, logMessageStr) => {
+        const targetDateStr = getTargetDateStr(daysAhead);
+        const coursesSnapshot = await db.collection("courses").where("date", "==", targetDateStr).get();
+        for (const courseDoc of coursesSnapshot.docs) {
+            const courseData = courseDoc.data();
+            if (courseData.name === "Elsősegély tanfolyam" && courseData.bookingsCount > 0) {
+                const bookingsSnap = await courseDoc.ref.collection("bookings").get();
+                for (const bookingDoc of bookingsSnap.docs) {
+                    const bookingData = bookingDoc.data();
+                    let hasPaid = false;
+
+                    let studentDoc = null;
+                    if (bookingData.linkedStudentId) {
+                        const snap = await db.collection("registrations").doc(bookingData.linkedStudentId).get();
+                        if (snap.exists) studentDoc = snap;
+                    } else {
+                        const emailSnap = await db.collection("registrations")
+                            .where("email", "==", bookingData.email)
+                            .limit(1).get();
+                        if (!emailSnap.empty) studentDoc = emailSnap.docs[0];
+                    }
+
+                    if (studentDoc && studentDoc.data().firstAidPaid === true) {
+                        hasPaid = true;
+                    }
+
+                    if (hasPaid) {
+                        const templateHtml = templateFunc(bookingData);
+                        studentPromises.push(sendDynamicEmail(templateId, bookingData, templateHtml, false));
+                        automationLogs.push({
+                            student: `${bookingData.lastName} ${bookingData.firstName}`,
+                            action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
+                        });
+                    }
+                }
+            }
+        }
+    };
+
+    // 3. Elsősegély tanfolyam emlékeztetők a MÁR FIZETETT diákoknak
+    await processFirstAidPaidReminders(3, templates.firstAidCourseReminder3Days, "firstAidCourseReminder3Days", "Elsősegély 3 napos (fizetett) emlékeztető");
+    await processFirstAidPaidReminders(1, templates.firstAidCourseReminder1Day, "firstAidCourseReminder1Day", "Elsősegély 1 napos (fizetett) emlékeztető");
 
     await Promise.allSettled(studentPromises); // Use allSettled here to catch all, just in case
 

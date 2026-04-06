@@ -683,6 +683,132 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    firstAidCourseReminder3Days: {
+        id: 'firstAidCourseReminder3Days',
+        name: 'Elsősegély: Emlékeztető 3 nap (Fizetett)', category: 'Elsősegély',
+        subject: `Emlékeztető a közelgő elsősegély tanfolyamról`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy 3 nap múlva várunk az elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Mivel a tanfolyam díját már sikeresen rendezted, nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
+                <p><strong>FONTOS KÉRÉS:</strong> Ha időközben közbejött valami, és mégsem tudsz részt venni, kérjük, az alábbi gombra kattintva mielőbb mondd le az időpontot!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
+    firstAidCourseReminder1Day: {
+        id: 'firstAidCourseReminder1Day',
+        name: 'Elsősegély: Emlékeztető 1 nap (Fizetett)', category: 'Elsősegély',
+        subject: `Holnap találkozunk! Emlékeztető az elsősegély tanfolyamról`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy holnap várunk az elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Mivel a tanfolyam díját már sikeresen rendezted, nincs más teendőd, mint pontosan megjelenni a képzésen.</p>
+                <p>Kérjük, ha váratlanul közbejött valami, és mégsem tudsz részt venni, az alábbi gombra kattintva haladéktalanul mondd le az időpontot!</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
+    firstAidCourseModified: {
+        id: 'firstAidCourseModified',
+        name: 'Elsősegély: Időpont változás', category: 'Elsősegély',
+        subject: `Elsősegély tanfolyam időpont változás - Mosolyzóna Autósiskola`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Tájékoztatunk, hogy az alábbi elsősegély tanfolyam, amire jelentkeztél, <strong>megváltozott:</strong></p>
+
+                <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px; color: #666;">
+                        <li>Időpont: {{oldCourseDate}} ({{oldStartTime}} - {{oldEndTime}})</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 2em; padding: 1em; background-color: #eef2ff; border-left: 4px solid #4f46e5;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Új adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Időpont:</strong> {{newCourseDate}} ({{newStartTime}} - {{newEndTime}})</li>
+                    </ul>
+                </div>
+
+                <p>A jelentkezésed automatikusan átkerült az új időpontra, nincs további teendőd.</p>
+                <p>Amennyiben az új időpont nem megfelelő számodra, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
+    firstAidCourseDeleted: {
+        id: 'firstAidCourseDeleted',
+        name: 'Elsősegély: Elmarad', category: 'Elsősegély',
+        subject: `Elsősegély tanfolyam elmarad - Mosolyzóna Autósiskola`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Sajnálattal tájékoztatunk, hogy a következő elsősegély tanfolyam, amelyre jelentkeztél, váratlan okok miatt <strong>elmarad:</strong></p>
+                <ul>
+                    <li><strong>Eredeti időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                {{reason_formatted}}
+                <p>Kérjük, foglalj egy új időpontot az aktuálisan meghirdetett foglalkozásaink közül.</p>
+                <p>Elnézést kérünk az esetleges kellemetlenségekért!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
+    firstAidBookingCancelledByStudent: {
+        id: 'firstAidBookingCancelledByStudent',
+        name: 'Elsősegély: Lemondás (Diák)', category: 'Elsősegély',
+        subject: `Elsősegély tanfolyam lemondva - Mosolyzóna Autósiskola`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Sikeresen lemondtad a jelentkezésedet a következő elsősegély tanfolyamra:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Köszönjük, hogy jelezted felénk!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
+    firstAidBookingCancelledByAdmin: {
+        id: 'firstAidBookingCancelledByAdmin',
+        name: 'Elsősegély: Törlés (Admin)', category: 'Elsősegély',
+        subject: `Elsősegély jelentkezés törölve - Mosolyzóna Autósiskola`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Tájékoztatunk, hogy a következő elsősegély tanfolyamra leadott jelentkezésed törlésre került a rendszerünkben:</p>
+                <ul>
+                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                {{reason_formatted}}
+                <p>Ha úgy gondolod, hogy ez tévedés, kérjük vedd fel velünk a kapcsolatot.</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
     firstAidPaymentReceived: {
         id: 'firstAidPaymentReceived',
         name: 'Elsősegély: Díj beérkezett', category: 'Elsősegély',
@@ -701,6 +827,127 @@ const DEFAULT_TEMPLATES = {
     },
     
     // ORVOSI ALKALMASSÁGI VIZSGÁLAT TEMPLATES
+    medicalWaitlistPromoted: {
+        id: 'medicalWaitlistPromoted',
+        name: 'Orvosi vizsg.: Automatikus bekerülés', category: 'Orvosi alkalmassági',
+        subject: `Jó hír! Bekerültél az orvosi alkalmassági vizsgálatra`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Örömmel értesítünk, hogy felszabadult egy hely az alábbi orvosi alkalmassági vizsgálaton, és mivel a várólistán voltál, automatikusan be is osztottunk rá!</p>
+                <ul>
+                    <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Nincs más teendőd, mint pontosan megjelenni a megadott időpontban.</p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Mit kell magaddal hoznod a vizsgálatra?</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p>Ha esetleg már nem aktuális, és mégsem tudsz részt venni, kérjük, az alábbi linkre kattintva mondd le a jelentkezésedet, hogy a várólistán következő tanuló megkaphassa a helyet:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+        `,
+        enabled: true
+    },
+    medicalWaitlistLastMinuteSpot: {
+        id: 'medicalWaitlistLastMinuteSpot',
+        name: 'Orvosi vizsg.: Last-minute üresedés', category: 'Orvosi alkalmassági',
+        subject: `Utolsó pillanatos szabad hely az orvosi alkalmassági vizsgálaton!`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Váratlanul felszabadult egy hely az orvosi alkalmassági vizsgálaton, amely kevesebb mint 24 óra múlva kezdődik!</p>
+                <ul>
+                    <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
+                </ul>
+                <p>Mivel az idő rövid, a helyet <strong>gyorsasági alapon lehet lefoglalni</strong>. Aki először kattint a lenti gombra, az kapja meg a helyet.</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lastminute.html?courseId={{courseId}}&email={{encodedEmail}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #5cb85c; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Lefoglalom a helyet!
+                    </a>
+                </p>
+                <p>Ha a gombra kattintva azt az üzenetet kapod, hogy a hely betelt, akkor valaki más már gyorsabb volt. Köszönjük a megértésedet!</p>
+                <p>Amennyiben már nem aktuális, és szeretnél leiratkozni a várólistáról, kérjük, kattints az alábbi gombra:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+        `,
+        enabled: true
+    },
+    medicalWaitlistModified: {
+        id: 'medicalWaitlistModified',
+        name: 'Orvosi vizsg.: Várólista időpont változás', category: 'Orvosi alkalmassági',
+        subject: `Orvosi alkalmassági vizsgálat várólistás időpont változás`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Tájékoztatunk, hogy az alábbi orvosi alkalmassági vizsgálat időpontja, amire <strong>várólistán vagy</strong>, megváltozott:</p>
+
+                <div style="margin-bottom: 1.5em; padding: 1em; background-color: #f9f9f9; border-left: 4px solid #666;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Régi adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px; color: #666;">
+                        <li>Dátum: {{oldCourseDate}} ({{oldStartTime}} - {{oldEndTime}})</li>
+                    </ul>
+                </div>
+
+                <div style="margin-bottom: 2em; padding: 1em; background-color: #eef2ff; border-left: 4px solid #4f46e5;">
+                    <p style="margin: 0 0 0.5em 0;"><strong>Új adatok:</strong></p>
+                    <ul style="margin: 0; padding-left: 20px;">
+                        <li><strong>Dátum:</strong> {{newCourseDate}} ({{newStartTime}} - {{newEndTime}})</li>
+                    </ul>
+                </div>
+
+                <p>A várólistás jelentkezésed automatikusan érvényben maradt az új időpontra, nincs további teendőd.</p>
+                <p>Amennyiben az új időpont már nem megfelelő számodra, kérjük, az alábbi linkre kattintva iratkozz le a várólistáról:</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Leiratkozás a várólistáról
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+        `,
+        enabled: true
+    },
+    medicalCourseReminder3Days: {
+        id: 'medicalCourseReminder3Days',
+        name: 'Orvosi vizsg.: Emlékeztető (3 nappal előtte)', category: 'Orvosi alkalmassági',
+        subject: `Emlékeztető a közelgő orvosi alkalmassági vizsgálatról`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
+                <p>Szeretnénk emlékeztetni, hogy 3 nap múlva orvosi alkalmassági vizsgálatra várunk az irodánkban.</p>
+                <p style="margin-left: 1.2em; font-size: 1.1em; color: #e53935;">
+                    <strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})<br>
+                    <strong>Helyszín:</strong> Irodánk (1088 Budapest, Krúdy u. 16-18. fszt. 3.)
+                </p>
+                <p style="margin-top: 2em; margin-bottom: 0.5em; color: #d32f2f;"><strong>FONTOS - Kérjük, ne felejtsd otthon a következőket:</strong></p>
+                <ul style="margin-top: 0.5em;">
+                    <li><strong>Személyi igazolvány</strong></li>
+                    <li><strong>Lakcímkártya</strong></li>
+                    <li><strong>TAJ kártya</strong> (ha rendelkezel vele)</li>
+                    <li>A vizsgálat díja (Kérjük, pontosan hozd a <strong>KÉSZPÉNZT</strong>. A vizsgálat díja: <strong>xxxx Ft</strong>)</li>
+                </ul>
+                <p><strong>FONTOS KÉRÉS:</strong> Ha időközben közbejött valami, és mégsem tudsz részt venni, kérjük, az alábbi gombra kattintva mielőbb mondd le az időpontot! Ezzel esélyt adsz a várólistán lévő tanulóknak, hogy bejussanak a helyedre.</p>
+                <p style="margin: 1.5em 0;">
+                    <a href="https://moszat.hu/beiratkozas/lemondas.html?token={{cancellation_token}}"
+                       style="display: inline-block; padding: 10px 20px; background-color: #d9534f; color: white; text-decoration: none; border-radius: 5px; font-weight: bold;">
+                       Időpont lemondása
+                    </a>
+                </p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
+        `,
+        enabled: true
+    },
     medicalBookingConfirmation: {
         id: 'medicalBookingConfirmation',
         name: 'Orvosi vizsg.: Sikeres foglalás', category: 'Orvosi alkalmassági',
