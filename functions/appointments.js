@@ -794,13 +794,6 @@ exports.cancelBookingByStudent = onCall({region: "europe-west1"}, async (request
                 });
             });
 
-            if (bookingData.courseName === "Orvosi alkalmassági vizsgálat") {
-                await sendDynamicEmail("medicalWaitlistCancelledByStudent", bookingData, templates.medicalWaitlistCancelledByStudent(bookingData), isTestView);
-            } else if (bookingData.courseName === "Konzultáció") {
-                await sendDynamicEmail("consultationWaitlistCancelledByStudent", bookingData, templates.consultationWaitlistCancelledByStudent(bookingData), isTestView);
-            } else {
-                await sendDynamicEmail("waitlistCancelledByStudent", bookingData, templates.waitlistCancelledByStudent(bookingData), isTestView);
-            }
             return {success: true, message: "Sikeresen leiratkoztál a várólistáról."};
         } else {
             // Normal Booking Cancellation
