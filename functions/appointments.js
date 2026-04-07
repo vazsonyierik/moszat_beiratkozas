@@ -1424,7 +1424,7 @@ exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (req
  * Admin notifies students who are marked as absent (isPresent: false).
  */
 exports.notifyAbsentees = onCall({region: "europe-west1"}, async (request) => {
-    ensureIsAdmin(request);
+    await ensureIsAdmin(request.auth);
 
     const data = request.data;
     const {courseId, isTestView, emails} = data;
@@ -1470,7 +1470,11 @@ exports.notifyAbsentees = onCall({region: "europe-west1"}, async (request) => {
 
         await Promise.all(emailPromises);
 
-        return {success: true, message: \`Sikeresen értesítve \${emails.length} tanuló.\`};
+        await courseRef.update({
+            absenteesNotified: true
+        });
+
+        return {success: true, message: `Sikeresen értesítve ${emails.length} tanuló.`};
     } catch (error) {
         console.error("Error notifying absentees:", error);
         throw new HttpsError("internal", "Hiba történt a hiányzók értesítésekor.", error.message);

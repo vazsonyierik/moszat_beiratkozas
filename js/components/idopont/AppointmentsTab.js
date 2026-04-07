@@ -722,15 +722,25 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                                 </p>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick=${handleNotifyAbsentees}
-                                    disabled=${isNotifying}
-                                    className=${`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors ${isNotifying ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'}`}
-                                    title="Hiányzók értesítése"
-                                >
-                                    ${isNotifying ? html`<${Icons.SpinnerIcon} className="animate-spin" size=${16} />` : html`<${Icons.MailIcon} size=${16} />`}
-                                    <span className="hidden sm:inline">${isNotifying ? 'Küldés...' : 'Hiányzók értesítése'}</span>
-                                </button>
+                                ${course.absenteesNotified
+                                    ? html`
+                                        <div className="bg-green-50 text-green-700 border border-green-200 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2" title="Értesítők már kiküldve">
+                                            <${Icons.CheckCircleIcon} size=${16} />
+                                            <span className="hidden sm:inline">Hiányzók értesítve!</span>
+                                        </div>
+                                    `
+                                    : html`
+                                        <button
+                                            onClick=${handleNotifyAbsentees}
+                                            disabled=${isNotifying}
+                                            className=${`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors ${isNotifying ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'}`}
+                                            title="Hiányzók értesítése"
+                                        >
+                                            ${isNotifying ? null : html`<${Icons.MailIcon} size=${16} />`}
+                                            <span className="hidden sm:inline">${isNotifying ? 'Küldés...' : 'Hiányzók értesítése'}</span>
+                                        </button>
+                                    `
+                                }
                                 <button
                                     onClick=${handlePrintCourseBookings}
                                     className="bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center transition-colors"
