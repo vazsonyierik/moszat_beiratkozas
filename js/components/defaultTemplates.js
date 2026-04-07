@@ -53,6 +53,27 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    absenteeNotification: {
+        id: 'absenteeNotification',
+        name: 'Hiányzó értesítő (Konzultáció/Elsősegély/Orvosi)',
+        category: 'Beiratkozás és Tanfolyam',
+        subject: `Értesítés: Hiányzás a "{{courseName}}" foglalkozásról`,
+        html: `
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+            <p>Szeretnénk értesíteni, hogy rendszerünk alapján nem jelentél meg a(z) <strong>{{courseName}}</strong> foglalkozáson.</p>
+
+            <p style="margin-top: 1.2em; margin-bottom: 1.2em;"><strong>A foglalkozás adatai:</strong></p>
+            <ul style="list-style-type: disc; padding-left: 20px;">
+                <li><strong>Időpont:</strong> {{courseDate}} | {{courseStartTime}} - {{courseEndTime}}</li>
+            </ul>
+
+            <p style="margin-top: 1.2em;">Amennyiben pótolni szeretnéd a hiányzást, kérjük, foglalj egy új időpontot a jelentkezési felületen!</p>
+            <p style="margin-top: 1.2em;">Ha bármilyen kérdésed van, vagy adminisztrációs hibáról van szó, kérjük, vedd fel velünk a kapcsolatot.</p>
+
+            <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
     enrolledConfirmation: {
         id: 'enrolledConfirmation',
         name: 'Beiratkozás visszaigazolása (E-2)', category: 'Beiratkozás és Tanfolyam',
