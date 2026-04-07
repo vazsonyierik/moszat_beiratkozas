@@ -1070,6 +1070,7 @@ exports.checkCancellationStatus = appointments.checkCancellationStatus;
 exports.joinWaitlist = appointments.joinWaitlist;
 exports.claimLastMinuteSpot = appointments.claimLastMinuteSpot;
 exports.removeWaitlistEntryAsAdmin = appointments.removeWaitlistEntryAsAdmin;
+exports.notifyAbsentees = appointments.notifyAbsentees;
 exports.bulkAddStudentToCourses = appointments.bulkAddStudentToCourses;
 exports.linkStudentToBooking = appointments.linkStudentToBooking;
 exports.updateBookingAttendance = appointments.updateBookingAttendance;

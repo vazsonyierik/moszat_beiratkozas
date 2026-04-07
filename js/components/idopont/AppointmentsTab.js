@@ -630,8 +630,9 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         });
     };
 
+    const [isNotifying, setIsNotifying] = useState(false);
+
     const handleNotifyAbsentees = () => {
-        // Ezt a gombot egyelőre csak előkészítjük
         const absentees = bookings.filter(b => b.isPresent === false);
         if (absentees.length === 0) {
             showToast('Nincs olyan tanuló, aki hiányzóként (piros X) lenne megjelölve.', 'info');
@@ -641,9 +642,30 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
         const absenteeNames = absentees.map(b => `${b.lastName} ${b.firstName}`).join(', ');
 
         showConfirmation({
-            message: `Hamarosan: Értesítés küldése a következő ${absentees.length} hiányzónak: ${absenteeNames}. Ez a funkció jelenleg fejlesztés alatt áll.`,
-            onConfirm: () => {
-                console.log('Absentees to notify:', absentees);
+            message: `Biztosan kiküldöd a hiányzási értesítőt a következő ${absentees.length} tanulónak: ${absenteeNames}?`,
+            onConfirm: async () => {
+                setIsNotifying(true);
+                const toastId = showToast('Értesítők küldése folyamatban...', 'info', 0);
+                try {
+                    const notifyFn = httpsCallable(functions, 'notifyAbsentees');
+                    const result = await notifyFn({
+                        courseId: course.id,
+                        isTestView,
+                        emails: absentees.map(b => b.email)
+                    });
+
+                    if (result.data?.success) {
+                        showToast(result.data.message || 'Értesítők sikeresen kiküldve.', 'success');
+                    } else {
+                        showToast('Hiba az értesítők küldésekor.', 'error');
+                    }
+                } catch (error) {
+                    console.error("Error notifying absentees:", error);
+                    showToast(`Hiba az értesítők küldésekor: ${error.message}`, 'error');
+                } finally {
+                    setIsNotifying(false);
+                    // Dismiss initial loading toast by showing a short empty toast or just relying on the success error override
+                }
             }
         });
     };
@@ -702,11 +724,12 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                             <div className="flex items-center gap-2">
                                 <button
                                     onClick=${handleNotifyAbsentees}
-                                    className="bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors"
-                                    title="Hiányzók értesítése (Hamarosan)"
+                                    disabled=${isNotifying}
+                                    className=${`px-3 py-1.5 rounded-md text-sm font-semibold flex items-center gap-2 transition-colors ${isNotifying ? 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed' : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'}`}
+                                    title="Hiányzók értesítése"
                                 >
-                                    <${Icons.MailIcon} size=${16} />
-                                    <span className="hidden sm:inline">Hiányzók értesítése</span>
+                                    ${isNotifying ? html`<${Icons.SpinnerIcon} className="animate-spin" size=${16} />` : html`<${Icons.MailIcon} size=${16} />`}
+                                    <span className="hidden sm:inline">${isNotifying ? 'Küldés...' : 'Hiányzók értesítése'}</span>
                                 </button>
                                 <button
                                     onClick=${handlePrintCourseBookings}
