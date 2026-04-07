@@ -1232,13 +1232,13 @@ const AdminPanel = ({ user, handleLogout }) => {
                                             </div>
                                         </button>
                                         <button onClick=${() => { handleClearAllTestExams(); setIsModeMenuOpen(false); }} className="w-full text-left px-4 py-3 text-sm font-bold text-red-600 hover:bg-red-50 flex items-center gap-3 border-t border-gray-50 transition-colors">
-                                            <${Icons.TrashIcon} size=${16} /> Összes vizsga törlése
+                                            <${Icons.TrashIcon} size=${14} /> Összes vizsga törlése
                                         </button>
-                                        <div className="p-2 bg-gray-50 border-y border-gray-100 mt-1">
-                                            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2">Fiók</span>
+                                        <div className="p-1.5 bg-gray-50 border-y border-gray-100 mt-1">
+                                            <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider px-1.5">Fiók</span>
                                         </div>
-                                        <button onClick=${handleLogout} className="w-full text-left px-4 py-3 text-sm font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-3 transition-colors">
-                                            <${Icons.LogoutIcon} size=${16} className="text-gray-400" /> Kijelentkezés
+                                        <button onClick=${handleLogout} className="w-full text-left px-3 py-2 text-xs font-bold text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                                            <${Icons.LogoutIcon} size=${14} className="text-gray-400" /> Kijelentkezés
                                         </button>
                                     </div>
                                 `}
@@ -1246,38 +1246,38 @@ const AdminPanel = ({ user, handleLogout }) => {
                         </div>
                     </header>
 
-                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar">
+                    <div className="flex-1 overflow-y-auto p-3 sm:p-4 custom-scrollbar">
                         ${mainTab === 'registrations' ? html`
                             <${Fragment}>
-                                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-2 mb-6 flex flex-col sm:flex-row items-center gap-2">
+                                <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-1.5 mb-4 flex flex-col sm:flex-row items-center gap-1.5">
                                     <div className="relative flex-1 w-full">
-                                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <${Icons.SearchIcon} size=${18} className="text-gray-400" />
+                                        <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+                                            <${Icons.SearchIcon} size=${14} className="text-gray-400" />
                                         </div>
                                         <input
                                             type="text"
                                             value=${searchTerm}
                                             onChange=${(e) => setSearchTerm(e.target.value)}
                                             placeholder="Keresés név, email, azonosító vagy telefon alapján..."
-                                            className="block w-full pl-10 pr-3 py-3 border-0 rounded-xl text-sm font-medium text-gray-900 placeholder-gray-400 focus:ring-0 bg-gray-50 hover:bg-gray-100 transition-colors"
+                                            className="block w-full pl-8 pr-2.5 py-1.5 border-0 rounded-md text-xs font-medium text-gray-900 placeholder-gray-400 focus:ring-0 bg-gray-50 hover:bg-gray-100 transition-colors"
                                         />
                                         ${searchTerm && html`
-                                            <button onClick=${() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600">
-                                                <${Icons.XIcon} size=${16} />
+                                            <button onClick=${() => setSearchTerm('')} className="absolute inset-y-0 right-0 pr-2.5 flex items-center text-gray-400 hover:text-gray-600">
+                                                <${Icons.XIcon} size=${14} />
                                             </button>
                                         `}
                                     </div>
                                     <button
                                         onClick=${() => setIsFilterVisible(!isFilterVisible)}
-                                        className=${`w-full sm:w-auto px-4 py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-colors ${isFilterVisible || selectedIconFilters.length > 0 || examResultFilter !== 'all' || startDate || endDate || searchInArchive ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                                        className=${`w-full sm:w-auto px-3 py-1.5 rounded-md font-bold text-xs flex items-center justify-center gap-1.5 transition-colors ${isFilterVisible || selectedIconFilters.length > 0 || examResultFilter !== 'all' || startDate || endDate || searchInArchive ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
                                     >
-                                        <${Icons.FilterIcon} size=${18} />
+                                        <${Icons.FilterIcon} size=${14} />
                                         Szűrők ${(selectedIconFilters.length > 0 || examResultFilter !== 'all' || startDate || endDate || searchInArchive) ? '(Aktív)' : ''}
                                     </button>
                                 </div>
 
                                 ${isFilterVisible && html`
-                                    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 mb-6 animate-fade-in-down relative overflow-hidden">
+                                    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4 mb-4 animate-fade-in-down relative overflow-hidden">
                                         <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
                                         <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-4">
                                             <h3 className="text-lg font-black text-gray-800 flex items-center gap-2">
@@ -1287,47 +1287,47 @@ const AdminPanel = ({ user, handleLogout }) => {
                                         </div>
 
                                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                                            <div className="space-y-4">
-                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Jelentkezés ideje</h4>
-                                                <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-3">
+                                                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Jelentkezés ideje</h4>
+                                                <div className="grid grid-cols-2 gap-2">
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-600 mb-1">-tól</label>
-                                                        <input type="date" value=${startDate} onChange=${e => setStartDate(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-shadow" />
+                                                        <label className="block text-[10px] font-bold text-gray-600 mb-0.5">-tól</label>
+                                                        <input type="date" value=${startDate} onChange=${e => setStartDate(e.target.value)} className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-medium focus:ring-1 focus:ring-orange-500 outline-none transition-shadow" />
                                                     </div>
                                                     <div>
-                                                        <label className="block text-xs font-bold text-gray-600 mb-1">-ig</label>
-                                                        <input type="date" value=${endDate} onChange=${e => setEndDate(e.target.value)} className="w-full p-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium focus:ring-2 focus:ring-orange-500 outline-none transition-shadow" />
+                                                        <label className="block text-[10px] font-bold text-gray-600 mb-0.5">-ig</label>
+                                                        <input type="date" value=${endDate} onChange=${e => setEndDate(e.target.value)} className="w-full p-1.5 bg-gray-50 border border-gray-200 rounded text-xs font-medium focus:ring-1 focus:ring-orange-500 outline-none transition-shadow" />
                                                     </div>
                                                 </div>
-                                                <label className="flex items-center gap-2 cursor-pointer mt-2 group">
+                                                <label className="flex items-center gap-2 cursor-pointer mt-1 group">
                                                     <div className="relative flex items-center justify-center">
                                                         <input type="checkbox" checked=${searchInArchive} onChange=${(e) => setSearchInArchive(e.target.checked)} className="peer sr-only" />
-                                                        <div className="w-5 h-5 border-2 border-gray-300 rounded peer-checked:bg-orange-500 peer-checked:border-orange-500 transition-colors"></div>
+                                                        <div className="w-4 h-4 border border-gray-300 rounded peer-checked:bg-orange-500 peer-checked:border-orange-500 transition-colors"></div>
                                                         <div className="absolute text-white opacity-0 peer-checked:opacity-100 pointer-events-none">
-                                                            <${Icons.CheckIcon} size=${14} />
+                                                            <${Icons.CheckIcon} size=${10} />
                                                         </div>
                                                     </div>
-                                                    <span className="text-sm font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Keresés az archívumban is</span>
+                                                    <span className="text-xs font-bold text-gray-600 group-hover:text-gray-900 transition-colors">Keresés az archívumban is</span>
                                                 </label>
                                             </div>
 
-                                            <div className="space-y-4">
-                                                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider">Vizsgaeredmény (legalább egy)</h4>
-                                                <div className="flex flex-col gap-2">
+                                            <div className="space-y-3">
+                                                <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Vizsgaeredmény (legalább egy)</h4>
+                                                <div className="flex flex-col gap-1">
                                                     ${[
                                                         { val: 'all', label: 'Összes', color: 'bg-gray-500' },
                                                         { val: 'successful', label: 'Sikeres (M)', color: 'bg-green-500' },
                                                         { val: 'failed', label: 'Sikertelen (1)', color: 'bg-red-500' },
                                                         { val: 'missed', label: 'Nem jelent meg (3)', color: 'bg-yellow-500' }
                                                     ].map(opt => html`
-                                                        <label key=${opt.val} className="flex items-center gap-3 cursor-pointer p-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                                        <label key=${opt.val} className="flex items-center gap-2 cursor-pointer p-1 rounded hover:bg-gray-50 transition-colors">
                                                             <div className="relative flex items-center justify-center">
                                                                 <input type="radio" name="examFilter_test" value=${opt.val} checked=${examResultFilter === opt.val} onChange=${e => setExamResultFilter(e.target.value)} className="peer sr-only" />
-                                                                <div className="w-5 h-5 border-2 border-gray-300 rounded-full peer-checked:border-orange-500 transition-colors"></div>
-                                                                <div className="absolute w-2.5 h-2.5 bg-orange-500 rounded-full opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"></div>
+                                                                <div className="w-4 h-4 border border-gray-300 rounded-full peer-checked:border-orange-500 transition-colors"></div>
+                                                                <div className="absolute w-2 h-2 bg-orange-500 rounded-full opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity"></div>
                                                             </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className=${`w-2 h-2 rounded-full ${opt.color}`}></span>
+                                                            <div className="flex items-center gap-1.5">
+                                                                <span className=${`w-1.5 h-1.5 rounded-full ${opt.color}`}></span>
                                                                 <span className="text-sm font-bold text-gray-700">${opt.label}</span>
                                                             </div>
                                                         </label>
