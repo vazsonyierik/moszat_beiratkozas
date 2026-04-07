@@ -1470,7 +1470,7 @@ exports.notifyAbsentees = onCall({region: "europe-west1"}, async (request) => {
 
         await Promise.all(emailPromises);
 
-        return {success: true, message: \`Sikeresen értesítve \${emails.length} tanuló.\`};
+        return {success: true, message: `Sikeresen értesítve ${emails.length} tanuló.`};
     } catch (error) {
         console.error("Error notifying absentees:", error);
         throw new HttpsError("internal", "Hiba történt a hiányzók értesítésekor.", error.message);
