@@ -1007,7 +1007,7 @@ async function processWaitlist(courseId, isTestView) {
                 } else if (courseData.name === "Konzultáció") {
                     return sendDynamicEmail("consultationWaitlistLastMinuteSpot", emailData, templates.consultationWaitlistLastMinuteSpot(emailData), isTestView);
                 } else {
-                    return sendDynamicEmail("lastMinuteSpot", emailData, templates.lastMinuteSpot(emailData), isTestView);
+                    return sendDynamicEmail("waitlistLastMinuteSpot", emailData, templates.waitlistLastMinuteSpot(emailData), isTestView);
                 }
             });
 

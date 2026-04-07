@@ -1021,9 +1021,9 @@ exports.waitlistJoined = (bookingData) => {
     };
 };
 
-exports.lastMinuteSpot = (bookingData) => {
+exports.waitlistLastMinuteSpot = (bookingData) => {
     return {
-        id: 'lastMinuteSpot',
+        id: 'waitlistLastMinuteSpot',
         subject: "Utolsó pillanatos szabad hely! (Gyorsasági foglalás)",
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
