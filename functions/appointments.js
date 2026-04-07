@@ -1424,7 +1424,7 @@ exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (req
  * Admin notifies students who are marked as absent (isPresent: false).
  */
 exports.notifyAbsentees = onCall({region: "europe-west1"}, async (request) => {
-    ensureIsAdmin(request);
+    await ensureIsAdmin(request.auth);
 
     const data = request.data;
     const {courseId, isTestView, emails} = data;
