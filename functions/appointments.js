@@ -1470,6 +1470,10 @@ exports.notifyAbsentees = onCall({region: "europe-west1"}, async (request) => {
 
         await Promise.all(emailPromises);
 
+        await courseRef.update({
+            absenteesNotified: true
+        });
+
         return {success: true, message: `Sikeresen értesítve ${emails.length} tanuló.`};
     } catch (error) {
         console.error("Error notifying absentees:", error);
