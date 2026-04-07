@@ -474,40 +474,7 @@ exports.doctorMedicalReminder = (courseData) => {
     };
 };
 
-exports.waitlistCancelledByStudent = (bookingData) => {
-    return {
-        id: 'waitlistCancelledByStudent',
-        subject: "Sikeres leiratkozás a várólistáról",
-        html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
-                <p>Sikeresen leiratkoztál a következő KRESZ foglalkozás várólistájáról:</p>
-                <ul>
-                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
-                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
-                </ul>
-                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
-        `
-    };
-};
 
-exports.medicalWaitlistCancelledByStudent = (bookingData) => {
-    return {
-        id: 'medicalWaitlistCancelledByStudent',
-        subject: "Sikeres leiratkozás az orvosi alkalmassági vizsgálat várólistájáról",
-        html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
-                <p>Sikeresen leiratkoztál a következő orvosi alkalmassági vizsgálat várólistájáról:</p>
-                <ul>
-                    <li><strong>Dátum:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
-                </ul>
-                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
-        `
-    };
-};
 
 exports.medicalBookingCancelledByStudent = (bookingData) => {
     return {
@@ -647,23 +614,6 @@ exports.consultationCourseReminder1Day = (bookingData) => {
     };
 };
 
-exports.consultationWaitlistCancelledByStudent = (bookingData) => {
-    return {
-        id: 'consultationWaitlistCancelledByStudent',
-        subject: "Sikeres leiratkozás a konzultáció várólistájáról",
-        html: `
-            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-                <p style="margin-bottom: 2.4em;"><strong>Kedves ${bookingData.firstName}!</strong></p>
-                <p>Sikeresen leiratkoztál a következő konzultációs foglalkozás várólistájáról:</p>
-                <ul>
-                    <li><strong>Foglalkozás:</strong> ${bookingData.courseName}</li>
-                    <li><strong>Időpont:</strong> ${bookingData.courseDate} (${bookingData.startTime} - ${bookingData.endTime})</li>
-                </ul>
-                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-            </div>
-        `
-    };
-};
 
 exports.consultationBookingCancelledByStudent = (bookingData) => {
     return {
@@ -1021,9 +971,9 @@ exports.waitlistJoined = (bookingData) => {
     };
 };
 
-exports.lastMinuteSpot = (bookingData) => {
+exports.waitlistLastMinuteSpot = (bookingData) => {
     return {
-        id: 'lastMinuteSpot',
+        id: 'waitlistLastMinuteSpot',
         subject: "Utolsó pillanatos szabad hely! (Gyorsasági foglalás)",
         html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">

@@ -1044,35 +1044,6 @@ const DEFAULT_TEMPLATES = {
     },
     
     // UJ VÁRÓLISTA ÉS LEMONDÁS SABLONOK
-    waitlistCancelledByStudent: {
-        id: 'waitlistCancelledByStudent',
-        name: 'Várólista: Leiratkozás (Diák)', category: 'Időpont foglalás',
-        subject: "Sikeres leiratkozás a várólistáról",
-        html: `
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-                <p>Sikeresen leiratkoztál a következő KRESZ foglalkozás várólistájáról:</p>
-                <ul>
-                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
-                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-                </ul>
-                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-        `,
-        enabled: true
-    },
-    medicalWaitlistCancelledByStudent: {
-        id: 'medicalWaitlistCancelledByStudent',
-        name: 'Orvosi vizsg.: Várólista leiratkozás', category: 'Orvosi alkalmassági',
-        subject: "Sikeres leiratkozás az orvosi alkalmassági vizsgálat várólistájáról",
-        html: `
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-                <p>Sikeresen leiratkoztál a következő orvosi alkalmassági vizsgálat várólistájáról:</p>
-                <ul>
-                    <li><strong>Dátum:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-                </ul>
-                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
-        `,
-        enabled: true
-    },
     medicalBookingCancelledByStudent: {
         id: 'medicalBookingCancelledByStudent',
         name: 'Orvosi vizsg.: Lemondás (Diák által)', category: 'Orvosi alkalmassági',
@@ -1383,21 +1354,6 @@ const DEFAULT_TEMPLATES = {
                     </a>
                 </p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
-        `,
-        enabled: true
-    },
-    consultationWaitlistCancelledByStudent: {
-        id: 'consultationWaitlistCancelledByStudent',
-        name: 'Konzultáció Várólista: Leiratkozás', category: 'Konzultáció',
-        subject: "Sikeres leiratkozás a konzultáció várólistájáról",
-        html: `
-            <p style="margin-bottom: 2.4em;"><strong>Kedves {{firstName}}!</strong></p>
-                <p>Sikeresen leiratkoztál a következő konzultációs foglalkozás várólistájáról:</p>
-                <ul>
-                    <li><strong>Foglalkozás:</strong> {{courseName}}</li>
-                    <li><strong>Időpont:</strong> {{courseDate}} ({{startTime}} - {{endTime}})</li>
-                </ul>
-                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna Autósiskola</strong></p>
         `,
         enabled: true
     },
