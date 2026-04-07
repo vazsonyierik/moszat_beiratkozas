@@ -231,7 +231,7 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
             
             // Create a formatted reason HTML property if reason exists
             if (mappedTemplateData.reason) {
-                mappedTemplateData.reason_formatted = `<p><strong>Indoklás:</strong> ${mappedTemplateData.reason}</p>`;
+                mappedTemplateData.reason_formatted = `<strong>Indoklás:</strong> ${mappedTemplateData.reason}`;
             } else {
                 mappedTemplateData.reason_formatted = '';
             }
