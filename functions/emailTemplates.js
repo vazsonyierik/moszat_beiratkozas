@@ -231,6 +231,24 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
     };
 };
 
+exports.absenteeNotification = (data) => ({
+    id: 'absenteeNotification',
+    subject: `Értesítés: Hiányzás a "${data.courseName}" foglalkozásról`,
+    html: `
+    <p style="margin-bottom: 2.4em;"><strong>Kedves ${data.lastName} ${data.firstName}${data.secondName ? " " + data.secondName : ""}!</strong></p>
+    <p>Szeretnénk értesíteni, hogy rendszerünk alapján nem jelentél meg a(z) <strong>${data.courseName}</strong> foglalkozáson.</p>
+
+    <p style="margin-top: 1.2em; margin-bottom: 1.2em;"><strong>A foglalkozás adatai:</strong></p>
+    <ul style="list-style-type: disc; padding-left: 20px;">
+        <li><strong>Időpont:</strong> ${data.courseDate} | ${data.courseStartTime} - ${data.courseEndTime}</li>
+    </ul>
+
+    <p style="margin-top: 1.2em;">Amennyiben pótolni szeretnéd a hiányzást, kérjük, foglalj egy új időpontot a jelentkezési felületen!</p>
+    <p style="margin-top: 1.2em;">Ha bármilyen kérdésed van, vagy adminisztrációs hibáról van szó, kérjük, vedd fel velünk a kapcsolatot.</p>
+
+    <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+`});
+
 // ==========================================
 // ORVOSI ALKALMASSÁGI VIZSGÁLAT TEMPLATES
 // ==========================================
