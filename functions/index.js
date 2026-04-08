@@ -272,12 +272,13 @@ const runDailyChecks = async () => {
     const today = new Date();
     const automationLogs = [];
     const snapshot = await db.collection("registrations").where("status", "==", "active").get();
-    if (snapshot.empty) {
-        logger.info("No active registrations found. Ending daily checks.");
-        return 0;
-    }
+
     const studentPromises = [];
-    snapshot.forEach((doc) => {
+
+    if (snapshot.empty) {
+        logger.info("No active registrations found. Skipping registration reminders.");
+    } else {
+        snapshot.forEach((doc) => {
         const student = {id: doc.id, ...doc.data()};
         const studentName = formatFullName(student.current_prefix, student.current_firstName, student.current_lastName, student.current_secondName);
         if (!student.status_paid && !student.status_enrolled) {
@@ -325,7 +326,8 @@ const runDailyChecks = async () => {
                 automationLogs.push({student: studentName, action: "Státusz 'lejárt (e-learning nem kész)'-re állítva (9 hónap eltelt)"});
             }
         }
-    });
+        });
+    }
 
     // --- IDŐPONT EMLÉKEZTETŐK ÉS ELSŐSEGÉLY FIZETÉSI EMLÉKEZTETŐK ---
     
@@ -344,8 +346,9 @@ const runDailyChecks = async () => {
             const courseData = courseDoc.data();
             const isFirstAidCourse = courseData.name === "Elsősegély tanfolyam";
             const isMedicalCourse = courseData.name === "Orvosi alkalmassági vizsgálat";
+            const isConsultationCourse = courseData.name === "Konzultáció";
 
-            // Külön kezeljük az Elsősegély és a sima (vagy orvosi) kurzusokat
+            // Külön kezeljük az Elsősegély és a sima (vagy orvosi/konzultáció) kurzusokat
             // Az Elsősegélyes hívásoknál csak azt, a sima hívásoknál csak a többit.
             if (isFirstAidSpecific && !isFirstAidCourse) continue;
             if (!isFirstAidSpecific && isFirstAidCourse) continue;
@@ -399,10 +402,10 @@ const runDailyChecks = async () => {
                     }
 
                     if (shouldSend) {
-                        // Kicseréljük az alap sablont, ha Orvosi Alkalmassági és 1 nappal előtte vagyunk
+                        // Kicseréljük az alap sablont a megfelelő tanfolyam típusához
                         let finalTemplateFunc = templateFunc;
-                        let templateId = "courseReminder1Day"; // Fallback normál emlékeztetőnél
-                        let isMedicalTemplate = false;
+                        let templateId = "courseReminder1Day"; // Fallback normál (KRESZ) emlékeztetőnél
+                        let isMedicalTemplate = false; // Mivel az orvosi sablonok courseData-t IS várnak első paraméterként
 
                         if (isMedicalCourse && daysAhead === 1) {
                             finalTemplateFunc = templates.medicalCourseReminder1Day;
@@ -412,6 +415,14 @@ const runDailyChecks = async () => {
                             finalTemplateFunc = templates.medicalCourseReminder3Days;
                             templateId = "medicalCourseReminder3Days";
                             isMedicalTemplate = true;
+                        } else if (isConsultationCourse) {
+                            if (daysAhead === 1) {
+                                finalTemplateFunc = templates.consultationCourseReminder1Day;
+                                templateId = "consultationCourseReminder1Day";
+                            } else if (daysAhead === 3) {
+                                finalTemplateFunc = templates.consultationCourseReminder3Days;
+                                templateId = "consultationCourseReminder3Days";
+                            }
                         } else if (!isFirstAidSpecific) {
                             templateId = daysAhead === 1 ? "courseReminder1Day" : "courseReminder3Days";
                         } else {
@@ -719,8 +730,14 @@ exports.sendAdminLoginLink = onCall({region: "europe-west1"}, async (request) =>
     }
 });
 
-// Napi ütemezett ellenőrzések
-exports.dailyScheduledChecks = onSchedule("every day 08:00", () => runDailyChecks());
+// Napi ütemezett ellenőrzések (Minden nap reggel 9:00-kor)
+exports.dailyScheduledChecks = onSchedule({
+    schedule: "0 9 * * *",
+    timeZone: "Europe/Budapest",
+    region: "europe-west1",
+    timeoutSeconds: 540,
+    memory: "1GiB",
+}, () => runDailyChecks());
 
 // Ütemezett email feldolgozás (Hétfőtől Péntekig, 06:00-18:00 között minden óra 5. percében)
 exports.scheduledEmailProcessor = onSchedule({
