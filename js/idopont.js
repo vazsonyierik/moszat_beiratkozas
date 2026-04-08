@@ -1470,20 +1470,22 @@ const StudentAppointmentsApp = () => {
                             `}
 
                             ${(desktopWeeks.length === 0) && html`
-                                <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-4">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                <div className="bg-white rounded-xl shadow-sm p-8 sm:p-12 text-center border border-gray-200 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-3">
+                                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-2 shadow-inner">
+                                        <${Icons.SearchIcon} size=${36} className="text-[#888888]" />
                                     </div>
-                                    <p className="text-gray-500 text-base sm:text-lg max-w-md mx-auto">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Nem találtunk ilyen időpontot</h3>
+                                    <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto leading-relaxed">Jelenleg nincs olyan szabad időpontunk, ami megfelelne a beállított szűrőknek. Nézz körül a többi lehetőség között!</p>
                                     <button
                                         onClick=${() => {
                                             setSelectedCategories({ consultation: false, medical: false, firstaid: false });
                                             setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
                                             setTimeFilter('all');
                                         }}
-                                        className="mt-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-semibold transition-colors flex items-center gap-2 text-sm"
+                                        className="mt-4 px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 flex items-center gap-2 text-sm"
                                     >
-                                        <${Icons.XIcon} size=${16} /> Szűrések törlése
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                        Összes időpont mutatása
                                     </button>
                                 </div>
                             `}
