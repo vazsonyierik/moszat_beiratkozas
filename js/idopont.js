@@ -1356,11 +1356,11 @@ const StudentAppointmentsApp = () => {
 
             <header className="mb-12 text-center flex flex-col items-center">
                 <div className="w-16 h-16 mb-8 text-[#e09900] drop-shadow-sm flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="w-full h-full">
-                        <circle cx="12" cy="12" r="10"></circle>
-                        <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
-                        <line x1="9" y1="9" x2="9.01" y2="9"></line>
-                        <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-full h-full">
+                        <circle cx="12" cy="12" r="12" fill="currentColor" />
+                        <circle cx="8" cy="9.5" r="1.5" fill="white" />
+                        <circle cx="16" cy="9.5" r="1.5" fill="white" />
+                        <path d="M7.5 14.5c1.5 2 4.5 2.5 9 0" stroke="white" strokeWidth="2" strokeLinecap="round" fill="none" />
                     </svg>
                 </div>
                 <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-5 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
