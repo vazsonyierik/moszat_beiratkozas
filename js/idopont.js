@@ -1622,10 +1622,10 @@ const StudentAppointmentsApp = () => {
                                     </div>
                                 `)}
                             </div>
-                            <div className="mt-4 pt-3 border-t border-gray-200 shrink-0">
+                            <div className="mt-4 pt-3 border-t border-gray-200 shrink-0 flex flex-col items-center">
                                 <button
                                     onClick=${() => setIsCheckoutOpen(true)}
-                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] lg:hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
+                                    className="w-full lg:w-[90%] flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] lg:hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
                                     Véglegesítés (${cart.length})
                                 </button>
