@@ -430,7 +430,7 @@ function getDayName(dateStr) {
 
 
 
-const InfoModal = ({ onClose }) => {
+const InfoModal = ({ onClose, onApplyFilter }) => {
     const [activeTab, setActiveTab] = useState('kresz');
     const [isClosing, setIsClosing] = useState(false);
     const [expandedModule, setExpandedModule] = useState(null);
@@ -439,6 +439,16 @@ const InfoModal = ({ onClose }) => {
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(onClose, 240);
+    };
+
+    const handleFilterClick = (filterType) => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            if (onApplyFilter) {
+                onApplyFilter(filterType);
+            }
+        }, 240);
     };
 
     const toggleAccordion = (mod) => {
@@ -493,7 +503,7 @@ const InfoModal = ({ onClose }) => {
                     </button>
                 </div>
 
-                <main ref=${contentRef} className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-[1.5rem] max-h-[60vh]">
+                <main ref=${contentRef} className="p-6 overflow-y-scroll custom-scrollbar flex-1 bg-white rounded-b-[1.5rem] max-h-[60vh] min-h-[60vh]">
                     
                     ${activeTab === 'kresz' && html`
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="kresz">
@@ -638,8 +648,18 @@ const InfoModal = ({ onClose }) => {
                             </div>
 
                             <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm mt-4">
-                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://www.youtube.com/watch?v=I3_ZJ46Oggs&list=PLyBTUlfT1smVc4xNCuiNHTkHzRRihBvRn&index=1" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
+                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
                             </p>
+                            
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('kresz')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
+                            </div>
                         </div>
                     `}
 
@@ -684,7 +704,7 @@ const InfoModal = ({ onClose }) => {
                                     <${Icons.ClockIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
                                     <div>
                                         <div className="font-bold text-gray-900 mb-1">Időpont</div>
-                                        <p className="text-gray-700">Szombatonként 09:00-tól 12:15-ig.</p>
+                                        <p className="text-gray-700">Szombatonként 09:00-tól 12:15-ig (átlagosan 3-4 hetente).</p>
                                     </div>
                                 </div>
                                 <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
@@ -694,6 +714,16 @@ const InfoModal = ({ onClose }) => {
                                         <p className="text-gray-700">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</p>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('consultation')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
                             </div>
                         </div>
                     `}
@@ -740,7 +770,7 @@ const InfoModal = ({ onClose }) => {
                                         </div>
                                         <div>
                                             <div className="font-bold text-gray-900">Időpont</div>
-                                            <div className="text-gray-600 text-sm mt-0.5">Péntekenként 16:30-tól 20:30-ig.</div>
+                                            <div className="text-gray-600 text-sm mt-0.5">Péntekenként 16:30-tól 20:30-ig (átlagosan 3-4 hetente).</div>
                                         </div>
                                     </div>
 
@@ -766,6 +796,16 @@ const InfoModal = ({ onClose }) => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('firstaid')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
                             </div>
                         </div>
                     `}
@@ -796,6 +836,14 @@ const InfoModal = ({ onClose }) => {
                                             <p className="text-base sm:text-sm text-gray-600">Akár egyéb előzetes vizsgálatok nélkül is elvégezhető (ez a helyszínen az orvos döntésétől függ).</p>
                                         </div>
                                     </div>
+
+                                    <div className="flex items-start gap-3 bg-orange-50 p-4 rounded-xl border border-orange-200">
+                                        <${Icons.InfoIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-orange-900 mb-1">Ritkábban indul</div>
+                                            <p className="text-base sm:text-sm text-orange-800">Orvosi alkalmassági vizsgálatot átlagosan 3-4 hetente tartunk.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -811,6 +859,16 @@ const InfoModal = ({ onClose }) => {
                                     <div className="font-bold text-lg mb-1">Díj: 10.000 Ft</div>
                                     <p className="text-orange-100 text-sm font-medium bg-black/10 px-3 py-1.5 rounded-lg inline-block">Kizárólag a helyszínen, <strong>készpénzben fizetendő!</strong></p>
                                 </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('medical')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
                             </div>
 
                         </div>
@@ -1230,8 +1288,8 @@ const StudentAppointmentsApp = () => {
             <div key=${course.id} className=${`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 ${isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : isFull ? 'border-gray-200 bg-gray-50/30' : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
                 <div className="flex flex-col h-full justify-between gap-4">
                     <div>
-                        <div className="flex justify-between items-start mb-2 gap-3">
-                            <h4 className=${`font-extrabold text-[#333333] leading-tight pr-2 ${course.name.length > 25 ? 'text-[15px]' : 'text-lg'}`}>${course.name}</h4>
+                        <div className="flex justify-between items-start mb-2 gap-3 min-h-[2.5rem] sm:min-h-[2.75rem]">
+                            <h4 className="font-extrabold text-[#333333] leading-tight pr-2 text-[15px] sm:text-base">${course.name}</h4>
                             ${isInCart ? (isWaitlistInCart ? html`
                                 <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-[#c98900] border border-orange-100 shrink-0">Várólistán</span>
                             ` : html`
@@ -1300,9 +1358,9 @@ const StudentAppointmentsApp = () => {
                 <img 
                     src="https://mosolyzona.hu/wp-content/uploads/2019/10/cropped-mosoly-1.jpg" 
                     alt="Mosolyzóna Logó" 
-                    className="w-16 h-16 rounded-full mb-5 shadow-sm object-cover"
+                    className="w-16 h-16 rounded-full mb-8 shadow-sm object-cover"
                 />
-                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-4 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
+                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-5 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
                 <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4 mt-2">
                     Válaszd ki a számodra megfelelő időpontot, és foglald le a helyed egyszerűen!
                 </p>
@@ -1327,7 +1385,7 @@ const StudentAppointmentsApp = () => {
                             <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
                                 Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
                             </p>
-                            <div className="hidden lg:inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm">
+                            <div className="hidden lg:flex w-[90%] mx-auto text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm">
                                 <span>Részletek megtekintése</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
                             </div>
@@ -1344,19 +1402,21 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- KRESZ TV (Csak asztali nézetben, a Fontos Tudnivalók mellett) -->
-                        <div className="hidden lg:flex bg-gray-50 lg:hover:bg-gray-100 transition-colors border border-gray-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
-                            <div className="flex items-center gap-2 mb-2">
-                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
+                        <div className="hidden lg:flex bg-white lg:hover:bg-gray-50 transition-colors border border-orange-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                    <${Icons.PlayCircleIcon} size=${20} />
+                                </div>
                                 <h3 className="font-bold text-[#333333] text-sm sm:text-base">KRESZ TV</h3>
                             </div>
                             <p className="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed flex-1">
                                 Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
                             </p>
                             <a
-                                href="https://www.youtube.com/watch?v=I3_ZJ46Oggs&list=PLyBTUlfT1smVc4xNCuiNHTkHzRRihBvRn&index=1"
+                                href="https://www.youtube.com/@KRESZTV"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors border border-transparent shadow-sm"
+                                className="inline-flex w-[90%] mx-auto items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm"
                             >
                                 <span>Tovább a csatornára</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
@@ -1412,20 +1472,22 @@ const StudentAppointmentsApp = () => {
                             `}
 
                             ${(desktopWeeks.length === 0) && html`
-                                <div className="bg-white rounded-xl shadow p-8 sm:p-12 text-center border border-gray-100 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-4">
-                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center text-gray-300 mb-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                                <div className="bg-white rounded-xl shadow-sm p-8 sm:p-12 text-center border border-gray-200 animate-fade-in-up min-h-[300px] flex flex-col items-center justify-center gap-3">
+                                    <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center text-gray-400 mb-2 shadow-inner">
+                                        <${Icons.SearchIcon} size=${36} className="text-[#888888]" />
                                     </div>
-                                    <p className="text-gray-500 text-base sm:text-lg max-w-md mx-auto">A megadott szűrési feltételekkel nincs meghirdetett időpont.</p>
+                                    <h3 className="text-xl sm:text-2xl font-bold text-gray-800">Nem találtunk ilyen időpontot</h3>
+                                    <p className="text-gray-500 text-sm sm:text-base max-w-md mx-auto leading-relaxed">Jelenleg nincs olyan szabad időpontunk, ami megfelelne a beállított szűrőknek. Nézz körül a többi lehetőség között!</p>
                                     <button
                                         onClick=${() => {
                                             setSelectedCategories({ consultation: false, medical: false, firstaid: false });
                                             setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
                                             setTimeFilter('all');
                                         }}
-                                        className="mt-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full font-semibold transition-colors flex items-center gap-2 text-sm"
+                                        className="mt-4 px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold transition-all shadow-md lg:active:scale-95 flex items-center gap-2 text-sm"
                                     >
-                                        <${Icons.XIcon} size=${16} /> Szűrések törlése
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="shrink-0"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                                        Összes időpont mutatása
                                     </button>
                                 </div>
                             `}
@@ -1560,10 +1622,10 @@ const StudentAppointmentsApp = () => {
                                     </div>
                                 `)}
                             </div>
-                            <div className="mt-4 pt-3 border-t border-gray-200 shrink-0">
+                            <div className="mt-4 pt-3 border-t border-gray-200 shrink-0 flex flex-col items-center">
                                 <button
                                     onClick=${() => setIsCheckoutOpen(true)}
-                                    className="w-full flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] lg:hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
+                                    className="w-full lg:w-[90%] flex justify-center items-center gap-1.5 py-2.5 px-3 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-[#e09900] lg:hover:bg-[#c98900] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#e09900] transition-all hover:shadow-md"
                                 >
                                     Véglegesítés (${cart.length})
                                 </button>
@@ -1642,7 +1704,31 @@ const StudentAppointmentsApp = () => {
                 />
             `}
 
-            ${isInfoModalOpen && html`<${InfoModal} onClose=${() => setIsInfoModalOpen(false)} />`}
+            ${isInfoModalOpen && html`<${InfoModal} 
+                onClose=${() => setIsInfoModalOpen(false)} 
+                onApplyFilter=${(filterType) => {
+                    // Reset all filters first
+                    setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                    setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                    setTimeFilter('all');
+                    
+                    // Apply new filter
+                    if (filterType === 'kresz') {
+                        setSelectedModules({ mod1: true, mod2: true, mod3: true, mod4: true });
+                    } else if (filterType === 'consultation') {
+                        setSelectedCategories(prev => ({ ...prev, consultation: true }));
+                    } else if (filterType === 'firstaid') {
+                        setSelectedCategories(prev => ({ ...prev, firstaid: true }));
+                    } else if (filterType === 'medical') {
+                        setSelectedCategories(prev => ({ ...prev, medical: true }));
+                    }
+                    
+                    // Open the filter panel on desktop if it's closed
+                    if (window.innerWidth >= 1024 && !isFilterExpanded) {
+                        setIsFilterExpanded(true);
+                    }
+                }}
+            />`}
 
             
             <!-- Mobile Filter Modal -->
