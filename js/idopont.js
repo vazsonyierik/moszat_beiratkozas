@@ -1385,7 +1385,7 @@ const StudentAppointmentsApp = () => {
                             <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
                                 Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
                             </p>
-                            <div className="hidden lg:inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm">
+                            <div className="hidden lg:flex w-[90%] mx-auto text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm">
                                 <span>Részletek megtekintése</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
                             </div>
@@ -1416,7 +1416,7 @@ const StudentAppointmentsApp = () => {
                                 href="https://www.youtube.com/@KRESZTV"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm"
+                                className="inline-flex w-[90%] mx-auto items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm"
                             >
                                 <span>Tovább a csatornára</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
