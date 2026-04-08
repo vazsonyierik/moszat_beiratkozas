@@ -1385,7 +1385,7 @@ const StudentAppointmentsApp = () => {
                             <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
                                 Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
                             </p>
-                            <div className="hidden lg:inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm">
+                            <div className="hidden lg:inline-flex w-full text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm">
                                 <span>Részletek megtekintése</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
                             </div>
@@ -1402,9 +1402,11 @@ const StudentAppointmentsApp = () => {
                         </div>
 
                         <!-- KRESZ TV (Csak asztali nézetben, a Fontos Tudnivalók mellett) -->
-                        <div className="hidden lg:flex bg-gray-50 lg:hover:bg-gray-100 transition-colors border border-gray-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
-                            <div className="flex items-center gap-2 mb-2">
-                                <${Icons.PlayCircleIcon} size=${20} className="text-[#e09900]" />
+                        <div className="hidden lg:flex bg-white lg:hover:bg-gray-50 transition-colors border border-orange-200 rounded-xl p-5 shadow-sm w-full flex-col h-full justify-center">
+                            <div className="flex items-center gap-3 mb-2">
+                                <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
+                                    <${Icons.PlayCircleIcon} size=${20} />
+                                </div>
                                 <h3 className="font-bold text-[#333333] text-sm sm:text-base">KRESZ TV</h3>
                             </div>
                             <p className="text-xs sm:text-sm text-gray-600 mb-4 leading-relaxed flex-1">
@@ -1414,7 +1416,7 @@ const StudentAppointmentsApp = () => {
                                 href="https://www.youtube.com/@KRESZTV"
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors border border-transparent shadow-sm"
+                                className="inline-flex w-full items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm"
                             >
                                 <span>Tovább a csatornára</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
