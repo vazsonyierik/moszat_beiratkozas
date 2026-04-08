@@ -1355,15 +1355,7 @@ const StudentAppointmentsApp = () => {
             `}
 
             <header className="mb-12 text-center flex flex-col items-center">
-                <div className="w-16 h-16 mb-8 text-[#e09900] drop-shadow-sm flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" className="w-full h-full">
-                        <circle cx="12" cy="12" r="10.5" stroke="currentColor" strokeWidth="2.5" fill="none" />
-                        <ellipse cx="8.5" cy="9" rx="1.5" ry="3" fill="currentColor" />
-                        <ellipse cx="15.5" cy="9" rx="1.5" ry="3" fill="currentColor" />
-                        <path d="M 7 14 L 17 14 C 17 18.5, 7 18.5, 7 14 Z" fill="currentColor" />
-                    </svg>
-                </div>
-                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-5 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
+                <h1 className="text-2xl font-extrabold text-[#e09900] sm:text-4xl mb-5 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
                 <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4 mt-2">
                     Válaszd ki a számodra megfelelő időpontot, és foglald le a helyed egyszerűen!
                 </p>
