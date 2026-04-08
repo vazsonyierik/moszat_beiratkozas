@@ -1288,7 +1288,7 @@ const StudentAppointmentsApp = () => {
             <div key=${course.id} className=${`bg-white border rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-300 ${isInCart ? (isWaitlistInCart ? 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/30' : 'border-[#e09900] ring-1 ring-[#e09900] bg-orange-50/10') : isFull ? 'border-gray-200 bg-gray-50/30' : 'border-gray-200'} ${isCompletelyFull ? 'opacity-60' : ''}`}>
                 <div className="flex flex-col h-full justify-between gap-4">
                     <div>
-                        <div className="flex justify-between items-start mb-2 gap-3">
+                        <div className="flex justify-between items-start mb-2 gap-3 min-h-[2.5rem] sm:min-h-[2.75rem]">
                             <h4 className=${`font-extrabold text-[#333333] leading-tight pr-2 ${course.name.length > 25 ? 'text-[15px]' : 'text-lg'}`}>${course.name}</h4>
                             ${isInCart ? (isWaitlistInCart ? html`
                                 <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-orange-50 text-[#c98900] border border-orange-100 shrink-0">Várólistán</span>
