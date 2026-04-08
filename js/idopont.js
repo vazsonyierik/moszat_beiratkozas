@@ -430,7 +430,7 @@ function getDayName(dateStr) {
 
 
 
-const InfoModal = ({ onClose }) => {
+const InfoModal = ({ onClose, onApplyFilter }) => {
     const [activeTab, setActiveTab] = useState('kresz');
     const [isClosing, setIsClosing] = useState(false);
     const [expandedModule, setExpandedModule] = useState(null);
@@ -439,6 +439,16 @@ const InfoModal = ({ onClose }) => {
     const handleClose = () => {
         setIsClosing(true);
         setTimeout(onClose, 240);
+    };
+
+    const handleFilterClick = (filterType) => {
+        setIsClosing(true);
+        setTimeout(() => {
+            onClose();
+            if (onApplyFilter) {
+                onApplyFilter(filterType);
+            }
+        }, 240);
     };
 
     const toggleAccordion = (mod) => {
@@ -640,6 +650,16 @@ const InfoModal = ({ onClose }) => {
                             <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm mt-4">
                                 Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
                             </p>
+                            
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('kresz')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
+                            </div>
                         </div>
                     `}
 
@@ -684,7 +704,7 @@ const InfoModal = ({ onClose }) => {
                                     <${Icons.ClockIcon} size=${20} className="text-gray-500 shrink-0 mt-0.5" />
                                     <div>
                                         <div className="font-bold text-gray-900 mb-1">Időpont</div>
-                                        <p className="text-gray-700">Szombatonként 09:00-tól 12:15-ig.</p>
+                                        <p className="text-gray-700">Szombatonként 09:00-tól 12:15-ig (átlagosan 3-4 hetente).</p>
                                     </div>
                                 </div>
                                 <div className="bg-gray-100 p-4 rounded-xl flex items-start gap-3">
@@ -694,6 +714,16 @@ const InfoModal = ({ onClose }) => {
                                         <p className="text-gray-700">1088 Budapest, Krúdy utca 16-18. földszint 3. ajtó.</p>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('consultation')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
                             </div>
                         </div>
                     `}
@@ -740,7 +770,7 @@ const InfoModal = ({ onClose }) => {
                                         </div>
                                         <div>
                                             <div className="font-bold text-gray-900">Időpont</div>
-                                            <div className="text-gray-600 text-sm mt-0.5">Péntekenként 16:30-tól 20:30-ig.</div>
+                                            <div className="text-gray-600 text-sm mt-0.5">Péntekenként 16:30-tól 20:30-ig (átlagosan 3-4 hetente).</div>
                                         </div>
                                     </div>
 
@@ -766,6 +796,16 @@ const InfoModal = ({ onClose }) => {
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('firstaid')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
                             </div>
                         </div>
                     `}
@@ -796,6 +836,14 @@ const InfoModal = ({ onClose }) => {
                                             <p className="text-base sm:text-sm text-gray-600">Akár egyéb előzetes vizsgálatok nélkül is elvégezhető (ez a helyszínen az orvos döntésétől függ).</p>
                                         </div>
                                     </div>
+
+                                    <div className="flex items-start gap-3 bg-orange-50 p-4 rounded-xl border border-orange-200">
+                                        <${Icons.InfoIcon} size=${20} className="text-[#ea9f21] mt-0.5 shrink-0" />
+                                        <div>
+                                            <div className="font-bold text-orange-900 mb-1">Ritkábban indul</div>
+                                            <p className="text-base sm:text-sm text-orange-800">Orvosi alkalmassági vizsgálatot átlagosan 3-4 hetente tartunk.</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
@@ -811,6 +859,16 @@ const InfoModal = ({ onClose }) => {
                                     <div className="font-bold text-lg mb-1">Díj: 10.000 Ft</div>
                                     <p className="text-orange-100 text-sm font-medium bg-black/10 px-3 py-1.5 rounded-lg inline-block">Kizárólag a helyszínen, <strong>készpénzben fizetendő!</strong></p>
                                 </div>
+                            </div>
+
+                            <div className="mt-6 flex justify-center">
+                                <button 
+                                    onClick=${() => handleFilterClick('medical')}
+                                    className="px-6 py-2.5 bg-[#e09900] lg:hover:bg-[#c98900] text-white rounded-xl font-bold flex items-center justify-center gap-2 shadow-md lg:active:scale-95 text-sm transition-all"
+                                >
+                                    <${Icons.SearchIcon} size=${16} />
+                                    <span>Szűrés az időpontokra</span>
+                                </button>
                             </div>
 
                         </div>
@@ -1642,7 +1700,31 @@ const StudentAppointmentsApp = () => {
                 />
             `}
 
-            ${isInfoModalOpen && html`<${InfoModal} onClose=${() => setIsInfoModalOpen(false)} />`}
+            ${isInfoModalOpen && html`<${InfoModal} 
+                onClose=${() => setIsInfoModalOpen(false)} 
+                onApplyFilter=${(filterType) => {
+                    // Reset all filters first
+                    setSelectedCategories({ consultation: false, medical: false, firstaid: false });
+                    setSelectedModules({ mod1: false, mod2: false, mod3: false, mod4: false });
+                    setTimeFilter('all');
+                    
+                    // Apply new filter
+                    if (filterType === 'kresz') {
+                        setSelectedModules({ mod1: true, mod2: true, mod3: true, mod4: true });
+                    } else if (filterType === 'consultation') {
+                        setSelectedCategories(prev => ({ ...prev, consultation: true }));
+                    } else if (filterType === 'firstaid') {
+                        setSelectedCategories(prev => ({ ...prev, firstaid: true }));
+                    } else if (filterType === 'medical') {
+                        setSelectedCategories(prev => ({ ...prev, medical: true }));
+                    }
+                    
+                    // Open the filter panel on desktop if it's closed
+                    if (window.innerWidth >= 1024 && !isFilterExpanded) {
+                        setIsFilterExpanded(true);
+                    }
+                }}
+            />`}
 
             
             <!-- Mobile Filter Modal -->
