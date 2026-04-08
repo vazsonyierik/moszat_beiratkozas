@@ -503,7 +503,7 @@ const InfoModal = ({ onClose, onApplyFilter }) => {
                     </button>
                 </div>
 
-                <main ref=${contentRef} className="p-6 overflow-y-auto custom-scrollbar flex-1 bg-white rounded-b-[1.5rem] max-h-[60vh]">
+                <main ref=${contentRef} className="p-6 overflow-y-scroll custom-scrollbar flex-1 bg-white rounded-b-[1.5rem] max-h-[60vh] min-h-[60vh]">
                     
                     ${activeTab === 'kresz' && html`
                         <div className="space-y-6 text-sm text-gray-700 leading-relaxed animate-tab-fade-in" key="kresz">
