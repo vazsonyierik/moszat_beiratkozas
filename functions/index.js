@@ -362,16 +362,20 @@ const runDailyChecks = async () => {
                 // Ha orvosi vizsgálatról van szó és 1 nappal előtte vagyunk,
                 // akkor az orvosnak is küldünk egy emlékeztetőt a jelentkezők nevével.
                 if (isMedicalCourse && daysAhead === 1) {
-                    studentPromises.push(sendDynamicEmail(
-                        "doctorMedicalReminder", 
-                        courseData, // courseData elegendő, a sendDynamicEmail kikeresi az orvos email címét
-                        templates.doctorMedicalReminder(courseData), 
-                        false
-                    ));
-                    automationLogs.push({
-                        student: "Orvos Emlékeztető", 
-                        action: `Orvos emlékeztető küldve (${courseData.name} - ${courseData.date})`
-                    });
+                    studentPromises.push((async () => {
+                        const isSent = await sendDynamicEmail(
+                            "doctorMedicalReminder",
+                            courseData, // courseData elegendő, a sendDynamicEmail kikeresi az orvos email címét
+                            templates.doctorMedicalReminder(courseData),
+                            false
+                        );
+                        if (isSent) {
+                            automationLogs.push({
+                                student: "Orvos Emlékeztető",
+                                action: `Orvos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                            });
+                        }
+                    })());
                 }
                 
                 // For First Aid, we need to check global payment status
@@ -436,11 +440,15 @@ const runDailyChecks = async () => {
                             ? finalTemplateFunc(courseData, bookingData) 
                             : finalTemplateFunc(bookingData);
 
-                        studentPromises.push(sendDynamicEmail(templateId, bookingData, templateHtml, false));
-                        automationLogs.push({
-                            student: `${bookingData.lastName} ${bookingData.firstName}`, 
-                            action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
-                        });
+                        studentPromises.push((async () => {
+                            const isSent = await sendDynamicEmail(templateId, bookingData, templateHtml, false);
+                            if (isSent) {
+                                automationLogs.push({
+                                    student: `${bookingData.lastName} ${bookingData.firstName}`,
+                                    action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
+                                });
+                            }
+                        })());
                     }
                 }
             }
@@ -486,11 +494,15 @@ const runDailyChecks = async () => {
 
                     if (hasPaid) {
                         const templateHtml = templateFunc(bookingData);
-                        studentPromises.push(sendDynamicEmail(templateId, bookingData, templateHtml, false));
-                        automationLogs.push({
-                            student: `${bookingData.lastName} ${bookingData.firstName}`, 
-                            action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
-                        });
+                        studentPromises.push((async () => {
+                            const isSent = await sendDynamicEmail(templateId, bookingData, templateHtml, false);
+                            if (isSent) {
+                                automationLogs.push({
+                                    student: `${bookingData.lastName} ${bookingData.firstName}`,
+                                    action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
+                                });
+                            }
+                        })());
                     }
                 }
             }

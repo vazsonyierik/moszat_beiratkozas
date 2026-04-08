@@ -264,12 +264,12 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
     // Ha a sablon ki van kapcsolva az adatbázisban, megszakítjuk a küldést
     if (isEnabled === false) {
         logger.info(`Template ${templateId} is disabled. Skipping email send for ${templateData.email}.`);
-        return;
+        return false;
     }
 
     if (!finalSubject || !finalHtml) {
         logger.error("Email template (dynamic or fallback) is invalid.", {studentId: templateData.id});
-        return;
+        return false;
     }
 
     // Orvosi emlékeztető esetén a címzett felülírása
@@ -279,7 +279,7 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
 
     if (!recipientEmail) {
         logger.error("Recipient email is missing, cannot send.", {templateId});
-        return;
+        return false;
     }
 
     // ÚJ: Ellenőrizzük, hogy a teszt emailek engedélyezve vannak-e
@@ -290,7 +290,7 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
                 const config = configDoc.data();
                 if (config.emailsEnabled === false) {
                     logger.info("Test emails are disabled in settings. Skipping email send.", {to: recipientEmail});
-                    return;
+                    return false;
                 }
             }
         } catch (error) {
@@ -367,9 +367,11 @@ const sendDynamicEmail = async (templateId, templateData, fallbackTemplate, isTe
     }
     try {
         await db.collection("mail").add(mailPayload);
-        logger.info(`Email added to queue for ${templateData.email}. Template ID: ${templateId}`);
+        logger.info(`Email added to queue for ${recipientEmail}. Template ID: ${templateId}`);
+        return true;
     } catch (error) {
-        logger.error(`Failed to queue email for ${templateData.email}. Error: ${error.message}`);
+        logger.error(`Failed to queue email for ${recipientEmail}. Error: ${error.message}`);
+        return false;
     }
 };
 
