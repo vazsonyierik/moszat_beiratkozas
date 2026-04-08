@@ -8,7 +8,7 @@ const {initializeApp} = require("firebase-admin/app");
 const {getAuth} = require("firebase-admin/auth"); // getAuth importálása
 const {google} = require("googleapis");
 const templates = require("./emailTemplates");
-const {formatFullName, formatSingleTimestamp, isAdmin, sendEmail} = require("./utils");
+const {formatFullName, formatSingleTimestamp, isAdmin, sendEmail, sendDynamicEmail} = require("./utils");
 const {processIncomingEmails} = require("./emailProcessor");
 const {calculateDeadline} = require("./deadlineCalculator");
 const appointments = require("./appointments");
@@ -18,6 +18,24 @@ const { updateFirstAidPaymentStatus } = require("./firstAidPayment");
 initializeApp();
 const db = getFirestore();
 const auth = getAuth(); // Auth szolgáltatás inicializálása
+
+// Helper function to check if student is under 18
+const isUnder18 = (birthDateStr) => {
+    if (!birthDateStr) return false;
+    const cleanedDateStr = birthDateStr.endsWith(".") ? birthDateStr.slice(0, -1) : birthDateStr;
+    const parts = cleanedDateStr.split(".").map(p => parseInt(p.trim(), 10));
+    if (parts.length < 3 || parts.some(isNaN)) return false;
+    const [year, month, day] = parts;
+    const birthDate = new Date(year, month - 1, day);
+    if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day) return false;
+    const today = new Date();
+    let age = today.getFullYear() - birthDate.getFullYear();
+    const m = today.getMonth() - birthDate.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+    }
+    return age < 18;
+};
 
 // Globális beállítások a funkcióknak
 setGlobalOptions({region: "europe-west1", memory: "512MiB"});
@@ -315,10 +333,18 @@ const runDailyChecks = async () => {
             const daysSinceIdAssigned = Math.floor((today - studentIdAssignedAt) / (1000 * 60 * 60 * 24));
             const monthsSinceId = (today.getFullYear() - studentIdAssignedAt.getFullYear()) * 12 + (today.getMonth() - studentIdAssignedAt.getMonth());
             if (daysSinceIdAssigned === 90) {
-                studentPromises.push(sendEmail(student, templates.elearningProgressReminderDay90(student)));
+                if (!student.hasMedicalCertificate) {
+                    studentPromises.push(sendEmail(student, templates.elearningProgressReminderDay90NoMedical(student)));
+                } else {
+                    studentPromises.push(sendEmail(student, templates.elearningProgressReminderDay90(student)));
+                }
                 automationLogs.push({student: studentName, action: "E-learning haladási emlékeztető (90. nap) küldve"});
             } else if (daysSinceIdAssigned === 180) {
-                studentPromises.push(sendEmail(student, templates.elearningProgressReminderDay180(student)));
+                if (!student.hasMedicalCertificate) {
+                    studentPromises.push(sendEmail(student, templates.elearningProgressReminderDay180NoMedical(student)));
+                } else {
+                    studentPromises.push(sendEmail(student, templates.elearningProgressReminderDay180(student)));
+                }
                 automationLogs.push({student: studentName, action: "E-learning haladási emlékeztető (180. nap) küldve"});
             }
             if (monthsSinceId >= 9) {
@@ -362,16 +388,20 @@ const runDailyChecks = async () => {
                 // Ha orvosi vizsgálatról van szó és 1 nappal előtte vagyunk,
                 // akkor az orvosnak is küldünk egy emlékeztetőt a jelentkezők nevével.
                 if (isMedicalCourse && daysAhead === 1) {
-                    studentPromises.push(sendDynamicEmail(
-                        "doctorMedicalReminder", 
-                        courseData, // courseData elegendő, a sendDynamicEmail kikeresi az orvos email címét
-                        templates.doctorMedicalReminder(courseData), 
-                        false
-                    ));
-                    automationLogs.push({
-                        student: "Orvos Emlékeztető", 
-                        action: `Orvos emlékeztető küldve (${courseData.name} - ${courseData.date})`
-                    });
+                    studentPromises.push((async () => {
+                        const isSent = await sendDynamicEmail(
+                            "doctorMedicalReminder",
+                            courseData, // courseData elegendő, a sendDynamicEmail kikeresi az orvos email címét
+                            templates.doctorMedicalReminder(courseData),
+                            false
+                        );
+                        if (isSent) {
+                            automationLogs.push({
+                                student: "Orvos Emlékeztető",
+                                action: `Orvos emlékeztető küldve (${courseData.name} - ${courseData.date})`
+                            });
+                        }
+                    })());
                 }
                 
                 // For First Aid, we need to check global payment status
@@ -436,11 +466,15 @@ const runDailyChecks = async () => {
                             ? finalTemplateFunc(courseData, bookingData) 
                             : finalTemplateFunc(bookingData);
 
-                        studentPromises.push(sendDynamicEmail(templateId, bookingData, templateHtml, false));
-                        automationLogs.push({
-                            student: `${bookingData.lastName} ${bookingData.firstName}`, 
-                            action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
-                        });
+                        studentPromises.push((async () => {
+                            const isSent = await sendDynamicEmail(templateId, bookingData, templateHtml, false);
+                            if (isSent) {
+                                automationLogs.push({
+                                    student: `${bookingData.lastName} ${bookingData.firstName}`,
+                                    action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
+                                });
+                            }
+                        })());
                     }
                 }
             }
@@ -486,11 +520,15 @@ const runDailyChecks = async () => {
 
                     if (hasPaid) {
                         const templateHtml = templateFunc(bookingData);
-                        studentPromises.push(sendDynamicEmail(templateId, bookingData, templateHtml, false));
-                        automationLogs.push({
-                            student: `${bookingData.lastName} ${bookingData.firstName}`, 
-                            action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
-                        });
+                        studentPromises.push((async () => {
+                            const isSent = await sendDynamicEmail(templateId, bookingData, templateHtml, false);
+                            if (isSent) {
+                                automationLogs.push({
+                                    student: `${bookingData.lastName} ${bookingData.firstName}`,
+                                    action: `${logMessageStr} küldve (${courseData.name} - ${courseData.date})`
+                                });
+                            }
+                        })());
                     }
                 }
             }
@@ -992,9 +1030,17 @@ exports.onRegistrationUpdated = onDocumentUpdated(
 
         if (!before.courseCompletedAt && after.courseCompletedAt) {
             if (after.hasMedicalCertificate) {
-                await sendEmail(after, templates.courseCompletedReadyToSign(after));
+                if (isUnder18(after.birthDate)) {
+                    await sendEmail(after, templates.courseCompletedReadyToSignUnder18(after));
+                } else {
+                    await sendEmail(after, templates.courseCompletedReadyToSign(after));
+                }
             } else {
-                await sendEmail(after, templates.courseCompletedMedicalNeeded(after));
+                if (isUnder18(after.birthDate)) {
+                    await sendEmail(after, templates.courseCompletedMedicalNeededUnder18(after));
+                } else {
+                    await sendEmail(after, templates.courseCompletedMedicalNeeded(after));
+                }
             }
         }
 
@@ -1042,9 +1088,17 @@ exports.onRegistrationTestUpdated = onDocumentUpdated(
 
         if (!before.courseCompletedAt && after.courseCompletedAt) {
             if (after.hasMedicalCertificate) {
-                await sendEmail(after, templates.courseCompletedReadyToSign(after), true);
+                if (isUnder18(after.birthDate)) {
+                    await sendEmail(after, templates.courseCompletedReadyToSignUnder18(after), true);
+                } else {
+                    await sendEmail(after, templates.courseCompletedReadyToSign(after), true);
+                }
             } else {
-                await sendEmail(after, templates.courseCompletedMedicalNeeded(after), true);
+                if (isUnder18(after.birthDate)) {
+                    await sendEmail(after, templates.courseCompletedMedicalNeededUnder18(after), true);
+                } else {
+                    await sendEmail(after, templates.courseCompletedMedicalNeeded(after), true);
+                }
             }
         }
 
