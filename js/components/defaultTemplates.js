@@ -53,6 +53,27 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    absenteeNotification: {
+        id: 'absenteeNotification',
+        name: 'Hiányzó értesítő (Konzultáció/Elsősegély/Orvosi)',
+        category: 'Beiratkozás és Tanfolyam',
+        subject: `Értesítés: Hiányzás a "{{courseName}}" foglalkozásról`,
+        html: `
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+            <p>Szeretnénk értesíteni, hogy rendszerünk alapján nem jelentél meg a(z) <strong>{{courseName}}</strong> foglalkozáson.</p>
+
+            <p style="margin-top: 1.2em; margin-bottom: 1.2em;"><strong>A foglalkozás adatai:</strong></p>
+            <ul style="list-style-type: disc; padding-left: 20px;">
+                <li><strong>Időpont:</strong> {{courseDate}} | {{courseStartTime}} - {{courseEndTime}}</li>
+            </ul>
+
+            <p style="margin-top: 1.2em;">Amennyiben pótolni szeretnéd a hiányzást, kérjük, foglalj egy új időpontot a jelentkezési felületen!</p>
+            <p style="margin-top: 1.2em;">Ha bármilyen kérdésed van, vagy adminisztrációs hibáról van szó, kérjük, vedd fel velünk a kapcsolatot.</p>
+
+            <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
     enrolledConfirmation: {
         id: 'enrolledConfirmation',
         name: 'Beiratkozás visszaigazolása (E-2)', category: 'Beiratkozás és Tanfolyam',
@@ -133,9 +154,58 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    courseCompletedMedicalNeededUnder18: {
+        id: 'courseCompletedMedicalNeededUnder18',
+        name: 'Tanfolyam elvégezve - Orvosi hiányzik (18 év alatti) (E-3)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Következő lépések a KRESZ-vizsgád felé`,
+        html: `
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+            <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez! Már csak néhány lépés választ el attól, hogy jelentkezhess a KRESZ-vizsgára. Segítünk, hogy minden simán menjen!</p>
+            <p>Kérjük, kövesd az alábbi <b>két egyszerű lépést</b> a megadott sorrendben:</p>
+            <p><b>1. LÉPÉS: Orvosi alkalmassági elküldése</b></p>
+            <p>A vizsgára jelentkezéshez elengedhetetlen az érvényes orvosi alkalmassági véleményed.</p>
+            <ul>
+                <li><p><b>Mi a teendő?</b> Készíts egy jól látható (olvasható) fotót vagy szkenneld be a dokumentumot.</p></li>
+                <li><p><b>Hova küldd?</b> Egyszerűen válaszolj erre az e-mailre, és csatold a fájlt.</p></li>
+            </ul>
+            <p><b>Fontos:</b> Kérjük, ezt tedd meg a lehető leghamarabb, mert csak ezután tudsz továbblépni a 2. lépésre.</p>
+            <p><b>Nincs háziorvosod?</b> Ebben az esetben is tudunk segítséget nyújtani. Kérjük, jelezd felénk válasz e-mailben, ha szeretnél tájékoztatást kapni a részleteiről.</p>
+            <p><b>2. LÉPÉS: Személyes ügyintézés az irodában</b></p>
+            <p>Miután e-mailben elküldted nekünk az orvosi alkalmasságit, a következő teendőd, hogy személyesen gyere be hozzánk aláírni a jelentkezési lapot.</p>
+            <ul>
+                <li><p><b>Mikor gyere?</b> Bármikor nyitvatartási időben:</p>
+                    <ul>
+                        <li><b>Hétfő:</b> 9:00 – 17:45</li>
+                        <li><b>Kedd:</b> 12:30 – 17:00</li>
+                        <li><b>Szerda:</b> 11:00 – 17:00</li>
+                        <li><b>Csütörtök:</b> 12:30 – 17:00</li>
+                        <li><b>Péntek:</b> 11:00 – 15:00</li>
+                    </ul>
+                </li>
+                <li><p><b>Hova gyere?</b></p>
+                    <ul>
+                        <li><b>Cím:</b> 1088 Budapest, Krúdy u. 16-18. fszt. 3.</li>
+                        <li><i>(A Harminckettesek terénél, a 4-6-os villamos megállójától pár percre.)</i></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <p>⚠️ <b>Figyelem, ha még nem múltál el 18!</b> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <b>ő is jöjjön veled!</b> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>
+
+            <p><b>Hogyan tovább, miután aláírtad a lapot?</b></p>
+            <ol>
+                <li>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</li>
+                <li>Ők 1-3 munkanapon belül feldolgozzák.</li>
+                <li>Amint ez megtörtént, <b>küldünk egy újabb e-mailt</b>, és utána már telefonon egyeztethetünk is a vizsgaidőpontról</li>
+            </ol>
+            <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
+            <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
+        `,
+        enabled: true
+    },
     courseCompletedMedicalNeeded: {
         id: 'courseCompletedMedicalNeeded',
-        name: 'Tanfolyam elvégezve - Orvosi hiányzik (E-3)', category: 'Beiratkozás és Tanfolyam',
+        name: 'Tanfolyam elvégezve - Orvosi hiányzik (Felnőtt) (E-3)', category: 'Beiratkozás és Tanfolyam',
         subject: `Következő lépések a KRESZ-vizsgád felé`,
         html: `
         <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
@@ -203,9 +273,50 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    courseCompletedReadyToSignUnder18: {
+        id: 'courseCompletedReadyToSignUnder18',
+        name: 'Tanfolyam elvégezve - Aláírásra kész (18 év alatti) (E-4)', category: 'Beiratkozás és Tanfolyam',
+        subject: `Következő lépés a KRESZ-vizsgád felé`,
+        html: `
+        <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+            <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez!</p>
+            <p>Mivel az orvosi alkalmassági véleményed már megvan, csak egyetlen lépés van hátra, hogy jelentkezhess a KRESZ-vizsgára: a jelentkezési lap aláírása.</p>
+            <p><strong>Teendőd: Személyes ügyintézés az irodában</strong></p>
+            <p>Kérjük, gyere be hozzánk személyesen az irodába, hogy aláírd a jelentkezési lapot.</p>
+            <ul>
+                <li><p><strong>Mikor gyere?</strong> Bármikor nyitvatartási időben:</p>
+                    <ul>
+                        <li><strong>Hétfő:</strong> 9:00 – 17:45</li>
+                        <li><strong>Kedd:</strong> 12:30 – 17:00</li>
+                        <li><strong>Szerda:</strong> 11:00 – 17:00</li>
+                        <li><strong>Csütörtök:</strong> 12:30 – 17:00</li>
+                        <li><strong>Péntek:</strong> 11:00 – 15:00</li>
+                    </ul>
+                </li>
+                <li><p><strong>Hova gyere?</strong></p>
+                    <ul>
+                        <li><strong>Cím:</strong> 1088 Budapest, Krúdy u. 16-18. fszt. 3.</li>
+                        <li><em>(A Harminckettesek terénél, a 4-6-os villamos megállójától pár percre.)</em></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <p>⚠️ <strong>Figyelem, ha még nem múltál el 18!</strong> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <strong>ő is jöjjön veled!</strong> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>
+            
+            <p><strong>Hogyan tovább, miután aláírtad a lapot?</strong></p>
+            <ol>
+                <li><p>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</p></li>
+                <li><p>Ők 1-3 munkanapon belül feldolgozzák.</p></li>
+                <li><p>Amint ez megtörtént, <strong>küldünk egy újabb e-mailt</strong>, és utána már telefonon egyeztethetünk is a vizsgaidőpontról</p></li>
+            </ol>
+            <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
+            <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
+        `,
+        enabled: true
+    },
     courseCompletedReadyToSign: {
         id: 'courseCompletedReadyToSign',
-        name: 'Tanfolyam elvégezve - Aláírásra kész (E-4)', category: 'Beiratkozás és Tanfolyam',
+        name: 'Tanfolyam elvégezve - Aláírásra kész (Felnőtt) (E-4)', category: 'Beiratkozás és Tanfolyam',
         subject: `Következő lépés a KRESZ-vizsgád felé`,
         html: `
         <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
@@ -321,9 +432,29 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    elearningProgressReminderDay90NoMedical: {
+        id: 'elearningProgressReminderDay90NoMedical',
+        name: 'E-learning haladási emlékeztető 90. nap (Nincs orvosi) (T-6)', category: 'Emlékeztetők',
+        subject: `Fontos információk az e-learninges KRESZ tanfolyamodhoz`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+                <p>Ez egy emlékeztető, hogy 3 hónapja kezdted el az online KRESZ tanfolyamot, ezért egy rövid helyzetjelentéssel és néhány fontos információval szeretnénk segíteni a haladásodat.</p>
+                <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong> Ehhez kérjük, keress minket elérhetőségeinken!</p>
+                
+                <p>A sikeres felkészülés mellett fontos, hogy a vizsgára jelentkezésnek se legyen akadálya. Ehhez szeretnénk felhívni a figyelmedet, hogy a <strong>KRESZ vizsga foglalásának két feltétele van:</strong> az online tanfolyam elvégzése és egy érvényes <strong>orvosi alkalmassági vélemény.</strong></p>
+                <ul>
+                    <li><strong>Már megszerezted az orvosi igazolást?</strong> Kérjük, küldd el nekünk a <a href="mailto:iroda@mosolyzona.hu">iroda@mosolyzona.hu</a> címre, hogy rögzíthessük.</li>
+                    <li><strong>Ha még nincs orvosi alkalmassági véleményed,</strong> semmi gond! Írj nekünk egy e-mailt, és örömmel elküldjük a tudnivalókat, hogy hogyan tudod a legegyszerűbben beszerezni.</li>
+                </ul>
+
+                <p>Kérdés esetén ne habozz keresni minket! Sikeres tanulást kívánunk!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
     elearningProgressReminderDay90: {
         id: 'elearningProgressReminderDay90',
-        name: 'E-learning haladási emlékeztető 90. nap (T-6)', category: 'Emlékeztetők',
+        name: 'E-learning haladási emlékeztető 90. nap (Van orvosi) (T-6)', category: 'Emlékeztetők',
         subject: `Fontos információk az e-learninges KRESZ tanfolyamodhoz`,
         html: `
             <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
@@ -445,9 +576,26 @@ const DEFAULT_TEMPLATES = {
         `,
         enabled: true
     },
+    elearningProgressReminderDay180NoMedical: {
+        id: 'elearningProgressReminderDay180NoMedical',
+        name: 'E-learning haladási emlékeztető 180. nap (Nincs orvosi) (T-7)', category: 'Emlékeztetők',
+        subject: `Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről`,
+        html: `
+            <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>
+                <p>Egy fontos határidőre szeretnénk emlékeztetni a KRESZ tanfolyamoddal kapcsolatban.</p>
+                <p>A jogszabályok értelmében a tanfolyam megkezdésétől számítva 9 hónapod van, hogy részt vegyél egy KRESZ vizsgán. A te esetedben ebből <strong>már csak 3 hónap van hátra.</strong></p>
+                <p>A KRESZ vizsgára való felkészüléshez elengedhetetlen a tananyaghoz való hozzáférés.<br>Amennyiben a hozzáférési időd időközben lejárt, kérjük, jelezd felénk e-mailben. A tandíjad ugyanis tartalmaz egy egyszeri, díjmentes hosszabbítást, <strong>ami plusz 30 napot és 10 óra gyakorlási időt biztosít a számodra.</strong></p>
+                
+                <p>Végül, de nem utolsósorban, szeretnénk emlékeztetni <strong>a vizsgára jelentkezés másik fontos feltételére, az orvosi alkalmassági véleményre.</strong><br>A már meglévő orvosi igazolásodat kérjük, küldd el a <strong><a href="mailto:iroda@mosolyzona.hu" target="_blank">iroda@mosolyzona.hu</a></strong> címre, hogy rögzíteni tudjuk. Annak hiányában pedig írj nekünk egy e-mailt, és örömmel elküldjük a beszerzéséhez szükséges tudnivalókat.</p>
+
+                <p>Ha a határidőkkel vagy a képzéssel kapcsolatban bármilyen kérdésed van, válasz e-mailben keress minket!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+        `,
+        enabled: true
+    },
     elearningProgressReminderDay180: {
         id: 'elearningProgressReminderDay180',
-        name: 'E-learning haladási emlékeztető 180. nap (T-7)', category: 'Emlékeztetők',
+        name: 'E-learning haladási emlékeztető 180. nap (Van orvosi) (T-7)', category: 'Emlékeztetők',
         subject: `Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről`,
         html: `
             <p style="margin-bottom: 2.4em;"><strong>Kedves {{lastName}} {{firstName}} {{secondName}}!</strong></p>

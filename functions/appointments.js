@@ -1418,3 +1418,65 @@ exports.removeWaitlistEntryAsAdmin = onCall({region: "europe-west1"}, async (req
         throw new HttpsError("internal", "Hiba történt a törléskor.");
     }
 });
+
+/**
+ * notifyAbsentees
+ * Admin notifies students who are marked as absent (isPresent: false).
+ */
+exports.notifyAbsentees = onCall({region: "europe-west1"}, async (request) => {
+    await ensureIsAdmin(request.auth);
+
+    const data = request.data;
+    const {courseId, isTestView, emails} = data;
+
+    if (!courseId || !emails || !Array.isArray(emails) || emails.length === 0) {
+        throw new HttpsError("invalid-argument", "Tanfolyam azonosító és legalább egy e-mail cím megadása kötelező.");
+    }
+
+    const db = getFirestore();
+    const coursesCollection = isTestView ? "courses_test" : "courses";
+
+    try {
+        const courseRef = db.collection(coursesCollection).doc(courseId);
+        const courseDoc = await courseRef.get();
+
+        if (!courseDoc.exists) {
+            throw new HttpsError("not-found", "Tanfolyam nem található.");
+        }
+
+        const courseData = courseDoc.data();
+
+        const emailPromises = emails.map(async (email) => {
+            // Find booking data to fetch student details
+            const bookingsRef = courseRef.collection("bookings");
+            const bookingQuery = await bookingsRef.where("email", "==", email).get();
+
+            if (bookingQuery.empty) return;
+
+            const bookingData = bookingQuery.docs[0].data();
+
+            const combinedData = {
+                ...courseData,
+                ...bookingData,
+                courseName: courseData.name,
+                courseDate: courseData.date,
+                courseStartTime: courseData.startTime,
+                courseEndTime: courseData.endTime,
+                courseLocation: courseData.location
+            };
+
+            return sendDynamicEmail("absenteeNotification", combinedData, templates.absenteeNotification ? templates.absenteeNotification(combinedData) : "", isTestView);
+        });
+
+        await Promise.all(emailPromises);
+
+        await courseRef.update({
+            absenteesNotified: true
+        });
+
+        return {success: true, message: `Sikeresen értesítve ${emails.length} tanuló.`};
+    } catch (error) {
+        console.error("Error notifying absentees:", error);
+        throw new HttpsError("internal", "Hiba történt a hiányzók értesítésekor.", error.message);
+    }
+});

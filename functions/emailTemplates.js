@@ -15,24 +15,6 @@ const getFullName = (studentData) => {
     return [studentData.current_lastName, studentData.current_firstName, studentData.current_secondName].filter(Boolean).join(" ");
 };
 
-// Helper function to check if student is under 18
-const isUnder18 = (birthDateStr) => {
-    if (!birthDateStr) return false;
-    const cleanedDateStr = birthDateStr.endsWith(".") ? birthDateStr.slice(0, -1) : birthDateStr;
-    const parts = cleanedDateStr.split(".").map(p => parseInt(p.trim(), 10));
-    if (parts.length < 3 || parts.some(isNaN)) return false;
-    const [year, month, day] = parts;
-    const birthDate = new Date(year, month - 1, day);
-    if (birthDate.getFullYear() !== year || birthDate.getMonth() !== month - 1 || birthDate.getDate() !== day) return false;
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-    }
-    return age < 18;
-};
-
 // --- Eseményvezérelt sablonok ---
 
 // Sablon ID: E-1
@@ -175,13 +157,9 @@ exports.enrolledConfirmation = (studentData) => ({
     `
 });
 
-// Sablon ID: E-3
+// Sablon ID: E-3 (Felnőtt)
 // 3. Course Completed - Medical Needed
 exports.courseCompletedMedicalNeeded = (studentData) => {
-    const under18WarningHtml = isUnder18(studentData.birthDate)
-        ? `<p>⚠️ <b>Figyelem, ha még nem múltál el 18!</b> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <b>ő is jöjjön veled!</b> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>`
-        : "";
-
     return {
         id: 'courseCompletedMedicalNeeded',
         subject: "Következő lépések a KRESZ-vizsgád felé",
@@ -217,7 +195,6 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
                     </ul>
                 </li>
             </ul>
-            ${under18WarningHtml}
             <p><b>Hogyan tovább, miután aláírtad a lapot?</b></p>
             <ol>
                 <li>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</li>
@@ -230,6 +207,75 @@ exports.courseCompletedMedicalNeeded = (studentData) => {
         `
     };
 };
+
+// Sablon ID: E-3 (18 év alatti)
+exports.courseCompletedMedicalNeededUnder18 = (studentData) => {
+    return {
+        id: 'courseCompletedMedicalNeededUnder18',
+        subject: "Következő lépések a KRESZ-vizsgád felé",
+        html: `
+        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez! Már csak néhány lépés választ el attól, hogy jelentkezhess a KRESZ-vizsgára. Segítünk, hogy minden simán menjen!</p>
+            <p>Kérjük, kövesd az alábbi <b>két egyszerű lépést</b> a megadott sorrendben:</p>
+            <p><b>1. LÉPÉS: Orvosi alkalmassági elküldése</b></p>
+            <p>A vizsgára jelentkezéshez elengedhetetlen az érvényes orvosi alkalmassági véleményed.</p>
+            <ul>
+                <li><p><b>Mi a teendő?</b> Készíts egy jól látható (olvasható) fotót vagy szkenneld be a dokumentumot.</p></li>
+                <li><p><b>Hova küldd?</b> Egyszerűen válaszolj erre az e-mailre, és csatold a fájlt.</p></li>
+            </ul>
+            <p><b>Fontos:</b> Kérjük, ezt tedd meg a lehető leghamarabb, mert csak ezután tudsz továbblépni a 2. lépésre.</p>
+            <p><b>Nincs háziorvosod?</b> Ebben az esetben is tudunk segítséget nyújtani. Kérjük, jelezd felénk válasz e-mailben, ha szeretnél tájékoztatást kapni a részleteiről.</p>
+            <p><b>2. LÉPÉS: Személyes ügyintézés az irodában</b></p>
+            <p>Miután e-mailben elküldted nekünk az orvosi alkalmasságit, a következő teendőd, hogy személyesen gyere be hozzánk aláírni a jelentkezési lapot.</p>
+            <ul>
+                <li><p><b>Mikor gyere?</b> Bármikor nyitvatartási időben:</p>
+                    <ul>
+                        <li><b>Hétfő:</b> 9:00 – 17:45</li>
+                        <li><b>Kedd:</b> 12:30 – 17:00</li>
+                        <li><b>Szerda:</b> 11:00 – 17:00</li>
+                        <li><b>Csütörtök:</b> 12:30 – 17:00</li>
+                        <li><b>Péntek:</b> 11:00 – 15:00</li>
+                    </ul>
+                </li>
+                <li><p><b>Hova gyere?</b></p>
+                    <ul>
+                        <li><b>Cím:</b> 1088 Budapest, Krúdy u. 16-18. fszt. 3.</li>
+                        <li><i>(A Harminckettesek terénél, a 4-6-os villamos megállójától pár percre.)</i></li>
+                    </ul>
+                </li>
+            </ul>
+            <p>⚠️ <b>Figyelem, ha még nem múltál el 18!</b> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <b>ő is jöjjön veled!</b> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>
+            <p><b>Hogyan tovább, miután aláírtad a lapot?</b></p>
+            <ol>
+                <li>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</li>
+                <li>Ők 1-3 munkanapon belül feldolgozzák.</li>
+                <li>Amint ez megtörtént, <b>küldünk egy újabb e-mailt</b>, és utána már telefonon egyeztethetünk is a vizsgaidőpontról</li>
+            </ol>
+            <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
+            <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
+        </div>
+        `
+    };
+};
+
+exports.absenteeNotification = (data) => ({
+    id: 'absenteeNotification',
+    subject: `Értesítés: Hiányzás a "${data.courseName}" foglalkozásról`,
+    html: `
+    <p style="margin-bottom: 2.4em;"><strong>Kedves ${data.lastName} ${data.firstName}${data.secondName ? " " + data.secondName : ""}!</strong></p>
+    <p>Szeretnénk értesíteni, hogy rendszerünk alapján nem jelentél meg a(z) <strong>${data.courseName}</strong> foglalkozáson.</p>
+
+    <p style="margin-top: 1.2em; margin-bottom: 1.2em;"><strong>A foglalkozás adatai:</strong></p>
+    <ul style="list-style-type: disc; padding-left: 20px;">
+        <li><strong>Időpont:</strong> ${data.courseDate} | ${data.courseStartTime} - ${data.courseEndTime}</li>
+    </ul>
+
+    <p style="margin-top: 1.2em;">Amennyiben pótolni szeretnéd a hiányzást, kérjük, foglalj egy új időpontot a jelentkezési felületen!</p>
+    <p style="margin-top: 1.2em;">Ha bármilyen kérdésed van, vagy adminisztrációs hibáról van szó, kérjük, vedd fel velünk a kapcsolatot.</p>
+
+    <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+`});
 
 // ==========================================
 // ORVOSI ALKALMASSÁGI VIZSGÁLAT TEMPLATES
@@ -1004,13 +1050,9 @@ exports.waitlistLastMinuteSpot = (bookingData) => {
     };
 };
 
-// Sablon ID: E-4
+// Sablon ID: E-4 (Felnőtt)
 // 4. Course Completed - Ready to Sign
 exports.courseCompletedReadyToSign = (studentData) => {
-    const under18WarningHtml = isUnder18(studentData.birthDate)
-        ? `<p>⚠️ <strong>Figyelem, ha még nem múltál el 18!</strong> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <strong>ő is jöjjön veled!</strong> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>`
-        : "";
-
     return {
         id: 'courseCompletedReadyToSign',
         subject: "Következő lépés a KRESZ-vizsgád felé",
@@ -1038,7 +1080,49 @@ exports.courseCompletedReadyToSign = (studentData) => {
                     </ul>
                 </li>
             </ul>
-            ${under18WarningHtml}
+            <p><strong>Hogyan tovább, miután aláírtad a lapot?</strong></p>
+            <ol>
+                <li><p>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</p></li>
+                <li><p>Ők 1-3 munkanapon belül feldolgozzák.</p></li>
+                <li><p>Amint ez megtörtént, <strong>küldünk egy újabb e-mailt</strong>, és utána már telefonon egyeztethetünk is a vizsgaidőpontról</p></li>
+            </ol>
+            <p>Ha bármi kérdésed van a fentiekkel kapcsolatban, írj bátran!</p>
+            <p style="margin-top: 2.4em;">Üdvözlettel:<br><b>Mosolyzóna, a Kreszprofesszor autósiskolája</b></p>
+        </div>
+        `
+    };
+};
+
+// Sablon ID: E-4 (18 év alatti)
+exports.courseCompletedReadyToSignUnder18 = (studentData) => {
+    return {
+        id: 'courseCompletedReadyToSignUnder18',
+        subject: "Következő lépés a KRESZ-vizsgád felé",
+        html: `
+        <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+            <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+            <p>Gratulálunk az e-learning tanfolyam sikeres elvégzéséhez!</p>
+            <p>Mivel az orvosi alkalmassági véleményed már megvan, csak egyetlen lépés van hátra, hogy jelentkezhess a KRESZ-vizsgára: a jelentkezési lap aláírása.</p>
+            <p><strong>Teendőd: Személyes ügyintézés az irodában</strong></p>
+            <p>Kérjük, gyere be hozzánk személyesen az irodába, hogy aláírd a jelentkezési lapot.</p>
+            <ul>
+                <li><p><strong>Mikor gyere?</strong> Bármikor nyitvatartási időben:</p>
+                    <ul>
+                        <li><strong>Hétfő:</strong> 9:00 – 17:45</li>
+                        <li><strong>Kedd:</strong> 12:30 – 17:00</li>
+                        <li><strong>Szerda:</strong> 11:00 – 17:00</li>
+                        <li><strong>Csütörtök:</strong> 12:30 – 17:00</li>
+                        <li><strong>Péntek:</strong> 11:00 – 15:00</li>
+                    </ul>
+                </li>
+                <li><p><strong>Hova gyere?</strong></p>
+                    <ul>
+                        <li><strong>Cím:</strong> 1088 Budapest, Krúdy u. 16-18. fszt. 3.</li>
+                        <li><em>(A Harminckettesek terénél, a 4-6-os villamos megállójától pár percre.)</em></li>
+                    </ul>
+                </li>
+            </ul>
+            <p>⚠️ <strong>Figyelem, ha még nem múltál el 18!</strong> A jelentkezési lapot egy szülődnek vagy gondviselődnek is alá kell írnia, ezért kérjük, hogy <strong>ő is jöjjön veled!</strong> Enélkül sajnos nem tudjuk elfogadni a jelentkezésed.</p>
             <p><strong>Hogyan tovább, miután aláírtad a lapot?</strong></p>
             <ol>
                 <li><p>Mi eljuttatjuk a jelentkezési adatlapot a vizsgaközponthoz (KAV).</p></li>
@@ -1155,17 +1239,9 @@ exports.courseStartReminderDay85 = (studentData) => ({
     `
 });
 
-// Sablon ID: T-6
+// Sablon ID: T-6 (Van Orvosi Igazolása)
 // E-learning haladási emlékeztetők (90 nap)
 exports.elearningProgressReminderDay90 = (studentData) => {
-    const medicalReminderHtml = !studentData.hasMedicalCertificate
-        ? `<p>A sikeres felkészülés mellett fontos, hogy a vizsgára jelentkezésnek se legyen akadálya. Ehhez szeretnénk felhívni a figyelmedet, hogy a <strong>KRESZ vizsga foglalásának két feltétele van:</strong> az online tanfolyam elvégzése és egy érvényes <strong>orvosi alkalmassági vélemény.</strong></p>
-            <ul style="list-style-type: disc; padding-left: 20px;">
-                <li><strong>Már megszerezted az orvosi igazolást?</strong> Kérjük, küldd el nekünk a <a href="mailto:iroda@mosolyzona.hu">iroda@mosolyzona.hu</a> címre, hogy rögzíthessük.</li>
-                <li><strong>Ha még nincs orvosi alkalmassági véleményed,</strong> semmi gond! Írj nekünk egy e-mailt, és örömmel elküldjük a tudnivalókat, hogy hogyan tudod a legegyszerűbben beszerezni.</li>
-            </ul>`
-        : "";
-
     return {
         id: 'elearningProgressReminderDay90',
         subject: "Fontos információk az e-learninges KRESZ tanfolyamodhoz",
@@ -1174,7 +1250,28 @@ exports.elearningProgressReminderDay90 = (studentData) => {
                 <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
                 <p>Ez egy emlékeztető, hogy 3 hónapja kezdted el az online KRESZ tanfolyamot, ezért egy rövid helyzetjelentéssel és néhány fontos információval szeretnénk segíteni a haladásodat.</p>
                 <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong> Ehhez kérjük, keress minket elérhetőségeinken!</p>
-                ${medicalReminderHtml}
+                <p>Kérdés esetén ne habozz keresni minket! Sikeres tanulást kívánunk!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+// Sablon ID: T-6 (NINCS Orvosi Igazolása)
+exports.elearningProgressReminderDay90NoMedical = (studentData) => {
+    return {
+        id: 'elearningProgressReminderDay90NoMedical',
+        subject: "Fontos információk az e-learninges KRESZ tanfolyamodhoz",
+        html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+                <p>Ez egy emlékeztető, hogy 3 hónapja kezdted el az online KRESZ tanfolyamot, ezért egy rövid helyzetjelentéssel és néhány fontos információval szeretnénk segíteni a haladásodat.</p>
+                <p>Szeretnénk, ha tudnád, hogy nem vagy egyedül a felkészülésben. Ha esetleg egy vagy több témát szívesen hallgatnál meg élőben is, bármikor csatlakozhatsz <strong>tantermi óráinkhoz vagy személyes konzultációinkhoz.</strong> Ehhez kérjük, keress minket elérhetőségeinken!</p>
+                <p>A sikeres felkészülés mellett fontos, hogy a vizsgára jelentkezésnek se legyen akadálya. Ehhez szeretnénk felhívni a figyelmedet, hogy a <strong>KRESZ vizsga foglalásának két feltétele van:</strong> az online tanfolyam elvégzése és egy érvényes <strong>orvosi alkalmassági vélemény.</strong></p>
+                <ul style="list-style-type: disc; padding-left: 20px;">
+                    <li><strong>Már megszerezted az orvosi igazolást?</strong> Kérjük, küldd el nekünk a <a href="mailto:iroda@mosolyzona.hu">iroda@mosolyzona.hu</a> címre, hogy rögzíthessük.</li>
+                    <li><strong>Ha még nincs orvosi alkalmassági véleményed,</strong> semmi gond! Írj nekünk egy e-mailt, és örömmel elküldjük a tudnivalókat, hogy hogyan tudod a legegyszerűbben beszerezni.</li>
+                </ul>
                 <p>Kérdés esetén ne habozz keresni minket! Sikeres tanulást kívánunk!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
@@ -1611,13 +1708,9 @@ exports.courseDeleted = (bookingData) => {
     };
 };
 
-// Sablon ID: T-7
+// Sablon ID: T-7 (Van Orvosi Igazolása)
 // E-learning haladási emlékeztetők (180 nap)
 exports.elearningProgressReminderDay180 = (studentData) => {
-    const medicalReminderHtml = !studentData.hasMedicalCertificate
-        ? `<p>Végül, de nem utolsósorban, szeretnénk emlékeztetni <strong>a vizsgára jelentkezés másik fontos feltételére, az orvosi alkalmassági véleményre.</strong><br>A már meglévő orvosi igazolásodat kérjük, küldd el a <strong><a href="mailto:iroda@mosolyzona.hu" target="_blank">iroda@mosolyzona.hu</a></strong> címre, hogy rögzíteni tudjuk. Annak hiányában pedig írj nekünk egy e-mailt, és örömmel elküldjük a beszerzéséhez szükséges tudnivalókat.</p>`
-        : "";
-
     return {
         id: 'elearningProgressReminderDay180',
         subject: "Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről",
@@ -1627,7 +1720,25 @@ exports.elearningProgressReminderDay180 = (studentData) => {
                 <p>Egy fontos határidőre szeretnénk emlékeztetni a KRESZ tanfolyamoddal kapcsolatban.</p>
                 <p>A jogszabályok értelmében a tanfolyam megkezdésétől számítva 9 hónapod van, hogy részt vegyél egy KRESZ vizsgán. A te esetedben ebből <strong>már csak 3 hónap van hátra.</strong></p>
                 <p>A KRESZ vizsgára való felkészüléshez elengedhetetlen a tananyaghoz való hozzáférés.<br>Amennyiben a hozzáférési időd időközben lejárt, kérjük, jelezd felénk e-mailben. A tandíjad ugyanis tartalmaz egy egyszeri, díjmentes hosszabbítást, <strong>ami plusz 30 napot és 10 óra gyakorlási időt biztosít a számodra.</strong></p>
-                ${medicalReminderHtml}
+                <p>Ha a határidőkkel vagy a képzéssel kapcsolatban bármilyen kérdésed van, válasz e-mailben keress minket!</p>
+                <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
+            </div>
+        `
+    };
+};
+
+// Sablon ID: T-7 (NINCS Orvosi Igazolása)
+exports.elearningProgressReminderDay180NoMedical = (studentData) => {
+    return {
+        id: 'elearningProgressReminderDay180NoMedical',
+        subject: "Fontos tájékoztatás a KRESZ vizsgád határidejéről és teendőidről",
+        html: `
+            <div dir="ltr" style="font-family: sans-serif; line-height: 1.6; color: #333;">
+                <p style="margin-bottom: 2.4em;"><strong>Kedves ${getFullName(studentData)}!</strong></p>
+                <p>Egy fontos határidőre szeretnénk emlékeztetni a KRESZ tanfolyamoddal kapcsolatban.</p>
+                <p>A jogszabályok értelmében a tanfolyam megkezdésétől számítva 9 hónapod van, hogy részt vegyél egy KRESZ vizsgán. A te esetedben ebből <strong>már csak 3 hónap van hátra.</strong></p>
+                <p>A KRESZ vizsgára való felkészüléshez elengedhetetlen a tananyaghoz való hozzáférés.<br>Amennyiben a hozzáférési időd időközben lejárt, kérjük, jelezd felénk e-mailben. A tandíjad ugyanis tartalmaz egy egyszeri, díjmentes hosszabbítást, <strong>ami plusz 30 napot és 10 óra gyakorlási időt biztosít a számodra.</strong></p>
+                <p>Végül, de nem utolsósorban, szeretnénk emlékeztetni <strong>a vizsgára jelentkezés másik fontos feltételére, az orvosi alkalmassági véleményre.</strong><br>A már meglévő orvosi igazolásodat kérjük, küldd el a <strong><a href="mailto:iroda@mosolyzona.hu" target="_blank">iroda@mosolyzona.hu</a></strong> címre, hogy rögzíteni tudjuk. Annak hiányában pedig írj nekünk egy e-mailt, és örömmel elküldjük a beszerzéséhez szükséges tudnivalókat.</p>
                 <p>Ha a határidőkkel vagy a képzéssel kapcsolatban bármilyen kérdésed van, válasz e-mailben keress minket!</p>
                 <p style="margin-top: 2.4em;">Üdvözlettel:<br><strong>Mosolyzóna, a Kreszprofesszor autósiskolája</strong></p>
             </div>
