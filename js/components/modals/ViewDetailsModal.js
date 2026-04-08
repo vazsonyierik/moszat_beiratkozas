@@ -683,7 +683,7 @@ const ViewDetailsModal = ({ student, onClose, onUpdate, isTestView }) => {
     };
 
     return html`
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
             <div className="bg-gray-50 rounded-xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col" onClick=${e => e.stopPropagation()}>
                 <header className="p-6 border-b bg-white rounded-t-xl flex justify-between items-center shadow-sm z-10">
                     <div>
