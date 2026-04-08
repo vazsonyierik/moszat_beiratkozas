@@ -1355,7 +1355,12 @@ const StudentAppointmentsApp = () => {
             `}
 
             <header className="mb-12 text-center flex flex-col items-center">
-                <h1 className="text-2xl font-extrabold text-[#e09900] sm:text-4xl mb-5 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
+                <img
+                    src="https://mosolyzona.hu/wp-content/uploads/2019/10/cropped-mosoly-1.jpg"
+                    alt="Mosolyzóna Logó"
+                    className="w-16 h-16 rounded-full mb-8 shadow-sm object-cover"
+                />
+                <h1 className="text-2xl font-extrabold text-gray-900 sm:text-4xl mb-5 leading-tight px-2">Mosolyzóna – Időpontfoglaló felület</h1>
                 <p className="max-w-4xl mx-auto text-base sm:text-lg text-gray-500 px-4 mt-2">
                     Válaszd ki a számodra megfelelő időpontot, és foglald le a helyed egyszerűen!
                 </p>
