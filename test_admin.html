@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Test Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./jelentkezes.css">
+</head>
+<body class="bg-gray-100">
+    <div id="root"></div>
+    <script type="module">
+        import AdminPanel from './js/AdminPanel.js';
+        import { html } from './js/UI.js';
+        import { AppProvider } from './js/context/AppContext.js';
+
+        // Mock Firebase completely to just render the UI
+        window.isTestMode = () => true;
+
+        const ReactDOM = window.ReactDOM;
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+
+        // By passing viewTestDataType as true through url, we'll force the new UI
+        const urlParams = new URLSearchParams(window.location.search);
+        urlParams.set('test', 'true');
+        window.history.replaceState(null, '', '?' + urlParams.toString());
+
+        const mockUser = { email: "test_admin@moszat.hu" };
+
+        root.render(html`
+            <${AppProvider}>
+                <${AdminPanel} user=${mockUser} handleLogout=${() => {}} />
+            <//>
+        `);
+    </script>
+</body>
+</html>

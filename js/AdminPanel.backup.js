@@ -27,7 +27,6 @@ import StudentIdInput from './components/StudentIdInput.js';
 import VersionHistory from './components/VersionHistory.js'; // ÚJ: Verziókövetés komponens importálása
 import AppointmentsTab from './components/idopont/AppointmentsTab.js'; // ÚJ: Időpontfoglaló fül
 import EmailTemplatesTab from './components/EmailTemplatesTab.js'; // ÚJ: Email Sablonok szerkesztője
-import TestStudentTable from './components/TestStudentTable.js'; // ÚJ: Teszt táblázat nézet
 import { generateTestStudents } from './utils/testDataGenerator.js';
 
 const React = window.React;
@@ -97,14 +96,14 @@ const getPaginationItems = (currentPage, totalPages) => {
 
     range.unshift(1);
     range.push(totalPages);
-    
+
     return [...new Set(range)];
 };
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
     if (totalPages <= 1) return null;
     const pageNumbers = getPaginationItems(currentPage, totalPages);
-    
+
     return html`
         <nav className="flex items-center justify-between">
             <div className="flex-1 flex justify-between sm:justify-end">
@@ -157,7 +156,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
             }
         });
     };
-    
+
     const handleMarkAsCompletedConfirm = (reg) => {
         onMarkAsCompleted(reg, completeDate, () => {
             handleCancelQuickEdit();
@@ -189,7 +188,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
     }, [students, currentPage, itemsPerPage, paginated]);
 
     const totalPages = paginated ? Math.ceil(students.length / itemsPerPage) : 1;
-    
+
     const getRowBgClass = (reg) => {
         if (reg.status === 'archived') {
             return 'bg-gray-100 text-gray-500 hover:bg-gray-200';
@@ -246,7 +245,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             const birthPlace = `${reg.birth_city}${reg.birth_district ? `, ${reg.birth_district}` : ''}`;
                             const fullName = studentFullName(reg);
                             const motherFullName = utils.formatFullName(reg.mother_prefix, reg.mother_firstName, reg.mother_lastName, reg.mother_secondName);
-                            
+
                             const adminIcons = [
                                 reg.registeredBy === 'admin' && { Icon: Icons.AdminUserIcon, color: "bg-slate-500", title: "Admin által rögzített", key: 'adminReg' },
                                 utils.hasMedicalCertificate(reg) && { Icon: Icons.MedicalIcon, color: "bg-pink-500", title: "Orvosi igazolás leadva", key: 'med' },
@@ -268,27 +267,27 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                             return html`
                             <${Fragment} key="${reg.id}">
                                 <tr key="${reg.id}-main" className="${getRowBgClass(reg)} transition-colors">
-                                    
+
                                     <td className="px-6 py-4 text-sm text-gray-700">
                                         <div className="flex flex-col">
                                             <span>${formattedTime.date}</span>
                                             <span className="text-gray-500">${formattedTime.time}</span>
                                         </div>
                                     </td>
-                                    
-                                    
+
+
                                     <td className="px-6 py-4 whitespace-normal">
                                         <div className="flex flex-col">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-bold text-gray-900">${fullName}</span>
                                                 ${(() => {
                                                     if (!showDayCounter) return null;
-                                                
+
                                                 // JAVÍTÁS: Hiányzó 'let' kulcsszavak pótlása
                                                 let days = null;
                                                 let daysLabel = '';
                                                 let bgColor = '';
-                                    
+
                                                 if (reg.studentIdAssignedAt) {
                                                     days = utils.calculateDaysSince(reg.studentIdAssignedAt);
                                                     daysLabel = 'napja kapott ID-t';
@@ -302,7 +301,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                                     daysLabel = 'napja jelentkezett';
                                                     bgColor = 'bg-gray-100 text-gray-800';
                                                 }
-                                    
+
                                                 // JAVÍTÁS: A hiányzó visszatérési érték (a span elem) pótlása
                                                 if (days !== null && days >= 0) {
                                                     return html`<span className="${'inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ' + bgColor}">${days} ${daysLabel}</span>`;
@@ -313,20 +312,20 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                             <span className="text-sm text-gray-500">${reg.email}</span>
                                         </div>
                                     </td>
-                                    
-                                    
+
+
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                                         <div className="flex flex-col">
                                             <span>${birthPlace}</span>
                                             <span className="text-gray-500">${reg.birthDate}</span>
                                         </div>
                                     </td>
-                                    
-                                    
+
+
                                     <td className="px-6 py-4 whitespace-normal text-sm text-gray-700">
                                         ${motherFullName}
                                     </td>
-                                    
+
                                     <td className="px-6 py-4">
                                         <div className="flex flex-col justify-center space-y-1">
                                             ${adminIcons.length > 0 && html`
@@ -374,7 +373,7 @@ const StudentTable = ({ title, students, onStatusChange, onShowDetails, onEditDe
                                             <div className="flex items-start space-x-2">
                                                 <div className="flex flex-col space-y-2 items-start">
                                                     <div className="flex items-center space-x-2">
-                                                        <${StudentIdInput} 
+                                                        <${StudentIdInput}
                                                             name="studentId"
                                                             value=${inlineIdValue}
                                                             onChange=${(e) => setInlineIdValue(e.target.value)}
@@ -519,7 +518,7 @@ const AdminPanel = ({ user, handleLogout }) => {
         const handleCopy = (event) => {
             if (event.target.closest('.admin-view-wrapper')) {
                 const selectedText = window.getSelection().toString();
-                const cleanText = selectedText.trim(); 
+                const cleanText = selectedText.trim();
                 event.clipboardData.setData('text/plain', cleanText);
                 event.preventDefault();
             }
@@ -605,7 +604,7 @@ const AdminPanel = ({ user, handleLogout }) => {
         await updateDoc(regRef, data);
         await logAdminAction(user.email, `Tanulói adatlap szerkesztése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
     }, [user, viewTestDataType]);
-    
+
     const handleStatusUpdate = useCallback(async (id, field, value, studentName) => {
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
         const regRef = doc(db, collectionName, id);
@@ -617,7 +616,7 @@ const AdminPanel = ({ user, handleLogout }) => {
             today.setUTCHours(12, 0, 0, 0);
             updateData.enrolledAt = Timestamp.fromDate(today);
         }
-        try { 
+        try {
             await updateDoc(regRef, updateData);
             const statusText = {
                 status_paid: 'Fizetve',
@@ -627,12 +626,12 @@ const AdminPanel = ({ user, handleLogout }) => {
             const actionText = `${statusText} státusz ${value ? 'bekapcsolása' : 'kikapcsolása'} (${viewTestDataType ? 'TESZT' : 'ÉLES'})`;
             await logAdminAction(user.email, actionText, studentName, id);
             showToast('Státusz frissítve!', 'success');
-        } catch (err) { 
+        } catch (err) {
             console.error("Hiba a státusz frissítésekor: ", err);
             showToast('Hiba a státusz frissítésekor!', 'error');
         }
     }, [showToast, user, viewTestDataType]);
-    
+
     const handleIdSave = useCallback(async (id, studentId, studentName, customDateStr) => {
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
         const regRef = doc(db, collectionName, id);
@@ -642,7 +641,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 let timestamp;
                 if (customDateStr) {
                     const date = new Date(customDateStr);
-                    // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás 
+                    // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás
                     // ne dobja át másnapra az azonosító kiadásának dátumát a határidők számolásánál.
                     date.setUTCHours(12, 0, 0, 0);
                     timestamp = Timestamp.fromDate(date);
@@ -656,7 +655,7 @@ const AdminPanel = ({ user, handleLogout }) => {
             await updateDoc(regRef, updatePayload);
             await logAdminAction(user.email, `Tanulói azonosító mentése (${viewTestDataType ? 'TESZT' : 'ÉLES'}): ${studentId}`, studentName, id);
             showToast('Tanulói azonosító mentve!', 'success');
-        } catch (err) { 
+        } catch (err) {
             console.error("Hiba a Tanuló azonosító mentésekor:", err);
             showToast('Hiba az azonosító mentésekor!', 'error');
         }
@@ -682,7 +681,7 @@ const AdminPanel = ({ user, handleLogout }) => {
             let timestamp;
             if (customDateStr) {
                 const date = new Date(customDateStr);
-                // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás 
+                // "Déli Horgony" (Noon Anchor): 12:00:00Z UTC formátum, hogy az időzóna eltolódás
                 // ne dobja át másnapra a KRESZ befejezésének dátumát.
                 date.setUTCHours(12, 0, 0, 0);
                 timestamp = Timestamp.fromDate(date);
@@ -702,18 +701,18 @@ const AdminPanel = ({ user, handleLogout }) => {
 
     const handleMarkAsCompletedWithConfirmation = useCallback((reg, customDate, onComplete) => {
         const studentName = utils.formatFullName(reg.current_prefix, reg.current_firstName, reg.current_lastName, reg.current_secondName);
-        
+
         const onConfirmAction = async () => {
             await handleMarkAsCompleted(reg.id, studentName, customDate);
             if (onComplete) onComplete();
         };
-    
-        const medicalStatusText = reg.hasMedicalCertificate 
-            ? '<strong><span style="text-transform: uppercase; color: red;">VAN</span></strong>' 
+
+        const medicalStatusText = reg.hasMedicalCertificate
+            ? '<strong><span style="text-transform: uppercase; color: red;">VAN</span></strong>'
             : '<strong><span style="text-transform: uppercase; color: red;">NINCS</span></strong>';
 
         const confirmationMessage = `Biztos szeretnéd befejezett státuszba állítani a tanulót? Ellenőrizd, hogy biztosan ${medicalStatusText} orvosi alkalmassági véleménye.`;
-    
+
         showConfirmation({
             message: confirmationMessage,
             onConfirm: onConfirmAction,
@@ -732,16 +731,16 @@ const AdminPanel = ({ user, handleLogout }) => {
     const handleDelete = useCallback(async (id, studentName) => {
         const collectionName = viewTestDataType ? "registrations_test" : "registrations";
         const regRef = doc(db, collectionName, id);
-        try { 
-            await deleteDoc(regRef); 
+        try {
+            await deleteDoc(regRef);
             await logAdminAction(user.email, `Jelentkezés törlése (${viewTestDataType ? 'TESZT' : 'ÉLES'})`, studentName, id);
             showToast('Jelentkezés törölve!', 'success');
-        } catch (err) { 
+        } catch (err) {
             console.error("Hiba a törlés során: ", err);
             showToast('Hiba a törlés során!', 'error');
         }
     }, [showToast, user, viewTestDataType]);
-    
+
     const handleDeleteRequest = useCallback((id, name) => {
         showConfirmation({
             message: `Biztosan törölni szeretnéd ${name} jelentkezését? Ez a művelet nem vonható vissza.`,
@@ -990,17 +989,17 @@ const AdminPanel = ({ user, handleLogout }) => {
         });
     }, [registrations, searchTerm, startDate, endDate, selectedIconFilters, examResultFilter, searchInArchive, activeTab]);
 
-    const { 
-        enrolledRegistrations, 
-        paidRegistrations, 
-        pendingRegistrations, 
+    const {
+        enrolledRegistrations,
+        paidRegistrations,
+        pendingRegistrations,
         completedRegistrations,
         allExpiredRegistrations,
         archivedRegistrations,
         transferRegistrations
     } = useMemo(() => {
         const source = filteredRegistrations;
-        
+
         const archivedStudents = source.filter(reg => reg.status === 'archived');
         const expiredStudents = source.filter(reg => reg.status && reg.status.startsWith('expired'));
 
@@ -1016,10 +1015,10 @@ const AdminPanel = ({ user, handleLogout }) => {
         const paid = regularActiveStudents.filter(reg => reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
         const pending = regularActiveStudents.filter(reg => !reg.status_paid && !reg.status_enrolled && !reg.courseCompletedAt);
 
-        return { 
-            enrolledRegistrations: enrolled, 
-            paidRegistrations: paid, 
-            pendingRegistrations: pending, 
+        return {
+            enrolledRegistrations: enrolled,
+            paidRegistrations: paid,
+            pendingRegistrations: pending,
             completedRegistrations: completed,
             allExpiredRegistrations: expiredStudents,
             archivedRegistrations: archivedStudents,
@@ -1087,355 +1086,13 @@ const AdminPanel = ({ user, handleLogout }) => {
 
     const containerBgClass = viewTestDataType ? 'bg-red-50' : 'bg-gray-50';
 
-    // --- RENDER TEST MODE LAYOUT ---
-    if (viewTestDataType) {
-        return html`
-            <div className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
-                {/* SIDEBAR */}
-                <aside className="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0">
-                    {/* Header/Logo */}
-                    <div className="h-16 flex items-center px-4 border-b border-slate-800 bg-slate-950">
-                        <div className="w-8 h-8 rounded bg-orange-500 text-white flex items-center justify-center font-bold text-xl mr-3 shadow-lg shadow-orange-500/20">M</div>
-                        <div>
-                            <h1 className="text-white font-bold tracking-wide">Mosolyzóna</h1>
-                            <div className="text-[10px] font-bold text-orange-400 tracking-widest uppercase">Teszt Mód</div>
-                        </div>
-                    </div>
-
-                    {/* Navigation */}
-                    <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1 custom-scrollbar">
-
-                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-4 px-2">Főmenü</div>
-
-                        <button onClick=${() => { setMainTab('registrations'); setActiveTab('applicants'); }} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${mainTab === 'registrations' && !['deadline_reports', 'automation_logs', 'admin_logs', 'email_logs'].includes(activeTab) ? 'bg-orange-500/10 text-orange-400 font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <${Icons.UserIcon} size=${18} className=${mainTab === 'registrations' && !['deadline_reports', 'automation_logs', 'admin_logs', 'email_logs'].includes(activeTab) ? 'text-orange-500' : ''} />
-                            Beiratkozások
-                        </button>
-
-                        <button onClick=${() => setMainTab('appointments')} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${mainTab === 'appointments' ? 'bg-orange-500/10 text-orange-400 font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <${Icons.CalendarIcon} size=${18} className=${mainTab === 'appointments' ? 'text-orange-500' : ''} />
-                            Időpontok
-                        </button>
-
-                        <button onClick=${() => setMainTab('emailTemplates')} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${mainTab === 'emailTemplates' ? 'bg-orange-500/10 text-orange-400 font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <${Icons.UploadCloudIcon} size=${18} className=${mainTab === 'emailTemplates' ? 'text-orange-500' : ''} />
-                            E-mail sablonok
-                        </button>
-
-                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-2">Naplók & Riportok</div>
-
-                        <button onClick=${() => { setMainTab('registrations'); setActiveTab('deadline_reports'); }} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'deadline_reports' ? 'bg-slate-800 text-white font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <div className="w-1.5 h-1.5 rounded-full bg-rose-500"></div> Határidő Riportok
-                        </button>
-                        <button onClick=${() => { setMainTab('registrations'); setActiveTab('automation_logs'); }} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'automation_logs' ? 'bg-slate-800 text-white font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Automatizációs
-                        </button>
-                        <button onClick=${() => { setMainTab('registrations'); setActiveTab('admin_logs'); }} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'admin_logs' ? 'bg-slate-800 text-white font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div> Admin Napló
-                        </button>
-                        <button onClick=${() => { setMainTab('registrations'); setActiveTab('email_logs'); }} className=${`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${activeTab === 'email_logs' ? 'bg-slate-800 text-white font-medium' : 'hover:bg-slate-800 hover:text-white'}`}>
-                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500"></div> Email Feldolgozás
-                        </button>
-
-                        <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2 mt-6 px-2">Eszközök</div>
-
-                        <button onClick=${handleGenerateTestData} disabled=${isGenerating} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-slate-800 hover:text-white group disabled:opacity-50">
-                            ${isGenerating ? html`<span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>` : html`<${Icons.FilePlusIcon} size=${16} className="text-slate-500 group-hover:text-white" />`}
-                            Adat generálása
-                        </button>
-
-                        <button onClick=${() => { setIsImporting(true); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-slate-800 hover:text-white group">
-                            <${Icons.UploadCloudIcon} size=${16} className="text-slate-500 group-hover:text-white" />
-                            KAV Import
-                        </button>
-
-                        <button onClick=${() => { setIsTransferImporting(true); }} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-slate-800 hover:text-white group">
-                            <${Icons.UploadCloudIcon} size=${16} className="text-slate-500 group-hover:text-white" />
-                            Áthelyezett Import
-                        </button>
-
-                        <button onClick=${() => setShowVersionHistory(true)} className="w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors hover:bg-slate-800 hover:text-white group">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-slate-500 group-hover:text-white"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
-                            Verziókövetés
-                        </button>
-                    </nav>
-
-                    {/* Footer / System menu */}
-                    <div className="p-4 border-t border-slate-800 bg-slate-950/50">
-                         <div className="flex items-center justify-between mb-3 text-sm">
-                             <span className="text-slate-400 truncate max-w-[140px]" title=${user.email}>${user.email}</span>
-                             <button onClick=${handleLogout} className="text-rose-400 hover:text-rose-300" title="Kijelentkezés">
-                                <${Icons.LogoutIcon} size=${18} />
-                             </button>
-                         </div>
-                         <button onClick=${handleModeSwitch} className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 font-semibold transition-colors border border-emerald-500/20">
-                             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div> Váltás ÉLES-re
-                         </button>
-                    </div>
-                </aside>
-
-                {/* MAIN CONTENT */}
-                <main className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50/50">
-                    {/* Top Header */}
-                    <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 shrink-0">
-                        <div className="flex items-center gap-4">
-                            <h2 className="text-lg font-bold text-slate-800 capitalize">
-                                ${mainTab === 'registrations' && !['deadline_reports', 'automation_logs', 'admin_logs', 'email_logs'].includes(activeTab) ? 'Beiratkozások kezelése' : mainTab === 'appointments' ? 'Időpontfoglalások' : mainTab === 'emailTemplates' ? 'E-mail sablonok' : 'Naplók és Riportok'}
-                            </h2>
-                            {/* Teszt e-mail kapcsoló gyors elérése */}
-                            <button onClick=${handleToggleTestEmails} className=${`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors border ${testEmailsEnabled ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-slate-100 border-slate-200 text-slate-500'}`} title="Kimenő teszt e-mailek küldésének engedélyezése">
-                                <div className=${`w-2 h-2 rounded-full ${testEmailsEnabled ? 'bg-emerald-500' : 'bg-slate-400'}`}></div>
-                                Teszt E-mailek ${testEmailsEnabled ? 'BE' : 'KI'}
-                            </button>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <button onClick=${handleClearAllTestExams} className="p-2 rounded-lg text-rose-500 hover:bg-rose-50 transition-colors" title="Összes vizsga törlése">
-                                <${Icons.TrashIcon} size=${20} />
-                            </button>
-                            <div className="relative" ref=${studentMenuRef}>
-                                <button onClick=${() => setIsStudentMenuOpen(!isStudentMenuOpen)} className="flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 px-4 rounded-lg transition-colors shadow-sm shadow-orange-500/30">
-                                    <${Icons.UserPlusIcon} size=${18} />
-                                    <span>Új tanuló</span>
-                                </button>
-                                ${isStudentMenuOpen && html`
-                                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl z-50 border border-slate-100 py-2">
-                                        <button onClick=${() => { setIsAddingStudent(true); setIsStudentMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-600 flex items-center gap-2 font-medium">
-                                            Új tanuló rögzítése
-                                        </button>
-                                        <button onClick=${() => { setIsTransferStudentMode(true); setIsAddingStudent(true); setIsStudentMenuOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-slate-700 hover:bg-orange-50 hover:text-orange-600 flex items-center gap-2 font-medium">
-                                            Áthelyezett tanuló
-                                        </button>
-                                    </div>
-                                `}
-                            </div>
-                        </div>
-                    </header>
-
-                    {/* Scrollable Content Area */}
-                    <div className="flex-1 overflow-y-auto p-6 custom-scrollbar relative">
-
-                        ${mainTab === 'registrations' ? html`
-                            <${Fragment}>
-
-                            ${!['deadline_reports', 'automation_logs', 'admin_logs', 'email_logs'].includes(activeTab) && html`
-                                <div className="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between">
-                                    {/* Sub-tabs mint csempék */}
-                                    <div className="flex flex-wrap gap-2 w-full md:w-auto">
-                                        <button onClick=${() => setActiveTab('applicants')} className=${`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'applicants' ? 'bg-white shadow-sm border border-slate-200 text-orange-600' : 'text-slate-500 hover:bg-slate-200/50'}`}>Jelentkezők</button>
-                                        <button onClick=${() => setActiveTab('enrolled')} className=${`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'enrolled' ? 'bg-white shadow-sm border border-slate-200 text-orange-600' : 'text-slate-500 hover:bg-slate-200/50'}`}>Beiratkozva</button>
-                                        <button onClick=${() => setActiveTab('completed')} className=${`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'completed' ? 'bg-white shadow-sm border border-slate-200 text-orange-600' : 'text-slate-500 hover:bg-slate-200/50'}`}>Befejezte</button>
-                                        <button onClick=${() => setActiveTab('transfers')} className=${`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'transfers' ? 'bg-white shadow-sm border border-slate-200 text-orange-600' : 'text-slate-500 hover:bg-slate-200/50'}`}>Átjelentkezett</button>
-                                        <button onClick=${() => setActiveTab('expired')} className=${`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'expired' ? 'bg-white shadow-sm border border-slate-200 text-orange-600' : 'text-slate-500 hover:bg-slate-200/50'}`}>Lejárt</button>
-                                        <button onClick=${() => setActiveTab('archived')} className=${`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'archived' ? 'bg-white shadow-sm border border-slate-200 text-orange-600' : 'text-slate-500 hover:bg-slate-200/50'}`}>Archív</button>
-                                    </div>
-
-                                    {/* Keresés és Szűrés gomb */}
-                                    <div className="flex w-full md:w-auto gap-2">
-                                        <div className="relative flex-1 md:w-64">
-                                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                <${Icons.SearchIcon} size=${16} className="text-slate-400" />
-                                            </div>
-                                            <input
-                                                type="text"
-                                                className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-lg text-sm bg-white focus:ring-1 focus:ring-orange-500 focus:border-orange-500 shadow-sm transition-shadow"
-                                                placeholder="Keresés névre, emailre..."
-                                                value=${searchTerm}
-                                                onChange=${(e) => setSearchTerm(e.target.value)}
-                                            />
-                                        </div>
-                                        <button onClick=${() => setIsFilterVisible(!isFilterVisible)} className=${`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${isFilterVisible || isSearchActive ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'} shadow-sm`}>
-                                            <${Icons.FilterIcon} size=${16} />
-                                            Szűrők
-                                            ${(selectedIconFilters.length > 0 || examResultFilter !== 'all' || startDate || endDate) && html`<span className="flex h-2 w-2 relative ml-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span></span>`}
-                                        </button>
-                                    </div>
-                                </div>
-                            `}
-
-                            {/* Panel a részletes szűrőknek */}
-                            ${isFilterVisible && !['deadline_reports', 'automation_logs', 'admin_logs', 'email_logs'].includes(activeTab) && html`
-                                <div className="mb-6 p-5 bg-white rounded-xl shadow-sm border border-slate-200 animate-fade-in-down relative">
-                                    <button onClick=${() => setIsFilterVisible(false)} className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"><${Icons.XIcon} size=${20} /></button>
-                                    <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2"><${Icons.FilterIcon} size=${18} className="text-orange-500" /> Részletes Szűrés</h3>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Jelentkezés ideje</label>
-                                            <div className="flex gap-2 items-center">
-                                                <input type="date" value=${startDate} onChange=${e => setStartDate(e.target.value)} className="w-full text-sm p-2 border border-slate-200 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500" />
-                                                <span className="text-slate-400">-</span>
-                                                <input type="date" value=${endDate} onChange=${e => setEndDate(e.target.value)} className="w-full text-sm p-2 border border-slate-200 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500" />
-                                            </div>
-                                            <label className="inline-flex items-center mt-3 cursor-pointer">
-                                                <input type="checkbox" checked=${searchInArchive} onChange=${(e) => setSearchInArchive(e.target.checked)} className="rounded border-slate-300 text-orange-500 focus:ring-orange-500 w-4 h-4" />
-                                                <span className="ml-2 text-sm text-slate-600 font-medium">Keresés az archívumban is</span>
-                                            </label>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Vizsgaeredmény szűrés</label>
-                                            <select value=${examResultFilter} onChange=${e => setExamResultFilter(e.target.value)} className="w-full text-sm p-2.5 border border-slate-200 rounded-lg focus:ring-1 focus:ring-orange-500 focus:border-orange-500 bg-white">
-                                                <option value="all">Minden eredmény</option>
-                                                <option value="successful">Csak Sikeres (M)</option>
-                                                <option value="failed">Csak Sikertelen (1)</option>
-                                                <option value="missed">Nem jelent meg (3)</option>
-                                            </select>
-                                        </div>
-
-                                        <div>
-                                            <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wider mb-2">Címke szűrés</label>
-                                            <div className="flex flex-wrap gap-2">
-                                                ${iconFilterOptions.map(({ key, Icon, title, color }) => {
-                                                    const isSelected = selectedIconFilters.includes(key);
-                                                    return html`
-                                                        <button
-                                                            key=${key}
-                                                            onClick=${() => setSelectedIconFilters(prev => prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key])}
-                                                            title=${title}
-                                                            className=${`p-2 rounded-lg border transition-all ${isSelected ? `${color} border-transparent shadow-md scale-105` : 'border-slate-200 bg-slate-50 hover:bg-slate-100'}`}
-                                                        >
-                                                            <${Icon} size=${16} className=${isSelected ? 'text-white' : 'text-slate-500'} />
-                                                        </button>
-                                                    `;
-                                                })}
-                                            </div>
-                                            <button onClick=${() => setShowIconLegend(true)} className="text-xs text-orange-600 hover:text-orange-700 font-medium mt-2 flex items-center gap-1">Mi mit jelent?</button>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">
-                                        <button onClick=${clearFilters} className="text-sm text-slate-500 hover:text-slate-800 font-semibold px-4 py-2">Szűrők törlése</button>
-                                    </div>
-                                </div>
-                            `}
-
-                            {/* Tables rendering */}
-                            ${isSearchActive ? html`
-                                <${Fragment}>
-                                    <div className="mb-4 p-4 bg-orange-50 border border-orange-200 rounded-lg text-orange-800 flex items-center justify-between shadow-sm">
-                                        <div className="flex items-center gap-3">
-                                            <${Icons.SearchIcon} size=${20} className="text-orange-500" />
-                                            <div>
-                                                <span className="font-bold text-sm">Keresés / Szűrés aktív</span>
-                                                <span className="ml-2 text-sm text-orange-700/80">Találatok a teljes adatbázisból</span>
-                                            </div>
-                                        </div>
-                                        <button onClick=${clearFilters} className="text-sm font-bold text-orange-600 hover:text-orange-800 bg-orange-200/50 px-3 py-1.5 rounded-md transition-colors">Törlés</button>
-                                    </div>
-                                    <${TestStudentTable}
-                                        adminUser=${user}
-                                        key="search_results_test"
-                                        title="Találati lista"
-                                        students=${filteredRegistrations}
-                                        onStatusChange=${handleStatusChangeRequest}
-                                        onShowDetails=${setViewingStudent}
-                                        onEditDetails=${setEditingStudent}
-                                        onDelete=${handleDeleteRequest}
-                                        onRestore=${handleRestoreRequest}
-                                        onIdSave=${handleIdSave}
-                                        onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation}
-                                        onCommentSave=${handleCommentSave}
-                                        showDayCounter=${true}
-                                        allowIdEditing=${true}
-                                        allowRestore=${true}
-                                        paginated=${true}
-                                    />
-                                </${Fragment}>
-                            ` : html`
-                                <${Fragment}>
-                                    ${activeTab === 'applicants' && html`<div key="applicants-tab"><${TestStudentTable} adminUser=${user} title="Fizetett (beiratkozásra váró)" students=${paidRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} showDayCounter=${true} /><${TestStudentTable} adminUser=${user} title="Új és folyamatban lévő" students=${pendingRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onDelete=${handleDeleteRequest} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} paginated=${true} showDayCounter=${true} /></div>`}
-                                    ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${TestStudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
-                                    ${activeTab === 'completed' && html`<div key="completed-tab"><${TestStudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
-                                    ${activeTab === 'transfers' && html`<div key="transfers-tab"><${TestStudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} onDelete=${handleTransferDeleteRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} isTransferTab=${true} /></div>`}
-
-                                    ${activeTab === 'expired' && html`
-                                        <div key="expired-tab">
-                                            <div className="mb-4 flex gap-2 overflow-x-auto pb-2">
-                                                <button onClick=${() => setExpiredFilter('all')} className=${`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${expiredFilter === 'all' ? 'bg-rose-100 text-rose-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>Összes</button>
-                                                <button onClick=${() => setExpiredFilter('thirty_day')} className=${`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${expiredFilter === 'thirty_day' ? 'bg-amber-100 text-amber-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>30 napos (nem fizetett)</button>
-                                                <button onClick=${() => setExpiredFilter('ninety_day')} className=${`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${expiredFilter === 'ninety_day' ? 'bg-cyan-100 text-cyan-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>90 napos (nem kezdte el)</button>
-                                                <button onClick=${() => setExpiredFilter('elearning')} className=${`px-3 py-1.5 text-sm rounded-full font-medium transition-colors ${expiredFilter === 'elearning' ? 'bg-rose-100 text-rose-700' : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>9 hónapos (e-learning)</button>
-                                            </div>
-                                            <${TestStudentTable}
-                                                adminUser=${user}
-                                                key="expired_students_test"
-                                                title="Lejárt tanulók"
-                                                students=${filteredExpiredStudents}
-                                                onStatusChange=${handleStatusChangeRequest}
-                                                onShowDetails=${setViewingStudent}
-                                                onEditDetails=${setEditingStudent}
-                                                onDelete=${handleDeleteRequest}
-                                                onRestore=${handleRestoreRequest}
-                                                onArchive=${handleArchiveRequest}
-                                                allowArchive=${true}
-                                                onCommentSave=${handleCommentSave}
-                                                allowRestore=${true}
-                                                allowIdEditing=${false}
-                                                paginated=${true}
-                                                showDayCounter=${false}
-                                            />
-                                        </div>
-                                    `}
-                                    ${activeTab === 'archived' && html`
-                                        <div key="archived-tab">
-                                            <${TestStudentTable}
-                                                adminUser=${user}
-                                                key="archived_students_test"
-                                                title="Archivált tanulók"
-                                                students=${archivedRegistrations}
-                                                onStatusChange=${handleStatusChangeRequest}
-                                                onShowDetails=${setViewingStudent}
-                                                onEditDetails=${setEditingStudent}
-                                                onDelete=${handleDeleteRequest}
-                                                onRestore=${handleRestoreRequest}
-                                                onCommentSave=${handleCommentSave}
-                                                allowRestore=${true}
-                                                paginated=${true}
-                                                showDayCounter=${false}
-                                            />
-                                        </div>
-                                    `}
-
-                                    {/* Logs Views */}
-                                    ${activeTab === 'automation_logs' && html`<div key="automation-logs-tab" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><${AutomationLog} /></div>`}
-                                    ${activeTab === 'admin_logs' && html`<div key="admin-logs-tab" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><${AdminLog} /></div>`}
-                                    ${activeTab === 'deadline_reports' && html`<div key="deadline-reports-tab" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><${DeadlineReports} students=${registrations} onShowDetails=${setViewingStudent} /></div>`}
-                                    ${activeTab === 'email_logs' && html`<div key="email-logs-tab" className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm"><${EmailImportLog} onStudentClick=${handleLogStudentClick} /></div>`}
-
-                                </${Fragment}>
-                            `}
-                            </${Fragment}>
-                        ` : mainTab === 'appointments' ? html`
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-                                <${AppointmentsTab} isTestView=${viewTestDataType} adminUser=${user} />
-                            </div>
-                        ` : html`
-                            <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200 min-h-full">
-                                <${EmailTemplatesTab} isTestView=${viewTestDataType} />
-                            </div>
-                        `}
-                    </div>
-                </main>
-
-                {/* Modals rendered here to overlay everything */}
-                ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
-                ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
-                ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => { setIsAddingStudent(false); setIsTransferStudentMode(false); }} adminUser=${user} isTestView=${viewTestDataType} isTransferMode=${isTransferStudentMode} />`}
-                ${isImporting && html`<${ExamImportModal} onClose=${() => setIsImporting(false)} isTestView=${viewTestDataType} onImportComplete=${() => showToast('Importálás kész!', 'info')} />`}
-                ${isTransferImporting && html`<${TransferImportModal} onClose=${() => setIsTransferImporting(false)} adminUser=${user} isTestView=${viewTestDataType} />`}
-                ${showIconLegend && html`<${IconLegendModal} onClose=${() => setShowIconLegend(false)} />`}
-                ${showVersionHistory && html`<${VersionHistory} onClose=${() => setShowVersionHistory(false)} adminUser=${user} />`}
-            </div>
-        `;
-    }
-
-    // --- RENDER LIVE MODE LAYOUT (ORIGINAL) ---
     return html`
         <div className=${`container mx-auto px-4 sm:px-6 lg:px-8 py-8 ${containerBgClass}`}>
             <div className=${`p-4 sm:p-6 lg:p-8 rounded-xl ${viewTestDataType ? 'bg-red-100/50' : 'bg-gray-50'}`}>
                 <header className="flex justify-between items-center mb-4 flex-wrap gap-4">
                     <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
                         Admin Felület
+                        ${viewTestDataType && html`<span className="text-red-600 ml-3 text-2xl">(TESZT MÓD)</span>`}
                     </h1>
                     <div className="flex items-center gap-4">
                         <span className="text-sm text-gray-600">Bejelentkezve: <strong className="font-medium">${user.email}</strong></span>
@@ -1774,7 +1431,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                     ${activeTab === 'enrolled' && html`<div key="enrolled-tab"><${StudentTable} adminUser=${user} title="Beiratkozott tanulók" students=${enrolledRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${true} /></div>`}
                     ${activeTab === 'completed' && html`<div key="completed-tab"><${StudentTable} adminUser=${user} title="E-learninget befejezte" students=${completedRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} /></div>`}
                     ${activeTab === 'transfers' && html`<div key="transfers-tab"><${StudentTable} adminUser=${user} title="Átjelentkezett tanulók" students=${transferRegistrations} onStatusChange=${handleStatusChangeRequest} onShowDetails=${setViewingStudent} onEditDetails=${setEditingStudent} onIdSave=${handleIdSave} onMarkAsCompleted=${handleMarkAsCompletedWithConfirmation} onCommentSave=${handleCommentSave} onArchive=${handleArchiveRequest} onDelete=${handleTransferDeleteRequest} allowArchive=${true} allowIdEditing=${true} paginated=${true} showDayCounter=${false} isTransferTab=${true} /></div>`}
-                    
+
                     ${activeTab === 'expired' && html`
                         <div key="expired-tab">
                             <div className="mb-6 p-4 bg-white rounded-lg border shadow-sm flex justify-between items-center">
@@ -1800,21 +1457,21 @@ const AdminPanel = ({ user, handleLogout }) => {
                                     </div>
                                 </div>
                             </div>
-                            <${StudentTable} 
+                            <${StudentTable}
                                 adminUser=${user}
-                                key="expired_students" 
-                                title="Lejárt tanulók" 
-                                students=${filteredExpiredStudents} 
-                                onStatusChange=${handleStatusChangeRequest} 
-                                onShowDetails=${setViewingStudent} 
-                                onEditDetails=${setEditingStudent} 
-                                onDelete=${handleDeleteRequest} 
+                                key="expired_students"
+                                title="Lejárt tanulók"
+                                students=${filteredExpiredStudents}
+                                onStatusChange=${handleStatusChangeRequest}
+                                onShowDetails=${setViewingStudent}
+                                onEditDetails=${setEditingStudent}
+                                onDelete=${handleDeleteRequest}
                                 onRestore=${handleRestoreRequest}
                                 onArchive=${handleArchiveRequest}
                                 allowArchive=${true}
                                 onCommentSave=${handleCommentSave}
                                 allowRestore=${true}
-                                allowIdEditing=${false} 
+                                allowIdEditing=${false}
                                 paginated=${true}
                                 showDayCounter=${false}
                             />
@@ -1867,7 +1524,7 @@ const AdminPanel = ({ user, handleLogout }) => {
                 ` : html`
                     <${EmailTemplatesTab} isTestView=${viewTestDataType} />
                 `}
-                
+
                 ${viewingStudent && html`<${ViewDetailsModal} student=${viewingStudent} onClose=${() => setViewingStudent(null)} onUpdate=${handleUpdateStudent} isTestView=${viewTestDataType} />`}
                 ${editingStudent && html`<${EditDetailsModal} student=${editingStudent} onClose=${() => setEditingStudent(null)} onUpdate=${handleUpdateStudent} adminUser=${user} />`}
                 ${isAddingStudent && html`<${AdminAddStudentModal} onClose=${() => { setIsAddingStudent(false); setIsTransferStudentMode(false); }} adminUser=${user} isTestView=${viewTestDataType} isTransferMode=${isTransferStudentMode} />`}
