@@ -15,7 +15,7 @@ export const html = htm.bind(React.createElement);
 export const LoadingOverlay = ({ text }) => html`
     <div className="fixed inset-0 bg-white/80 backdrop-blur-sm flex flex-col items-center justify-center z-[100]">
         <div className="text-center loader-content">
-            <img src="https://moszat.hu/moszat_teszt/images/MK_128px.png" alt="Betöltés..." className="loader-icon" />
+            <div className="w-12 h-12 border-4 border-gray-200 border-l-indigo-600 rounded-full animate-spin mx-auto"></div>
             <p className="mt-4 text-lg font-semibold text-gray-700">${text}</p>
         </div>
     </div>
