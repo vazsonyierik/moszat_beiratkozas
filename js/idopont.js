@@ -259,7 +259,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="bg-gray-50 p-2.5 sm:py-1.5 sm:px-2.5 rounded border border-gray-200 flex justify-between items-center gap-3 sm:gap-2 transition-all hover:border-[#e09900]">
+                                        <li key=${index} className="bg-gray-50 p-2.5 sm:py-1.5 sm:px-2.5 rounded border border-gray-200 flex justify-between items-center gap-3 sm:gap-2 transition-all hover:border-[#e09900] animate-cart-item">
                                             <div className="flex-1 min-w-0 leading-tight">
                                                 <span className="font-bold text-gray-800 text-[14px] sm:text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">Várólista</span>` : ''}</span>
                                                 <div className="text-gray-500 mt-1 sm:mt-0.5 flex items-center gap-1.5 sm:gap-1 text-[12px] sm:text-[10px]">
@@ -648,7 +648,7 @@ const InfoModal = ({ onClose, onApplyFilter }) => {
                             </div>
 
                             <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm mt-4">
-                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
+                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://youtu.be/I3_ZJ46Oggs?si=Uy_1_4lS9OUyfVJ8" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
                             </p>
                             
                             <div className="mt-6 flex justify-center">
@@ -1375,7 +1375,10 @@ const StudentAppointmentsApp = () => {
                     <!-- Felső Kártyák (Fontos Tudnivalók & KRESZ TV) -->
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                         <!-- Fontos Tudnivalók -->
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-orange-100 transition-colors h-full justify-center" onClick=${() => setIsInfoModalOpen(true)}>
+                        <div 
+                            className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col gap-3 lg:cursor-default cursor-pointer lg:hover:bg-orange-50 active:bg-orange-100 lg:active:bg-orange-50 transition-colors h-full justify-center" 
+                            onClick=${() => { if(window.innerWidth < 1024) setIsInfoModalOpen(true); }}
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
                                     <span className="font-serif italic font-bold text-xl leading-none">i</span>
@@ -1385,10 +1388,13 @@ const StudentAppointmentsApp = () => {
                             <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
                                 Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
                             </p>
-                            <div className="hidden lg:flex w-[90%] mx-auto text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm">
+                            <button 
+                                onClick=${(e) => { e.stopPropagation(); setIsInfoModalOpen(true); }}
+                                className="hidden lg:flex w-[90%] mx-auto text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm cursor-pointer"
+                            >
                                 <span>Részletek megtekintése</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
-                            </div>
+                            </button>
                         </div>
 
                         <!-- Mobile only filter hint banner -->
@@ -1413,7 +1419,7 @@ const StudentAppointmentsApp = () => {
                                 Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
                             </p>
                             <a
-                                href="https://www.youtube.com/@KRESZTV"
+                                href="https://youtu.be/I3_ZJ46Oggs?si=Uy_1_4lS9OUyfVJ8"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex w-[90%] mx-auto items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm"
@@ -1601,7 +1607,7 @@ const StudentAppointmentsApp = () => {
                         ` : html`
                             <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar flex-1 min-h-0">
                                 ${cart.map(item => html`
-                                    <div key=${item.course.id} className="flex justify-between items-start p-2.5 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors">
+                                    <div key=${item.course.id} className="flex justify-between items-start p-2.5 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors animate-cart-item">
                                         <div className="flex-1">
                                             <div className="font-semibold text-[#e09900] text-xs">
                                                 ${item.course.name}
