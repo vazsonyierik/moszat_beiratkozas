@@ -126,6 +126,15 @@ function App() {
     const showToast = useToast();
 
     useEffect(() => {
+        // MÓDOSÍTÁS: A fő loader eltüntetése, miután az App komponens már felépült a DOM-ban
+        const loader = document.getElementById('loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+
         // ÚJ: Teszt mód ellenőrzése
         if (isTestMode()) {
             setIsTest(true);

@@ -209,7 +209,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                         Sikeres jelentkezés (${results.success.length} db)
                                     </h4>
                                     <ul className="space-y-2">
-                                        ${results.success.map(s => html`
+                                        ${results.success.map((s, idx) => html`
                                             <li key=${s.course.id} className="bg-white p-2.5 rounded-lg border border-gray-100 flex items-start gap-2 shadow-sm text-sm">
                                                 <div className="flex-1">
                                                     <div className="font-bold text-gray-800">${s.course.name}</div>
@@ -972,6 +972,15 @@ const StudentAppointmentsApp = () => {
 
     // 1. Setup Auth
     useEffect(() => {
+        // MÓDOSÍTÁS: Loader eltüntetése
+        const loader = document.getElementById('loader');
+        if (loader) {
+            loader.style.opacity = '0';
+            setTimeout(() => {
+                loader.style.display = 'none';
+            }, 300);
+        }
+
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             try {
                 if (!user) {
