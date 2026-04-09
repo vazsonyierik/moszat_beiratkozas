@@ -1375,7 +1375,10 @@ const StudentAppointmentsApp = () => {
                     <!-- Felső Kártyák (Fontos Tudnivalók & KRESZ TV) -->
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
                         <!-- Fontos Tudnivalók -->
-                        <div className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col gap-3 cursor-pointer hover:bg-orange-100 transition-colors h-full justify-center" onClick=${() => setIsInfoModalOpen(true)}>
+                        <div
+                            className="bg-orange-50 border border-orange-200 rounded-xl p-5 shadow-sm flex flex-col gap-3 lg:cursor-default cursor-pointer lg:hover:bg-orange-50 active:bg-orange-100 lg:active:bg-orange-50 transition-colors h-full justify-center"
+                            onClick=${() => { if(window.innerWidth < 1024) setIsInfoModalOpen(true); }}
+                        >
                             <div className="flex items-center gap-3">
                                 <div className="bg-[#e09900] text-white rounded-full w-10 h-10 flex items-center justify-center shrink-0 shadow-md">
                                     <span className="font-serif italic font-bold text-xl leading-none">i</span>
@@ -1385,10 +1388,13 @@ const StudentAppointmentsApp = () => {
                             <p className="hidden lg:block text-orange-800 text-xs sm:text-sm mb-2 flex-1">
                                 Kérjük, mindenképp olvasd el a tájékoztatót az egyes modulokról és szolgáltatásokról a gördülékeny foglalás érdekében.
                             </p>
-                            <div className="hidden lg:flex w-[90%] mx-auto text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm">
+                            <button
+                                onClick=${(e) => { e.stopPropagation(); setIsInfoModalOpen(true); }}
+                                className="hidden lg:flex w-[90%] mx-auto text-center items-center justify-center gap-2 px-4 py-2 bg-[#e09900] hover:bg-[#c98900] text-white rounded-lg font-bold text-xs transition-colors shadow-sm cursor-pointer"
+                            >
                                 <span>Részletek megtekintése</span>
                                 <${Icons.ChevronRightIcon} size=${16} />
-                            </div>
+                            </button>
                         </div>
 
                         <!-- Mobile only filter hint banner -->
