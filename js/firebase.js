@@ -1,4 +1,7 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+// 1. Firebase App
+import { initializeApp } from "https://esm.sh/firebase@10.8.1/app";
+
+// 2. Firebase Auth
 import { 
     getAuth, 
     onAuthStateChanged,
@@ -7,7 +10,9 @@ import {
     signInWithEmailLink,
     signOut,
     signInAnonymously
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+} from "https://esm.sh/firebase@10.8.1/auth";
+
+// 3. Firebase Firestore
 import { 
     getFirestore, 
     serverTimestamp, 
@@ -26,11 +31,13 @@ import {
     deleteField,
     Timestamp,
     limit // ÚJ
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+} from "https://esm.sh/firebase@10.8.1/firestore";
+
+// 4. Firebase Functions
 import { 
     getFunctions, 
     httpsCallable 
-} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
+} from "https://esm.sh/firebase@10.8.1/functions";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCuZrleVz4n_c6BZPQVklquGcjw9KOwEB8",
