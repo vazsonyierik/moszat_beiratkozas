@@ -648,7 +648,7 @@ const InfoModal = ({ onClose, onApplyFilter }) => {
                             </div>
 
                             <p className="text-gray-600 italic border border-gray-200 p-4 rounded-xl text-base sm:text-sm mt-4">
-                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://www.youtube.com/@KRESZTV" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
+                                Inkább otthonról tanulnál? A tanórákat teljesen ingyenesen visszanézheted Pető Attila előadásában a YouTube-on: <a href="https://youtu.be/I3_ZJ46Oggs?si=Uy_1_4lS9OUyfVJ8" target="_blank" className="text-[#e09900] font-bold underline flex items-center gap-1 inline-flex mt-1"><${Icons.ChevronRightIcon} size=${16} /> KRESZ TV csatorna</a>
                             </p>
                             
                             <div className="mt-6 flex justify-center">
@@ -1413,7 +1413,7 @@ const StudentAppointmentsApp = () => {
                                 Nem találsz megfelelő időpontot? Nézd végig az előadásokat a KRESZ TV YouTube csatornáján!
                             </p>
                             <a
-                                href="https://www.youtube.com/@KRESZTV"
+                                href="https://youtu.be/I3_ZJ46Oggs?si=Uy_1_4lS9OUyfVJ8"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex w-[90%] mx-auto items-center justify-center gap-2 px-4 py-2 bg-white hover:bg-gray-50 text-[#e09900] rounded-lg font-bold text-xs transition-colors border border-orange-200 shadow-sm"
