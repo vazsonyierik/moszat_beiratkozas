@@ -8,6 +8,15 @@
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚗</text></svg>">
 
+    <!-- Preload kulcsfontosságú JS fájlok iOS sebességnöveléséhez -->
+    <link rel="preload" href="https://cdn.tailwindcss.com" as="script">
+    <link rel="preload" href="https://unpkg.com/react@18/umd/react.development.js" as="script">
+    <link rel="preload" href="https://unpkg.com/react-dom@18/umd/react-dom.development.js" as="script">
+    <link rel="modulepreload" href="./js/main.js?v=202602241835">
+    <link rel="modulepreload" href="./js/App.js">
+    <link rel="modulepreload" href="./js/firebase.js">
+    <link rel="modulepreload" href="./js/RegistrationForm.js">
+
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     

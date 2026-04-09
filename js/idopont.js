@@ -999,15 +999,19 @@ const StudentAppointmentsApp = () => {
     useEffect(() => {
         if (!isAuthReady) return;
 
-        const collectionName = isTestView ? 'courses_test' : 'courses';
-        const todayStr = new Date().toISOString().split('T')[0];
-        
-        const q = query(
-            collection(db, collectionName),
-            where('date', '>=', todayStr)
-        );
+        // Késleltetjük a lekérést minimálisan (100ms), hogy az iOS Safari hálózati stóc (network stack) felszabaduljon
+        // az Auth lekérések (és React init) befejeztével.
+        let unsubscribeSnapshot = null;
+        const timer = setTimeout(() => {
+            const collectionName = isTestView ? 'courses_test' : 'courses';
+            const todayStr = new Date().toISOString().split('T')[0];
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const q = query(
+                collection(db, collectionName),
+                where('date', '>=', todayStr)
+            );
+
+            unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
             const now = new Date();
             let coursesData = [];
 
@@ -1047,13 +1051,19 @@ const StudentAppointmentsApp = () => {
             
             setCourses(coursesData);
             setIsLoading(false);
-        }, (error) => {
-            console.error("Error fetching courses:", error);
-            showToast("Nem sikerült betölteni az időpontokat.", "error");
-            setIsLoading(false);
-        });
+            }, (error) => {
+                console.error("Error fetching courses:", error);
+                showToast("Nem sikerült betölteni az időpontokat.", "error");
+                setIsLoading(false);
+            });
+        }, 100);
 
-        return () => unsubscribe();
+        return () => {
+            clearTimeout(timer);
+            if (unsubscribeSnapshot) {
+                unsubscribeSnapshot();
+            }
+        };
     }, [isAuthReady, isTestView]);
 
     const handleBookAppointment = async (bookingData) => {

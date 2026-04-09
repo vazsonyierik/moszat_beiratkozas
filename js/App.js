@@ -17,10 +17,12 @@ import {
 } from './firebase.js';
 import { html, LoadingOverlay } from './UI.js';
 import RegistrationForm from './RegistrationForm.js';
-import AdminPanel from './AdminPanel.js';
 import { useToast } from './context/AppContext.js';
 
-const { useState, useEffect, useCallback, Fragment } = window.React;
+const { useState, useEffect, useCallback, Fragment, Suspense, lazy } = window.React;
+
+// Aszinkron betöltjük az AdminPanel-t (így a tanulók nem töltik le)
+const AsyncAdminPanel = lazy(() => import('./AdminPanel.js'));
 
 // LoginCard component for the admin login form
 const LoginCard = ({ children }) => html`
@@ -193,7 +195,13 @@ function App() {
             if (authLoading) {
                 return html`<${LoadingOverlay} text="Azonosítás folyamatban..." />`;
             }
-            return user ? html`<${AdminPanel} user=${user} handleLogout=${handleLogout} />` : html`<${AdminLogin} />`;
+            return user
+                ? html`
+                    <${Suspense} fallback=${html`<${LoadingOverlay} text="Admin felület betöltése..." />`}>
+                        <${AsyncAdminPanel} user=${user} handleLogout=${handleLogout} />
+                    <//>
+                  `
+                : html`<${AdminLogin} />`;
         }
         // Default view is the registration form
         return html`<${RegistrationForm} />`;
