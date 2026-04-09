@@ -360,27 +360,14 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
             
             // If this is a First Aid course, fetch payment statuses
             if (course.name === "Elsősegély tanfolyam" && data.length > 0) {
-                const regCollection = isTestView ? 'registrations_test' : 'registrations';
                 const statuses = {};
                 
-                // We fetch the registrations to get firstAidPaid status for each student
-                try {
-                    // For safety and performance, we'll fetch them individually since we have their emails. 
-                    // To optimize, we run them in parallel
-                    await Promise.all(data.map(async (booking) => {
-                        const email = booking.email;
-                        const qReg = query(collection(db, regCollection), where('email', '==', email), limit(1));
-                        const regSnapshot = await getDocs(qReg);
-                        if (!regSnapshot.empty) {
-                            statuses[email] = regSnapshot.docs[0].data().firstAidPaid === true;
-                        } else {
-                            statuses[email] = false;
-                        }
-                    }));
-                    setPaymentStatuses(statuses);
-                } catch (err) {
-                    console.error("Error fetching payment statuses:", err);
-                }
+                // Read the firstAidPaid status directly from the booking documents
+                data.forEach((booking) => {
+                    statuses[booking.email] = booking.firstAidPaid === true;
+                });
+
+                setPaymentStatuses(statuses);
             }
         }, (error) => {
             console.error("Error fetching bookings:", error);
@@ -605,6 +592,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                     const updatePaymentFn = httpsCallable(functions, 'updateFirstAidPaymentStatus');
                     const result = await updatePaymentFn({
                         studentEmail: booking.email,
+                        courseId: course.id,
                         isPaid: newStatus,
                         isTestView
                     });

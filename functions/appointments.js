@@ -453,6 +453,7 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
         let bookingDataToEmail = null;
         let courseDataToEmail = null;
         let isLinkedToStudent = false;
+        let hasFirstAidCredit = false;
 
         // 0. Check if student exists in registrations collection by email
         const normalizedEmail = email.toLowerCase().trim();
@@ -463,6 +464,10 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
         
         if (!registrationsSnapshot.empty) {
             isLinkedToStudent = true;
+            const studentData = registrationsSnapshot.docs[0].data();
+            if (studentData.firstAidPaid === true) {
+                hasFirstAidCredit = true;
+            }
         }
 
         await db.runTransaction(async (transaction) => {
@@ -509,6 +514,11 @@ exports.bookAppointment = onCall({region: "europe-west1"}, async (request) => {
                 addedAsExtra: !!silent,
                 isLinkedToStudent: isLinkedToStudent,
             };
+
+            // Apply First Aid credit if it's an Elsősegély course
+            if (courseData.name === "Elsősegély tanfolyam" && hasFirstAidCredit) {
+                bookingData.firstAidPaid = true;
+            }
 
             // 5. Prepare global reference
             const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
@@ -1266,10 +1276,11 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
     const courseRef = db.collection(coursesCollection).doc(courseId);
     const bookingDocRef = courseRef.collection("bookings").doc(normalizedEmail);
     const globalBookingRef = db.collection(allBookingsCollection).doc(`${courseId}_${normalizedEmail}`);
+    const registrationsCollection = isTestView ? "registrations_test" : "registrations";
 
     try {
         await db.runTransaction(async (transaction) => {
-            // 1. READS (Minden olvasásnak meg kell előznie az írásokat a Firestore transaction-ökben!)
+            // 1. READS
             const bookingDoc = await transaction.get(bookingDocRef);
             let globalBookingDoc = null;
             try {
@@ -1278,18 +1289,36 @@ exports.updateBookingAttendance = onCall({region: "europe-west1"}, async (reques
                 console.warn("Global booking fetch failed, but continuing.", err);
             }
 
+            // --- Elsősegély kredit levonása logikája (READ phase) ---
+            let studentDocRef = null;
+            if (bookingDoc.exists) {
+                const localData = bookingDoc.data();
+                if (localData.courseName === "Elsősegély tanfolyam" && isPresent === true) {
+                    const studentSnapshot = await transaction.get(
+                        db.collection(registrationsCollection).where("email", "==", normalizedEmail).limit(1)
+                    );
+                    if (!studentSnapshot.empty) {
+                        studentDocRef = studentSnapshot.docs[0].ref;
+                    }
+                }
+            }
+
             // 2. WRITES
-            // Ha létezik a lokális foglalás, frissítjük
             if (bookingDoc.exists) {
                 transaction.update(bookingDocRef, {
                     isPresent: isPresent
                 });
+
+                if (studentDocRef) {
+                    transaction.update(studentDocRef, {
+                        firstAidPaid: false
+                    });
+                }
             } else {
                 console.warn(`Booking with ID ${normalizedEmail} not found in course ${courseId}.`);
                 throw new HttpsError("not-found", `A foglalás nem található (${normalizedEmail}).`);
             }
 
-            // Ha létezik a globális foglalás, azt is frissítjük
             if (globalBookingDoc && globalBookingDoc.exists) {
                 transaction.update(globalBookingRef, {
                     isPresent: isPresent
