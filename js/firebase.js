@@ -1,5 +1,5 @@
 // 1. Firebase App
-import { initializeApp } from "https://esm.sh/firebase@10.8.1/app";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
 // 2. Firebase Auth
 import { 
@@ -10,7 +10,7 @@ import {
     signInWithEmailLink,
     signOut,
     signInAnonymously
-} from "https://esm.sh/firebase@10.8.1/auth";
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
 // 3. Firebase Firestore
 import { 
@@ -31,13 +31,13 @@ import {
     deleteField,
     Timestamp,
     limit // ÚJ
-} from "https://esm.sh/firebase@10.8.1/firestore";
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
 // 4. Firebase Functions
 import { 
     getFunctions, 
     httpsCallable 
-} from "https://esm.sh/firebase@10.8.1/functions";
+} from "https://www.gstatic.com/firebasejs/10.8.1/firebase-functions.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyCuZrleVz4n_c6BZPQVklquGcjw9KOwEB8",
