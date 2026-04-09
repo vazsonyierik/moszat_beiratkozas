@@ -259,7 +259,7 @@ const CheckoutModal = ({ cart, onClose, onBook, isTestView, onRemoveItem }) => {
                                 <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2">Kiválasztott időpontok (${cart.length})</p>
                                 <ul className="space-y-2">
                                     ${cart.map((item, index) => html`
-                                        <li key=${index} className="bg-gray-50 p-2.5 sm:py-1.5 sm:px-2.5 rounded border border-gray-200 flex justify-between items-center gap-3 sm:gap-2 transition-all hover:border-[#e09900]">
+                                        <li key=${index} className="bg-gray-50 p-2.5 sm:py-1.5 sm:px-2.5 rounded border border-gray-200 flex justify-between items-center gap-3 sm:gap-2 transition-all hover:border-[#e09900] animate-cart-item">
                                             <div className="flex-1 min-w-0 leading-tight">
                                                 <span className="font-bold text-gray-800 text-[14px] sm:text-[12px] break-words">${item.course.name} ${item.isWaitlist ? html`<span className="text-[9px] uppercase tracking-wide font-bold text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded-full ml-1.5 align-middle border border-orange-100 whitespace-nowrap">Várólista</span>` : ''}</span>
                                                 <div className="text-gray-500 mt-1 sm:mt-0.5 flex items-center gap-1.5 sm:gap-1 text-[12px] sm:text-[10px]">
@@ -1601,7 +1601,7 @@ const StudentAppointmentsApp = () => {
                         ` : html`
                             <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar flex-1 min-h-0">
                                 ${cart.map(item => html`
-                                    <div key=${item.course.id} className="flex justify-between items-start p-2.5 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors">
+                                    <div key=${item.course.id} className="flex justify-between items-start p-2.5 bg-gray-50 rounded-lg border border-gray-100 hover:border-[#e09900] transition-colors animate-cart-item">
                                         <div className="flex-1">
                                             <div className="font-semibold text-[#e09900] text-xs">
                                                 ${item.course.name}
