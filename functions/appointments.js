@@ -329,8 +329,29 @@ exports.deleteCourseAsAdmin = onCall({region: "europe-west1"}, async (request) =
             transaction.delete(courseRef);
         });
 
-        // Send emails outside the transaction
-        if (courseData && bookingsToCancel.length > 0) {
+        // Check if course is archived (end time is in the past)
+        let isArchived = false;
+        if (courseData && courseData.date && courseData.endTime) {
+            const dateParts = courseData.date.split('-');
+            const timeParts = courseData.endTime.split(':');
+            if (dateParts.length === 3 && timeParts.length === 2) {
+                const courseEndDateTime = new Date(
+                    parseInt(dateParts[0]),
+                    parseInt(dateParts[1]) - 1,
+                    parseInt(dateParts[2]),
+                    parseInt(timeParts[0]),
+                    parseInt(timeParts[1])
+                );
+                
+                if (courseEndDateTime < new Date()) {
+                    isArchived = true;
+                    console.log(`Course ${courseId} is archived. Skipping cancellation emails.`);
+                }
+            }
+        }
+
+        // Send emails outside the transaction ONLY if not archived
+        if (courseData && bookingsToCancel.length > 0 && !isArchived) {
             const emailPromises = bookingsToCancel.map(booking => {
                 const bookingWithReason = { ...booking, reason: reason || '' };
                 // ÚJ: Használjuk a dinamikus e-mail küldőt

@@ -55,7 +55,7 @@ exports.updateFirstAidPaymentStatus = onCall({ region: "europe-west1" }, async (
                 // READ PHASE
                 const localDoc = await transaction.get(localBookingRef);
                 const globalDoc = await transaction.get(globalBookingRef);
-
+                
                 // WRITE PHASE
                 if (localDoc.exists) {
                     transaction.update(localBookingRef, { firstAidPaid: isPaid });
@@ -83,7 +83,7 @@ exports.updateFirstAidPaymentStatus = onCall({ region: "europe-west1" }, async (
             if (globalDoc.exists) {
                 bookingData = globalDoc.data();
             }
-        }
+        } 
         
         if (!bookingData) {
             // Fallback: Check if there's any First Aid course booking to get course details for the email
@@ -91,12 +91,12 @@ exports.updateFirstAidPaymentStatus = onCall({ region: "europe-west1" }, async (
             const bookingsSnapshot = await bookingsRef.where('email', '==', normalizedEmail)
                 .where('courseName', '==', 'Elsősegély tanfolyam')
                 .get();
-
+                
             if (!bookingsSnapshot.empty) {
                 bookingData = bookingsSnapshot.docs[0].data();
             }
         }
-
+            
         let courseDate = bookingData?.courseDate || "N/A";
         let startTime = bookingData?.startTime || "N/A";
         let endTime = bookingData?.endTime || "N/A";

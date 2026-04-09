@@ -366,7 +366,7 @@ const CourseBookingsModal = ({ course, onClose, isTestView }) => {
                 data.forEach((booking) => {
                     statuses[booking.email] = booking.firstAidPaid === true;
                 });
-
+                
                 setPaymentStatuses(statuses);
             }
         }, (error) => {
